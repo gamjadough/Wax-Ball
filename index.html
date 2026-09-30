@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Wax-Ball에 오신 것을 환영합니다. 왁뿌볼을 플레이하고 프로젝트를 만나보세요.">
+  <meta name="theme-color" content="#f6f3eb">
+  <title>Wax-Ball — 작고 즐거운 시작</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #253a30; background: #f6f3eb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; }
+    header, footer { width: min(100% - 48px, 1080px); margin-inline: auto; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    header { padding-block: 28px; }
+    .brand { font-weight: 800; letter-spacing: -.04em; font-size: 22px; }
+    .header-link { color: #253a30; font-size: 14px; text-underline-offset: 5px; }
+    main { flex: 1; width: min(100% - 48px, 780px); margin-inline: auto; padding-block: 48px 72px; text-align: center; }
+    .ball { width: clamp(100px, 22vw, 160px); aspect-ratio: 1; margin: 0 auto 36px; border-radius: 50%; background: radial-gradient(circle at 32% 27%, #fff4ca 0%, #edc878 40%, #bb853e 82%, #986027 100%); box-shadow: inset -12px -16px 24px #83572026, 0 22px 30px -20px #765b3d70; }
+    .eyebrow { margin: 0 0 14px; color: #486150; font-size: 12px; font-weight: 700; letter-spacing: .18em; }
+    h1 { margin: 0; font-size: clamp(58px, 12vw, 112px); line-height: 1.06; letter-spacing: -.065em; }
+    .intro { margin: 24px 0 0; font-size: clamp(20px, 4vw, 26px); font-weight: 600; line-height: 1.5; word-break: keep-all; }
+    .description { margin: 12px auto 0; max-width: 420px; color: #58675b; font-size: 16px; line-height: 1.8; word-break: keep-all; }
+    .actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+    .button { display: inline-flex; align-items: center; justify-content: center; min-height: 50px; padding: 14px 24px; border: 1px solid #253a30; border-radius: 999px; color: #253a30; text-decoration: none; font-size: 15px; font-weight: 600; }
+    .button.primary { background: #253a30; color: #fff; }
+    .button:hover { background: #e8e6dc; }
+    .button.primary:hover { background: #3b5544; }
+    a:focus-visible { outline: 3px solid #95621d; outline-offset: 5px; }
+    footer { border-top: 1px solid #d6d9cd; padding-block: 20px; color: #58675b; font-size: 12px; }
+    footer p { margin: 0; }
+    @media (max-width: 480px) {
+      header, footer, main { width: calc(100% - 40px); }
+      header { padding-block: 22px; }
+      main { padding-block: 36px 56px; }
+      footer { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="brand">Wax-Ball</span>
+    <a class="header-link" href="https://github.com/gamjadough/Wax-Ball">GitHub ↗</a>
+  </header>
+  <main>
+    <div class="ball" aria-hidden="true"></div>
+    <p class="eyebrow">A LITTLE BALL, A LITTLE JOY</p>
+    <h1>Wax-Ball</h1>
+    <p class="intro">작은 공 하나로 시작하는 즐거움.</p>
+    <p class="description">Wax-Ball에 오신 것을 환영합니다.<br>왁뿌볼을 만나고, 가볍게 즐겨보세요.</p>
+    <div class="actions">
+      <a class="button primary" href="./wakppuball/">왁뿌볼 시작하기 →</a>
+      <a class="button" href="https://github.com/gamjadough/Wax-Ball">프로젝트 살펴보기</a>
+    </div>
+  </main>
+  <footer>
+    <p>Wax-Ball · gamjadough</p>
+    <p>작고 즐거운 시작.</p>
+  </footer>
+</body>
+</html>
