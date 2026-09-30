@@ -280,7 +280,6 @@
     // 파괴 연출 (과하지 않게)
     wrap.classList.add('broken');
     flash();
-    shake();
     spawnChips(center.x, center.y, 16, 3, data);
 
     // 잠시 후 새 왁뿌볼 등장
@@ -425,17 +424,6 @@
     ], { duration: 300, easing: 'ease-out' });
   }
 
-  /* 화면을 아주 살짝 흔들기 */
-  function shake() {
-    stage.animate([
-      { transform: 'translate(0,0)' },
-      { transform: 'translate(-5px,3px)' },
-      { transform: 'translate(4px,-3px)' },
-      { transform: 'translate(-2px,2px)' },
-      { transform: 'translate(0,0)' },
-    ], { duration: 230, easing: 'ease-out' });
-  }
-
   /* ==========================================================================
      6. 골드 · 해금 · 선택
      ========================================================================== */
@@ -530,6 +518,14 @@
   /* ==========================================================================
      8. 이벤트 연결
      ========================================================================== */
+  // Safari의 두 손가락 확대 제스처도 차단합니다.
+  const preventZoom = (event) => event.preventDefault();
+  document.addEventListener('gesturestart', preventZoom, { passive: false });
+  document.addEventListener('gesturechange', preventZoom, { passive: false });
+  document.addEventListener('touchstart', (event) => {
+    if (event.touches.length > 1) event.preventDefault();
+  }, { passive: false });
+
   // 첫 터치 때 오디오 깨우기 (브라우저 정책)
   document.addEventListener('pointerdown', () => SoundManager.unlock(), true);
 
