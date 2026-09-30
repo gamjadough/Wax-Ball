@@ -1,26 +1,27 @@
 # Wax-Ball
 
-Wax-Ball의 간단한 랜딩 페이지와 왁뿌볼 게임입니다.
+작은 공 하나로 시작하는 즐거움. **Wax-Ball(왁스볼)**은 볼을 누르고 깨뜨리며 골드를 모으는 브라우저 게임 프로젝트입니다.
 
-- `index.html`: 스타일을 포함한 단일 정적 HTML 랜딩 페이지. 별도 프레임워크, 설치 또는 빌드가 필요하지 않습니다.
-- `wakppuball/`: 기존 왁뿌볼 게임. 랜딩 페이지의 시작 버튼으로 이동합니다.
-- `.nojekyll`: GitHub Pages에서 Jekyll 처리 없이 정적 파일을 게시하도록 합니다.
+**[왁스볼 사이트](https://gamjadough.github.io/Wax-Ball/)** · **[왁뿌볼 바로 플레이](https://gamjadough.github.io/Wax-Ball/wakppuball/)**
 
-## GitHub Pages 설정
+## 게임 소개
 
-저장소 관리자 또는 유지관리 권한이 있는 계정으로 다음을 설정하세요.
+왁뿌볼을 클릭하거나 터치하면 공에 금이 생기고, 소리와 함께 눌리는 모습을 볼 수 있습니다. 공을 끝까지 깨뜨리면 골드를 얻고 새로운 공이 나타납니다.
 
-1. 저장소의 **Settings → Pages**로 이동합니다.
-2. **Build and deployment → Source**에서 **Deploy from a branch**를 선택합니다.
-3. 브랜치는 **main**, 폴더는 **/ (root)**를 선택합니다.
-4. **Save**를 누릅니다.
-5. **Actions**에서 Pages 배포가 완료됐는지 확인합니다.
+모은 골드로 다음 볼을 순서대로 해금하고, 도감에서 해금한 볼을 골라 플레이할 수 있습니다.
 
-설정 및 배포가 완료되면 다음 주소로 접속할 수 있습니다.
+## 플레이 방법
 
-- 랜딩 페이지: https://gamjadough.github.io/Wax-Ball/
-- 왁뿌볼 게임: https://gamjadough.github.io/Wax-Ball/wakppuball/
+1. 사이트에서 **왁뿌볼 시작하기**를 누릅니다.
+2. 화면 중앙의 볼을 클릭하거나 터치해 깨뜨립니다.
+3. 획득한 골드로 새로운 볼을 해금합니다.
+4. **도감**에서 볼을 살펴보고 사용할 볼을 선택합니다.
 
-추가 워크플로 또는 `CNAME` 파일은 필요하지 않습니다. `.nojekyll` 파일만 추가해도 Pages 설정이 자동으로 켜지는 것은 아닙니다.
+## 프로젝트 구성
 
-[GitHub Pages 게시 소스 설정 안내](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)
+- `index.html`: Wax-Ball 랜딩 페이지
+- `wakppuball/index.html`: 왁뿌볼 게임 화면
+- `wakppuball/style.css`: 게임 스타일
+- `wakppuball/js/`: 볼 데이터, 그림, 사운드 및 게임 로직
+
+HTML, CSS, JavaScript로 구성되어 있으며 별도 프레임워크 없이 브라우저에서 실행됩니다.
