@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>왁뿌볼</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="game">
+
+    <!-- 상단: 현재 골드 -->
+    <header class="top">
+      <div class="gold" aria-label="보유 골드">
+        <span class="coin" aria-hidden="true"></span>
+        <span id="goldValue" class="gold-value">0</span>
+        <span class="gold-unit">G</span>
+      </div>
+    </header>
+
+    <!-- 중앙: 왁뿌볼 -->
+    <section id="stage" class="stage">
+      <div class="spot" aria-hidden="true"></div>
+      <div class="ball-shadow" aria-hidden="true"></div>
+      <div id="ballWrap" class="ball-wrap">
+        <svg id="ballSvg" viewBox="0 0 200 200" role="img" aria-label="왁뿌볼"></svg>
+      </div>
+      <div id="flash" class="flash" aria-hidden="true"></div>
+      <div id="effects" class="effects" aria-hidden="true"></div>
+      <p id="hint" class="hint">왁뿌볼을 눌러 깨보세요</p>
+    </section>
+
+    <!-- 하단: 이름 · 등급 · 버튼 -->
+    <footer class="bottom">
+      <div class="info">
+        <span id="ballGrade" class="grade"></span>
+        <h1 id="ballName" class="name"></h1>
+      </div>
+      <div class="actions">
+        <button id="unlockBtn" class="btn primary" type="button"></button>
+        <button id="collectionBtn" class="btn" type="button">도감</button>
+      </div>
+    </footer>
+  </main>
+
+  <!-- 도감 (선택 / 해금) -->
+  <div id="collection" class="modal" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="collectionTitle">
+      <div class="sheet-head">
+        <h2 id="collectionTitle">왁뿌볼 도감</h2>
+        <button id="collectionClose" class="btn small" type="button" aria-label="닫기">닫기</button>
+      </div>
+      <div id="collectionGrid" class="grid"></div>
+    </div>
+  </div>
+
+  <!-- 스크립트 순서가 중요해요: 데이터 → 사운드 → 그림 → 게임 -->
+  <script src="js/balls-data.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/ball-art.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
