@@ -43,6 +43,54 @@
     lastSound: null,    // 같은 소리가 연달아 나오지 않게 기억
   };
 
+  /* ---------- 브라우저 자동 저장 ---------- */
+  const SAVE_KEY = 'wax-ball:wakppuball:save';
+  const SAVE_VERSION = 1;
+
+  function saveProgress() {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify({
+        version: SAVE_VERSION,
+        gold: state.gold,
+        unlocked: state.unlocked,
+        selected: state.selected,
+      }));
+    } catch (error) {
+      // 저장소가 차단되거나 가득 차도 현재 플레이는 계속합니다.
+      console.warn('왁뿌볼 진행 상황을 저장하지 못했습니다.', error);
+    }
+  }
+
+  function loadProgress() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (!saved || saved.version !== SAVE_VERSION ||
+          !Number.isSafeInteger(saved.gold) || saved.gold < 0 ||
+          !Array.isArray(saved.unlocked) || saved.unlocked[0] !== true ||
+          !saved.unlocked.every((value) => typeof value === 'boolean')) return;
+
+      // 볼이 추가되어도 기존 해금은 유지하고 새 볼은 잠긴 상태로 시작합니다.
+      const unlocked = WAKPPU_BALLS.map((_, index) => saved.unlocked[index] === true);
+      // 해금은 순서대로만 가능하므로 중간에 잠긴 볼이 있는 데이터는 복구하지 않습니다.
+      let locked = false;
+      for (const open of unlocked) {
+        if (!open) locked = true;
+        else if (locked) return;
+      }
+      const selected = Number.isInteger(saved.selected) &&
+        saved.selected >= 0 && saved.selected < unlocked.length &&
+        unlocked[saved.selected] ? saved.selected : 0;
+      state.gold = saved.gold;
+      state.unlocked = unlocked;
+      state.selected = selected;
+    } catch (error) {
+      // 손상된 데이터나 저장소 접근 오류가 있어도 게임을 시작할 수 있습니다.
+      console.warn('왁뿌볼 저장 데이터를 불러오지 못했습니다.', error);
+    }
+  }
+
   /* ---------- 작은 도우미 함수 ---------- */
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const rand = (a, b) => a + Math.random() * (b - a);
@@ -475,6 +523,7 @@
     }
 
     if (!modal.hidden) renderCollection();
+    saveProgress();
   }
 
   /* ---------- 도감 ---------- */
@@ -563,6 +612,7 @@
   });
   SoundManager.init(Array.from(soundNames));
 
+  loadProgress();
   spawnBall(false);
   updateAll();
 })();
