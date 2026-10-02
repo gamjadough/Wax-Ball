@@ -199,6 +199,33 @@ const ART = {
     };
   },
 
+  /* ----- 사과 / 도넛 / 물: 코드만으로 그리는 추가 왁스 질감 ----- */
+  apple(uid, ball) {
+    const d = ball.design;
+    return { defs: radialGrad(`${uid}-base`, d.colors), art: `<rect width="200" height="200" fill="url(#${uid}-base)"/>
+      <path d="M100 45 C96 29 105 20 120 16" fill="none" stroke="#5a3516" stroke-width="8" stroke-linecap="round"/>
+      <path d="M108 34 C132 15 157 29 151 53 C132 56 117 49 108 34Z" fill="#54a847"/>
+      <ellipse cx="70" cy="70" rx="18" ry="9" fill="#fff" opacity=".22" filter="url(#${uid}-b4)"/>` };
+  },
+  donut(uid, ball) {
+    const d = ball.design;
+    return { defs: radialGrad(`${uid}-base`, d.colors), art: `<rect width="200" height="200" fill="url(#${uid}-base)"/>
+      <circle cx="100" cy="100" r="64" fill="#f39aae"/><circle cx="100" cy="100" r="24" fill="#875029"/>
+      <circle cx="100" cy="100" r="16" fill="#5b3420"/>
+      <g stroke-linecap="round" stroke-width="5"><path d="M54 68l10 6" stroke="#fff0a0"/><path d="M133 58l7 11" stroke="#70dff1"/><path d="M145 126l-11 7" stroke="#fff"/><path d="M66 136l6-11" stroke="#9ee58b"/><path d="M90 53l2 12" stroke="#be75ed"/></g>` };
+  },
+  water(uid, ball) {
+    const d = ball.design;
+    return { defs: radialGrad(`${uid}-base`, d.colors), art: `<rect width="200" height="200" fill="url(#${uid}-base)"/>
+      <path d="M-10 85 Q25 63 62 85 T135 85 T210 85 V110 Q175 89 135 110 T62 110 T-10 110Z" fill="#e1fcff" opacity=".42"/>
+      <path d="M-10 128 Q35 105 77 128 T160 128 T210 128" fill="none" stroke="#e7fdff" stroke-width="8" opacity=".35"/>
+      <ellipse cx="68" cy="60" rx="26" ry="11" fill="#fff" opacity=".38" filter="url(#${uid}-b4)"/>` };
+  },
+  emerald(uid, ball) {
+    const P = '58,30 142,30 186,68 100,172 14,68';
+    return { defs: '', art: `<polygon points="${P}" fill="#20ad80"/><polygon points="58,30 100,68 14,68" fill="#99ffe0"/><polygon points="142,30 186,68 100,68" fill="#55d8af"/><polygon points="14,68 100,68 100,172" fill="#15916d"/><polygon points="186,68 100,68 100,172" fill="#087356"/><path d="M58 30L142 30L186 68L100 172L14 68Z" fill="none" stroke="#dffff4" stroke-width="3"/>` };
+  },
+
   /* ----- 신화: 다이아몬드 (반투명 면 + 반사광 + 반짝임) ----- */
   diamond(uid, ball) {
     const P = { A: [58, 30], B: [142, 30], C: [186, 68], D: [14, 68], E: [100, 172],

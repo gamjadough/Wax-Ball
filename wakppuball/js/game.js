@@ -27,13 +27,22 @@
   const modal = $('collection');
   const grid = $('collectionGrid');
   const closeBtn = $('collectionClose');
+  const rebirthBtn = $('rebirthBtn');
+  const rankingBtn = $('rankingBtn');
+  const rebirthModal = $('rebirth');
+  const rankingModal = $('ranking');
+  const rebirthText = $('rebirthText');
+  const rebirthConfirm = $('rebirthConfirm');
+  const rankingStatus = $('rankingStatus');
+  const rankingList = $('rankingList');
 
   const NS = 'http://www.w3.org/2000/svg';
 
   /* ---------- 게임 상태 ---------- */
   const state = {
     gold: 0,
-    unlocked: WAKPPU_BALLS.map((b, i) => i === 0),  // 처음엔 첫 번째(초록)만 해금
+    rebirths: 0,
+    unlocked: WAKPPU_BALLS.map((b, i) => i === 0),  // 처음엔 첫 번째(노란색)만 해금
     selected: 0,        // 지금 깨고 있는 왁뿌볼 번호
     clicks: 0,          // 현재 왁뿌볼을 누른 횟수 (화면엔 표시 안 함)
     busy: false,        // 깨지는 연출 중에는 true
@@ -45,13 +54,14 @@
 
   /* ---------- 브라우저 자동 저장 ---------- */
   const SAVE_KEY = 'wax-ball:wakppuball:save';
-  const SAVE_VERSION = 1;
+  const SAVE_VERSION = 2;
 
   function saveProgress() {
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         version: SAVE_VERSION,
         gold: state.gold,
+        rebirths: state.rebirths,
         unlocked: state.unlocked,
         selected: state.selected,
       }));
@@ -66,7 +76,7 @@
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw);
-      if (!saved || saved.version !== SAVE_VERSION ||
+      if (!saved || (saved.version !== 1 && saved.version !== SAVE_VERSION) ||
           !Number.isSafeInteger(saved.gold) || saved.gold < 0 ||
           !Array.isArray(saved.unlocked) || saved.unlocked[0] !== true ||
           !saved.unlocked.every((value) => typeof value === 'boolean')) return;
@@ -83,6 +93,7 @@
         saved.selected >= 0 && saved.selected < unlocked.length &&
         unlocked[saved.selected] ? saved.selected : 0;
       state.gold = saved.gold;
+      state.rebirths = Number.isSafeInteger(saved.rebirths) && saved.rebirths >= 0 ? saved.rebirths : 0;
       state.unlocked = unlocked;
       state.selected = selected;
     } catch (error) {
@@ -320,10 +331,11 @@
     makeShards(shape);
 
     // 골드 획득
-    state.gold += data.reward;
+    const reward = data.reward * rebirthMultiplier(state.rebirths);
+    state.gold += reward;
     updateAll();
     const center = ballCenter();
-    floatText('+' + fmt(data.reward) + 'G', center.x, center.y - wrap.offsetHeight * 0.32);
+    floatText('+' + fmt(reward) + 'G', center.x, center.y - wrap.offsetHeight * 0.32);
 
     // 파괴 연출 (과하지 않게)
     wrap.classList.add('broken');
@@ -497,6 +509,48 @@
     selectBall(index);                       // 해금하면 바로 그 볼로 바꿔줘요
   }
 
+  function nextRebirthCost() { return REBIRTH_COSTS[state.rebirths] ?? null; }
+
+  function openRebirth() {
+    const cost = nextRebirthCost();
+    rebirthText.textContent = cost === null
+      ? '10회 이후 환생 요구 Gold는 추후 공개됩니다.'
+      : `${fmt(cost)}G를 모으면 환생할 수 있습니다. 환생하면 Gold와 해금한 왁뿌볼이 초기화되고, 보상 배율은 ×${fmt(rebirthMultiplier(state.rebirths + 1))}이 됩니다.`;
+    rebirthConfirm.hidden = cost === null;
+    rebirthConfirm.disabled = cost === null || state.gold < cost;
+    rebirthModal.hidden = false;
+  }
+  function doRebirth() {
+    const cost = nextRebirthCost();
+    if (cost === null || state.gold < cost) return;
+    state.gold = 0;
+    state.rebirths += 1;
+    state.unlocked = WAKPPU_BALLS.map((_, i) => i === 0);
+    state.selected = 0;
+    wrap.classList.remove('broken');
+    spawnBall(true);
+    rebirthModal.hidden = true;
+    updateAll();
+  }
+
+  async function openRanking() {
+    rankingModal.hidden = false;
+    rankingList.innerHTML = '';
+    rankingStatus.textContent = '온라인 랭킹을 불러오는 중…';
+    try {
+      const response = await fetch('/api/rankings', { credentials: 'include' });
+      if (!response.ok) throw new Error('ranking unavailable');
+      const rows = await response.json();
+      if (!Array.isArray(rows)) throw new Error('invalid ranking');
+      rankingStatus.hidden = true;
+      rankingList.innerHTML = rows.map((row, i) => `<li><b>${i + 1}</b><span>${escapeHtml(row.nickname)}</span><em>${fmt(row.rebirths)}회</em><strong>${fmt(row.gold)}G</strong></li>`).join('');
+    } catch (_) {
+      rankingStatus.hidden = false;
+      rankingStatus.textContent = '온라인 서버에 연결하면 모든 플레이어의 공용 랭킹이 표시됩니다.';
+    }
+  }
+  function escapeHtml(value) { const div = document.createElement('div'); div.textContent = String(value || 'Player'); return div.innerHTML; }
+
   /* ==========================================================================
      7. 화면 갱신
      ========================================================================== */
@@ -511,6 +565,10 @@
     nameEl.textContent = data.name;
     gradeEl.textContent = data.grade;
     gradeEl.style.setProperty('--grade', data.gradeColor);
+
+    const cost = nextRebirthCost();
+    rebirthBtn.textContent = `환생 ${state.rebirths}회 · ×${fmt(rebirthMultiplier(state.rebirths))}`;
+    rebirthBtn.disabled = cost === null || state.gold < cost;
 
     const ni = nextLockedIndex();
     if (ni === -1) {
@@ -547,7 +605,7 @@
         <div class="card-body">
           <span class="grade" style="--grade:${b.gradeColor}">${b.grade}</span>
           <h3>${b.name}</h3>
-          <p class="meta">${b.difficulty} · 깨면 +${fmt(b.reward)}G</p>
+          <p class="meta">파괴 보상 +${fmt(b.reward)}G</p>
           ${action}
         </div>
       </article>`;
@@ -588,9 +646,19 @@
 
   unlockBtn.addEventListener('click', () => unlockBall(nextLockedIndex()));
   collectionBtn.addEventListener('click', openCollection);
+  rebirthBtn.addEventListener('click', openRebirth);
+  rebirthConfirm.addEventListener('click', doRebirth);
+  rankingBtn.addEventListener('click', openRanking);
   closeBtn.addEventListener('click', closeCollection);
   modal.addEventListener('click', (e) => { if (e.target === modal) closeCollection(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) closeCollection(); });
+  [rebirthModal, rankingModal].forEach((dialog) => dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.hidden = true; }));
+  document.querySelectorAll('[data-close]').forEach((button) => button.addEventListener('click', () => { $(button.dataset.close).hidden = true; }));
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (!modal.hidden) closeCollection();
+    rebirthModal.hidden = true;
+    rankingModal.hidden = true;
+  });
 
   grid.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-action]');

@@ -197,6 +197,11 @@ body {
 @keyframes sheet-in { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .sheet-head h2 { margin: 0; font-size: 1.25rem; }
+.sheet.compact { width: min(100%, 460px); }
+.dialog-text { margin: 6px 0 18px; color: var(--muted); line-height: 1.65; }
+.ranking-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.ranking-list li { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 10px; align-items: center; padding: 11px 12px; border-radius: 12px; background: var(--panel-2); }
+.ranking-list li b { color: var(--gold); }.ranking-list li em { font-style: normal; color: var(--muted); }.ranking-list li strong { color: var(--gold); font-variant-numeric: tabular-nums; }
 
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .card {
