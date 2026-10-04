@@ -210,6 +210,10 @@ body {
 .ranking-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .ranking-list li { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 10px; align-items: center; padding: 11px 12px; border-radius: 12px; background: var(--panel-2); }
 .ranking-list li b { color: var(--gold); }.ranking-list li em { font-style: normal; color: var(--muted); }.ranking-list li strong { color: var(--gold); font-variant-numeric: tabular-nums; }
+.account-form { display: grid; gap: 10px; margin: 14px 0; }
+.account-form label { display: grid; gap: 5px; color: var(--muted); font-size: .88rem; }
+.account-form input { min-width: 0; border: 1px solid #ffffff2e; border-radius: 10px; background: #10141d; color: #fff; padding: 10px; font: inherit; }
+.account-actions { display: flex; gap: 8px; }
 
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .card {

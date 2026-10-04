@@ -26,6 +26,7 @@
       </div>
       <button id="shopBtn" class="btn top-btn" type="button">🛒 상점</button>
       <button id="rebirthBtn" class="btn top-btn" type="button">환생</button>
+      <button id="accountBtn" class="btn top-btn" type="button">계정</button>
     </header>
 
     <!-- 중앙: 왁뿌볼 -->
@@ -89,10 +90,27 @@
     </div>
   </div>
 
+  <div id="account" class="modal" hidden>
+    <div class="sheet compact" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
+      <div class="sheet-head"><h2 id="accountTitle">계정</h2><button data-close="account" class="btn small" type="button">닫기</button></div>
+      <p id="accountStatus" class="dialog-text">로그인하면 진행도와 랭킹이 계정에 저장됩니다.</p>
+      <div id="accountForm" class="account-form">
+        <label>이메일<input id="accountEmail" type="email" autocomplete="email" placeholder="name@example.com"></label>
+        <label>비밀번호<input id="accountPassword" type="password" autocomplete="current-password" minlength="6" placeholder="6자 이상"></label>
+        <label>닉네임<input id="nicknameInput" type="text" maxlength="16" placeholder="2~16자, 한글/영문/숫자/_"></label>
+        <div class="account-actions"><button id="signInBtn" class="btn primary" type="button">로그인</button><button id="signUpBtn" class="btn" type="button">회원가입</button></div>
+      </div>
+      <button id="signOutBtn" class="btn" type="button" hidden>로그아웃</button>
+    </div>
+  </div>
+
   <!-- 스크립트 순서가 중요해요: 데이터 → 사운드 → 그림 → 게임 -->
-  <script src="js/balls-data.js?v=20261004-hammer1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/server-config.js?v=20261004-account1"></script>
+  <script src="js/account.js?v=20261004-account1"></script>
+  <script src="js/balls-data.js?v=20261004-account1"></script>
   <script src="js/sound.js?v=20261002-progression1"></script>
   <script src="js/ball-art.js?v=20261002-progression1"></script>
-  <script src="js/game.js?v=20261004-hammer1"></script>
+  <script src="js/game.js?v=20261004-account1"></script>
 </body>
 </html>

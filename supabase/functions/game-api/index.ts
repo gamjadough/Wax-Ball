@@ -29,6 +29,7 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 const fail = (message: string, status = 400) => json({ error: message }, status);
 const list = (value: unknown) => Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
 const multiplier = (rebirths: number) => 2 ** rebirths;
+const isSafeGold = (value: unknown) => Number.isSafeInteger(value) && Number(value) >= 0 && Number(value) <= 9_000_000_000_000_000;
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
@@ -60,6 +61,33 @@ Deno.serve(async (request) => {
     const { error } = await admin.from('players').update({ nickname, updated_at: now.toISOString() }).eq('user_id', user.id);
     if (error) return fail('nickname is already in use', 409);
     return json({ nickname });
+  }
+
+  if (action === 'save_progress') {
+    const gold = body.gold;
+    const rebirths = body.rebirths;
+    const unlocked = list(body.unlocked_ball_ids);
+    const selectedId = typeof body.selected_ball_id === 'string' ? body.selected_ball_id : '';
+    const currentId = typeof body.current_ball_id === 'string' ? body.current_ball_id : '';
+    const currentClicks = body.current_clicks;
+    const hammerOwned = body.hammer_owned === true;
+    const hammerLevel = body.hammer_level;
+    const honeyExpiresAt = body.honey_expires_at === null ? null : typeof body.honey_expires_at === 'string' ? new Date(body.honey_expires_at) : null;
+    const expectedUnlocked = balls.slice(0, unlocked.length).map((ball) => ball.id);
+    const currentBall = ballById.get(currentId);
+    if (!isSafeGold(gold) || !Number.isInteger(rebirths) || Number(rebirths) < 0 || Number(rebirths) > rebirthCosts.length ||
+        unlocked.length < 1 || unlocked.some((id, index) => id !== expectedUnlocked[index]) || !unlocked.includes(selectedId) ||
+        !currentBall || currentId !== selectedId || !Number.isInteger(currentClicks) || Number(currentClicks) < 0 || Number(currentClicks) >= currentBall.clicks ||
+        !Number.isInteger(hammerLevel) || Number(hammerLevel) < 0 || Number(hammerLevel) > 10 || (hammerOwned && Number(hammerLevel) < 1) || (!hammerOwned && Number(hammerLevel) !== 0) ||
+        (honeyExpiresAt && (!Number.isFinite(honeyExpiresAt.getTime()) || honeyExpiresAt.getTime() > now.getTime() + 11 * 60 * 1000))) return fail('invalid progress');
+    const next = {
+      gold, rebirths, unlocked_ball_ids: unlocked, selected_ball_id: selectedId, current_ball_id: currentId,
+      current_clicks: currentClicks, hammer_owned: hammerOwned, hammer_level: hammerLevel,
+      honey_expires_at: honeyExpiresAt?.toISOString() ?? null, progress_imported_at: state.progress_imported_at ?? now.toISOString(), updated_at: now.toISOString(),
+    };
+    const { data, error } = await admin.from('game_states').update(next).eq('user_id', user.id).select('*').single();
+    if (error) return fail('progress save failed', 500);
+    return json({ state: data });
   }
 
   if (action === 'rankings') {
