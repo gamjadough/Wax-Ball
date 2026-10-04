@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>왁뿌볼</title>
-  <link rel="stylesheet" href="style.css?v=20261004-release2">
+  <link rel="stylesheet" href="style.css?v=20261004-admin-gold2">
 </head>
 <body>
   <aside class="landscape-notice" aria-live="polite">
@@ -18,6 +18,7 @@
       <h1 id="maintenanceTitle">왁뿌볼 패치 중</h1>
       <p>현재 게임이 업데이트 중입니다.<br>잠시 후 다시 접속해주세요.</p>
       <p class="maintenance-note">새로운 상점과 모바일 파괴 안정화 기능을 적용하고 있습니다.</p>
+      <button id="maintenanceLogin" class="btn" type="button">관리자 로그인</button>
     </div>
   </section>
   <main id="game">
@@ -32,6 +33,7 @@
       <button id="shopBtn" class="btn top-btn" type="button">🛒 상점</button>
       <button id="rebirthBtn" class="btn top-btn" type="button">환생</button>
       <button id="accountBtn" class="btn top-btn" type="button">계정</button>
+      <button id="adminBtn" class="btn top-btn" type="button" hidden>관리자 패널</button>
     </header>
 
     <!-- 중앙: 왁뿌볼 -->
@@ -113,13 +115,28 @@
   </div>
 
 
+  <div id="admin" class="modal" hidden>
+    <div class="sheet admin-sheet" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+      <div class="sheet-head"><h2 id="adminTitle">관리자 패널</h2><button data-close="admin" class="btn small">닫기</button></div>
+      <p id="adminStatus" role="status"></p>
+      <section><h3>점검·공지</h3><label>점검 안내<input id="adminMaintenanceMessage" value="현재 게임이 업데이트 중입니다."></label><div class="account-actions"><button id="adminMaintenanceOn" class="btn">점검 ON</button><button id="adminMaintenanceOff" class="btn">점검 OFF</button></div><label>전체 공지<input id="adminAnnouncement" maxlength="500"></label><button id="adminAnnounce" class="btn">공지 보내기</button></section>
+      <section><h3>플레이어 검색</h3><label>닉네임 / User ID<input id="adminQuery" placeholder="테스트플레이어 또는 local-player"></label><button id="adminSearch" class="btn">검색</button><div id="adminResults"></div><p id="adminPlayerInfo">검색 결과에서 대상을 선택하세요.</p></section>
+      <section><h3>Gold·환생 관리</h3><label>변경 방식<select id="adminChangeMode"><option value="set">직접 설정</option><option value="add">추가</option><option value="subtract">차감</option></select></label><label>Gold<input id="adminGold" type="number" min="0" step="1" value="10000"></label><button id="adminSetGold" class="btn">Gold 적용</button><label>환생 횟수 (0~25)<input id="adminRebirths" type="number" min="0" max="25" step="1" value="0"></label><button id="adminSetRebirths" class="btn">환생 적용</button><button id="adminUnban" class="btn">정지 해제</button></section>
+      <section><h3>해금·도감</h3><label>왁뿌볼<select id="adminBall"></select></label><div class="admin-controls"><button id="adminUnlock" class="btn">선택 볼 해금</button><button id="adminUnlockAll" class="btn">전체 해금</button><button id="adminDiscover" class="btn">발견 처리</button><button id="adminDiscoverAll" class="btn">전체 도감 발견</button><button id="adminResetOne" class="btn">선택 발견 초기화</button><button id="adminResetAll" class="btn">전체 도감 초기화</button></div></section>
+      <section><h3>파괴·꿀 테스트</h3><p>별도 테스트 모드에서 실행합니다. 테스트 중 저장·Gold 지급·랭킹 변경은 중지됩니다.</p><div class="admin-controls"><button id="adminTestBall" class="btn">선택 볼 테스트</button><button id="adminTestLast" class="btn">마지막 균열</button><button id="adminTestBreak" class="btn">즉시 파괴</button></div><label>꿀 테스트 남은 시간 (초)<input id="adminHoneySeconds" type="number" min="0" max="600" value="600"></label><button id="adminTestHoney" class="btn">꿀 시간 적용</button><button id="adminEndTest" class="btn">테스트 종료·진행도 복원</button></section>
+      <section><h3>관리자 작업 기록</h3><button id="adminLoadLogs" class="btn">기록 새로고침</button><pre id="adminLogs"></pre></section>
+    </div>
+  </div>
+  <div id="serverAnnouncement" class="server-announcement" hidden role="status"></div>
   <!-- 스크립트 순서가 중요해요: 데이터 → 사운드 → 그림 → 게임 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/server-config.js?v=20261004-account1"></script>
-  <script src="js/account.js?v=20261004-authfix1"></script>
+  <script src="js/account.js?v=20261004-admin-gold2"></script>
+  <script src="js/gold-format.js?v=20261004-admin-gold2"></script>
   <script src="js/balls-data.js?v=20261004-account1"></script>
   <script src="js/sound.js?v=20261002-progression1"></script>
   <script src="js/ball-art.js?v=20261002-progression1"></script>
-  <script src="js/game.js?v=20261004-account1"></script>
+  <script src="js/game.js?v=20261004-admin-gold2"></script>
+  <script src="js/admin-panel.js?v=20261004-admin-gold2"></script>
 </body>
 </html>

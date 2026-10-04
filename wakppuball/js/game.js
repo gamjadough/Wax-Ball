@@ -58,7 +58,7 @@
 
   /* ---------- 게임 상태 ---------- */
   const state = {
-    gold: 0,
+    gold: 0n,
     rebirths: 0,
     unlocked: WAKPPU_BALLS.map((b, i) => i === 0),  // 처음엔 첫 번째(노란색)만 해금
     selected: 0,        // 지금 깨고 있는 왁뿌볼 번호
@@ -73,6 +73,8 @@
     honeyExpiresAt: 0,
     account: null,
     remoteReady: false,
+    adminRevision: 0,
+    discovered: ['yellow'],
   };
 
   const HAMMERS = [
@@ -89,17 +91,21 @@
   ];
 
   /* ---------- 브라우저 자동 저장 ---------- */
-  const SAVE_KEY = 'wax-ball:wakppuball:save';
+  const SAVE_KEY = window.WakppuAuth?.local ? 'wax-ball:wakppuball:local-test-save' : 'wax-ball:wakppuball:save';
   const SAVE_VERSION = 3;
   let remoteSaveTimer = null;
+  let testSnapshot = null;
+  let animationEpoch = 0;
 
   function saveProgress() {
+    if (testSnapshot || window.wakppuServerBlocked) return;
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         version: SAVE_VERSION,
-        gold: state.gold,
+        gold: state.gold.toString(),
         rebirths: state.rebirths,
         unlocked: state.unlocked,
+        discovered: state.discovered,
         selected: state.selected,
         hammerOwned: state.hammerOwned,
         hammerLevel: state.hammerLevel,
@@ -118,7 +124,7 @@
       if (!raw) return;
       const saved = JSON.parse(raw);
       if (!saved || ![1, 2, SAVE_VERSION].includes(saved.version) ||
-          !Number.isSafeInteger(saved.gold) || saved.gold < 0 ||
+          !/^[0-9]+$/.test(String(saved.gold)) ||
           !Array.isArray(saved.unlocked) || saved.unlocked[0] !== true ||
           !saved.unlocked.every((value) => typeof value === 'boolean')) return;
 
@@ -133,9 +139,10 @@
       const selected = Number.isInteger(saved.selected) &&
         saved.selected >= 0 && saved.selected < unlocked.length &&
         unlocked[saved.selected] ? saved.selected : 0;
-      state.gold = saved.gold;
+      state.gold = WakppuGold.integer(saved.gold);
       state.rebirths = Number.isSafeInteger(saved.rebirths) && saved.rebirths >= 0 ? saved.rebirths : 0;
       state.unlocked = unlocked;
+      state.discovered = Array.isArray(saved.discovered) ? saved.discovered.filter(id=>WAKPPU_BALLS.some(b=>b.id===id)) : unlocked.map((v,i)=>v?WAKPPU_BALLS[i].id:null).filter(Boolean);
       state.selected = selected;
       state.hammerOwned = saved.hammerOwned === true;
       state.hammerLevel = state.hammerOwned && Number.isInteger(saved.hammerLevel) && saved.hammerLevel >= 1 && saved.hammerLevel <= HAMMERS.length ? saved.hammerLevel : (state.hammerOwned ? 1 : 0);
@@ -151,12 +158,7 @@
   const rand = (a, b) => a + Math.random() * (b - a);
   // Gold가 커져도 모든 화면에서 한 줄로 읽히도록 K/M/B/T 단위로 축약합니다.
   function fmt(n) {
-    const value = Number(n) || 0;
-    const units = [[1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
-    for (const [base, suffix] of units) {
-      if (Math.abs(value) >= base) return (Math.round((value / base) * 10) / 10).toString().replace(/\.0$/, '') + suffix;
-    }
-    return value.toLocaleString('ko-KR');
+    return WakppuGold.compact(n);
   }
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -281,6 +283,7 @@
      2. 왁뿌볼 등장시키기
      ========================================================================== */
   function spawnBall(animate) {
+    animationEpoch++;
     clearTimeout(state.respawnTimer);
     const data = WAKPPU_BALLS[state.selected];
     const shape = SHAPES[data.design.shape] || SHAPES.circle;
@@ -310,9 +313,11 @@
   function unlockedIds() { return state.unlocked.map((open, index) => open ? ballIdAt(index) : null).filter(Boolean); }
   function remotePayload() {
     return {
-      gold: state.gold,
+      gold: state.gold.toString(),
+      admin_revision: state.adminRevision,
       rebirths: state.rebirths,
       unlocked_ball_ids: unlockedIds(),
+      discovered_ball_ids: state.discovered,
       selected_ball_id: ballIdAt(state.selected),
       current_ball_id: ballIdAt(state.selected),
       current_clicks: state.clicks,
@@ -325,33 +330,42 @@
     if (!state.remoteReady || !window.WakppuAuth) return;
     clearTimeout(remoteSaveTimer);
     remoteSaveTimer = setTimeout(() => {
-      window.WakppuAuth.invoke('save_progress', remotePayload()).catch(() => {});
+      window.WakppuAuth.invoke('save_progress', remotePayload()).catch((error) => {
+        if(error.status===409) restoreAccount();
+        else if(error.status===503||error.status===403) {state.remoteReady=false;window.dispatchEvent(new Event('wakppu-account-restored'));}
+      });
     }, 500);
   }
 
   async function restoreAccount() {
     if (!window.WakppuAuth) return;
+    if(testSnapshot) window.WakppuGameTest.end();
+    state.remoteReady = false;
+    clearTimeout(remoteSaveTimer);
     const { data: { session } } = await window.WakppuAuth.session();
     state.account = session?.user ?? null;
-    if (!state.account) { renderAccount(); return; }
+    if (!state.account) { renderAccount(); window.dispatchEvent(new Event('wakppu-account-restored')); return; }
     try {
       const local = remotePayload();
       const data = await window.WakppuAuth.invoke('bootstrap');
       const saved = data.state;
+      state.adminRevision = saved.admin_revision || 0;
       // 계정 도입 전의 이 기기 저장 데이터는 첫 로그인 때 한 번만 서버 계정으로 옮깁니다.
-      if (!saved.progress_imported_at) {
+      if (!saved.progress_imported_at && !saved.admin_revision) {
         await window.WakppuAuth.invoke('save_progress', local);
         state.remoteReady = true;
         updateAll();
         renderAccount();
+        window.dispatchEvent(new Event('wakppu-account-restored'));
         return;
       }
       const ids = Array.isArray(saved.unlocked_ball_ids) ? saved.unlocked_ball_ids : ['yellow'];
       const unlocked = WAKPPU_BALLS.map((ball) => ids.includes(ball.id));
       const selected = WAKPPU_BALLS.findIndex((ball) => ball.id === saved.selected_ball_id);
-      state.gold = Number(saved.gold) || 0;
+      state.gold = WakppuGold.integer(saved.gold || '0');
       state.rebirths = Number(saved.rebirths) || 0;
       state.unlocked = unlocked[0] ? unlocked : WAKPPU_BALLS.map((_, index) => index === 0);
+      state.discovered = Array.isArray(saved.discovered_ball_ids) ? saved.discovered_ball_ids : ['yellow'];
       state.selected = selected >= 0 && state.unlocked[selected] ? selected : 0;
       state.hammerOwned = saved.hammer_owned === true;
       state.hammerLevel = state.hammerOwned ? Math.min(HAMMERS.length, Math.max(1, Number(saved.hammer_level) || 1)) : 0;
@@ -364,6 +378,7 @@
       state.remoteReady = false;
     }
     renderAccount();
+    window.dispatchEvent(new Event('wakppu-account-restored'));
   }
 
   function renderAccount() {
@@ -371,7 +386,7 @@
     accountBtn.textContent = loggedIn ? '내 계정' : '계정';
     accountForm.hidden = loggedIn;
     signOutBtn.hidden = !loggedIn;
-    if (loggedIn) accountStatus.textContent = `${state.account.email} 로그인됨\n진행도와 랭킹이 서버에 저장됩니다.`;
+    if (loggedIn) accountStatus.textContent = `${state.account.email || '빠른 시작 계정'} 로그인됨\n진행도와 랭킹이 서버에 저장됩니다.`;
   }
   function openAccount() { renderAccount(); accountModal.hidden = false; }
   function accountMessage(message) { accountStatus.textContent = message; }
@@ -421,7 +436,7 @@
      3. 클릭 처리
      ========================================================================== */
   function onHit(clientX, clientY, damage = null, isHammer = state.hammerOwned) {
-    if (state.busy) return;
+    if (state.busy || window.wakppuServerBlocked) return;
     const data = WAKPPU_BALLS[state.selected];
     damage = damage ?? (state.hammerOwned ? HAMMERS[state.hammerLevel - 1].cracks : 1);
 
@@ -443,10 +458,11 @@
   }
 
   function buyOrUpgradeHammer() {
+    if(window.wakppuServerBlocked)return;
     const nextLevel = state.hammerOwned ? state.hammerLevel + 1 : 1;
     const next = HAMMERS[nextLevel - 1];
     if (!next || state.gold < next.cost) return;
-    state.gold -= next.cost;
+    state.gold -= BigInt(next.cost);
     state.hammerOwned = true;
     state.hammerLevel = nextLevel;
     updateAll();
@@ -455,8 +471,9 @@
   function honeyActive() { return state.honeyExpiresAt > Date.now(); }
   function honeyMultiplier() { return honeyActive() ? 2 : 1; }
   function buyHoney() {
+    if(window.wakppuServerBlocked)return;
     if (state.gold < 30) return;
-    state.gold -= 30;
+    state.gold -= 30n;
     state.honeyExpiresAt = Date.now() + 10 * 60 * 1000;
     updateAll();
   }
@@ -509,14 +526,16 @@
      4. 깨지는 연출
      ========================================================================== */
   function breakBall(data) {
+    const epoch=animationEpoch;
     state.busy = true;
     // WebKit에서 마지막 균열을 한 프레임 이상 그린 뒤에만 SVG를 조각으로 교체합니다.
     svgEl.classList.add('instant');
     updateCracks(1);
-    requestAnimationFrame(() => setTimeout(() => finishBreak(data), 110));
+    requestAnimationFrame(() => setTimeout(() => {if(epoch===animationEpoch)finishBreak(data);}, 110));
   }
 
   function finishBreak(data) {
+    const epoch=animationEpoch;
     const shape = SHAPES[data.design.shape] || SHAPES.circle;
     makeShards(shape);
     wrap.classList.add('broken');
@@ -525,8 +544,9 @@
     spawnChips(center.x, center.y, 16, 3, data);
     // 파편이 실제로 보인 뒤 Gold를 지급하고, 끝난 뒤에만 다음 공을 만듭니다.
     setTimeout(() => {
+      if(epoch!==animationEpoch || window.wakppuServerBlocked)return;
       const reward = data.reward * rebirthMultiplier(state.rebirths) * honeyMultiplier();
-      state.gold += reward;
+      if (!testSnapshot) state.gold += BigInt(reward);
       updateAll();
       floatText('+' + fmt(reward) + 'G', center.x, center.y - wrap.offsetHeight * 0.32);
     }, 260);
@@ -681,6 +701,7 @@
   }
 
   function selectBall(index) {
+    if(window.wakppuServerBlocked)return;
     if (!state.unlocked[index]) return;      // 해금 안 된 볼은 사용할 수 없어요
     state.selected = index;
     wrap.classList.remove('broken');
@@ -690,11 +711,13 @@
   }
 
   function unlockBall(index) {
+    if(window.wakppuServerBlocked)return;
     if (index !== nextLockedIndex()) return; // 순서대로만 해금 가능
     const b = WAKPPU_BALLS[index];
     if (state.gold < b.price) return;
-    state.gold -= b.price;
+    state.gold -= BigInt(b.price);
     state.unlocked[index] = true;
+    if(!state.discovered.includes(ballIdAt(index)))state.discovered.push(ballIdAt(index));
     selectBall(index);                       // 해금하면 바로 그 볼로 바꿔줘요
   }
 
@@ -710,9 +733,10 @@
     rebirthModal.hidden = false;
   }
   function doRebirth() {
+    if(window.wakppuServerBlocked)return;
     const cost = nextRebirthCost();
     if (cost === null || state.gold < cost) return;
-    state.gold = 0;
+    state.gold = 0n;
     state.rebirths += 1;
     state.honeyExpiresAt = 0;
     state.unlocked = WAKPPU_BALLS.map((_, i) => i === 0);
@@ -726,13 +750,14 @@
   async function openRanking() {
     rankingModal.hidden = false;
     rankingList.innerHTML = '';
+    rankingStatus.hidden = false;
     rankingStatus.textContent = '온라인 랭킹을 불러오는 중…';
     try {
       if (!window.WakppuAuth || !state.account) throw new Error('login required');
       const rows = await window.WakppuAuth.invoke('rankings');
       if (!Array.isArray(rows)) throw new Error('invalid ranking');
       rankingStatus.hidden = true;
-      rankingList.innerHTML = rows.map((row, i) => `<li><b>${i + 1}</b><span>${escapeHtml(row.nickname)}</span><em>${fmt(row.rebirths)}회</em><strong>${fmt(row.gold)}G</strong></li>`).join('');
+      rankingList.innerHTML = rows.map((row, i) => `<li><b>${i + 1}</b><span>${escapeHtml(row.nickname)}</span><em>${fmt(row.rebirths)}회</em><strong title="${escapeHtml(String(row.gold))}G">${fmt(row.gold)}G</strong></li>`).join('');
     } catch (_) {
       rankingStatus.hidden = false;
       rankingStatus.textContent = state.account ? '랭킹을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.' : '계정으로 로그인하면 모든 플레이어의 공용 랭킹을 볼 수 있습니다.';
@@ -816,6 +841,7 @@
           <span class="grade" style="--grade:${b.gradeColor}">${b.grade}</span>
           <h3>${b.name}</h3>
           <p class="meta">파괴 보상 +${fmt(b.reward)}G</p>
+          <p class="meta">${state.discovered.includes(b.id)?'발견 완료':'미발견'}</p>
           ${action}
         </div>
       </article>`;
@@ -863,10 +889,11 @@
   rebirthConfirm.addEventListener('click', doRebirth);
   rankingBtn.addEventListener('click', openRanking);
   accountBtn.addEventListener('click', openAccount);
+  $('maintenanceLogin').addEventListener('click',openAccount);
   signInBtn.addEventListener('click', signIn);
   signUpBtn.addEventListener('click', signUp);
   guestStartBtn.addEventListener('click', startGuest);
-  signOutBtn.addEventListener('click', async () => { await window.WakppuAuth?.signOut(); state.account = null; state.remoteReady = false; renderAccount(); accountModal.hidden = true; });
+  signOutBtn.addEventListener('click', async () => { window.WakppuGameTest.end(); await window.WakppuAuth?.signOut(); state.account = null; state.remoteReady = false; renderAccount(); accountModal.hidden = true; window.dispatchEvent(new Event('wakppu-account-restored')); });
   closeBtn.addEventListener('click', closeCollection);
   modal.addEventListener('click', (e) => { if (e.target === modal) closeCollection(); });
   [rebirthModal, rankingModal, shopModal, accountModal].forEach((dialog) => dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.hidden = true; }));
@@ -901,6 +928,23 @@
   SoundManager.init(Array.from(soundNames));
 
   loadProgress();
+  window.WakppuGameTest = {
+    restoreAccount,
+    revision: () => state.adminRevision,
+    run(mode, ballId, seconds) {
+      clearTimeout(remoteSaveTimer);
+      if (!testSnapshot) testSnapshot = {gold:state.gold,rebirths:state.rebirths,unlocked:[...state.unlocked],discovered:[...state.discovered],selected:state.selected,hammerOwned:state.hammerOwned,hammerLevel:state.hammerLevel,honeyExpiresAt:state.honeyExpiresAt};
+      clearTimeout(state.respawnTimer);
+      state.selected = Math.max(0, WAKPPU_BALLS.findIndex(b=>b.id===ballId));
+      state.unlocked = WAKPPU_BALLS.map(()=>true);
+      wrap.classList.remove('broken');svgEl.classList.remove('instant');spawnBall(false);
+      if(mode==='last') {state.clicks=WAKPPU_BALLS[state.selected].clicks-1;updateCracks(state.clicks/WAKPPU_BALLS[state.selected].clicks);}
+      if(mode==='break') breakBall(WAKPPU_BALLS[state.selected]);
+      if(mode==='honey') state.honeyExpiresAt=Date.now()+Math.max(0,Math.min(600,seconds||0))*1000;
+      updateAll();hintEl.textContent='관리자 테스트 모드 · 저장/보상 중지';hintEl.classList.remove('gone');
+    },
+    end() {if(!testSnapshot)return; Object.assign(state,testSnapshot);testSnapshot=null;wrap.classList.remove('broken');svgEl.classList.remove('instant');spawnBall(false);updateAll();hintEl.textContent='왁뿌볼을 눌러 깨보세요';},
+  };
   spawnBall(false);
   updateAll();
   window.addEventListener('wakppu-auth-changed', restoreAccount);

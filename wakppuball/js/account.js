@@ -9,18 +9,18 @@
 
   async function invoke(action, payload = {}) {
     const { data: { session } } = await client.auth.getSession();
-    if (!session) throw new Error('로그인이 필요합니다.');
-    const response = await fetch(`${config.url}/functions/v1/game-api`, {
+    if (!session && action !== 'status') throw new Error('로그인이 필요합니다.');
+    const response = await fetch(`${config.url}/rest/v1/rpc/wakppu_api`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'apikey': config.anonKey,
-        'Authorization': `Bearer ${session.access_token}`,
+        'Authorization': `Bearer ${session?.access_token || config.anonKey}`,
       },
-      body: JSON.stringify({ action, ...payload }),
+      body: JSON.stringify({ b: { action, ...payload } }),
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || '서버 요청에 실패했습니다.');
+    if (!response.ok) throw Object.assign(new Error(result.message || result.error || '서버 요청에 실패했습니다.'), {status:response.status});
     return result;
   }
 
