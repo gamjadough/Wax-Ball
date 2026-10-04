@@ -290,6 +290,20 @@ const ART = {
                 stroke-width="4" filter="url(#${uid}-b2)"/>`,
     };
   },
+
+  sun(uid) {
+    const ray = (a, len) => `<path d="M100 100 L${100 + Math.cos(a) * len} ${100 + Math.sin(a) * len}" stroke="#ffd85e" stroke-width="7" stroke-linecap="round" opacity=".72"/>`;
+    let rays = '';
+    for (let i = 0; i < 18; i++) rays += ray(i * Math.PI * 2 / 18, i % 2 ? 103 : 116);
+    return { defs: `<radialGradient id="${uid}-sun"><stop stop-color="#fffbd0"/><stop offset=".27" stop-color="#ffe45a"/><stop offset=".68" stop-color="#ff9a10"/><stop offset="1" stop-color="#d64505"/></radialGradient>`,
+      art: `<g class="sun-rays">${rays}</g><circle cx="100" cy="100" r="83" fill="url(#${uid}-sun)"/><circle cx="76" cy="73" r="25" fill="#fff" opacity=".22" filter="url(#${uid}-b10)"/><path d="M36 114 Q67 91 94 114 T154 114" fill="none" stroke="#fff6a7" stroke-width="7" opacity=".25" filter="url(#${uid}-b4)"/>` };
+  },
+
+  blackhole(uid) {
+    const ring = (r, color, opacity, rotate) => `<ellipse cx="100" cy="100" rx="${r}" ry="${Math.round(r * .34)}" transform="rotate(${rotate} 100 100)" fill="none" stroke="${color}" stroke-width="${Math.max(2, r / 15)}" opacity="${opacity}"/>`;
+    return { defs: `<radialGradient id="${uid}-void"><stop stop-color="#040008" offset="0"/><stop stop-color="#12001f" offset=".48"/><stop stop-color="#5b157f" offset=".78"/><stop stop-color="#d49cff" offset="1"/></radialGradient>`,
+      art: `<rect width="200" height="200" fill="#080014"/><circle cx="100" cy="100" r="83" fill="url(#${uid}-void)"/>${ring(85,'#f1c6ff','.58',-22)}${ring(66,'#7e3cc5','.7',34)}${ring(49,'#e7abff','.32',-8)}<circle cx="100" cy="100" r="32" fill="#010003"/><path d="M24 112 C54 50 144 155 178 74" fill="none" stroke="#bd82ff" stroke-width="6" opacity=".5" filter="url(#${uid}-b4)"/>` };
+  },
 };
 
 /* ==========================================================================
@@ -312,7 +326,7 @@ function buildBallSvgInner(ball, uid) {
     part = (ART[d.art] || ART.plain)(uid, ball);
   }
 
-  const shade = d.art === 'planet' ? 0.5 : (d.art === 'diamond' ? 0.18 : 0.32);
+  const shade = d.art === 'blackhole' ? 0.65 : (d.art === 'planet' ? 0.5 : (d.art === 'diamond' ? 0.18 : 0.32));
   const defs = commonDefs(uid, shape, shade) + part.defs;
 
   return `<defs id="${uid}-defs">${defs}</defs>

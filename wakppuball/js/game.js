@@ -35,6 +35,8 @@
   const rebirthConfirm = $('rebirthConfirm');
   const rankingStatus = $('rankingStatus');
   const rankingList = $('rankingList');
+  const hammerBtn = $('hammerBtn');
+  const hammerUseBtn = $('hammerUseBtn');
 
   const NS = 'http://www.w3.org/2000/svg';
 
@@ -50,11 +52,26 @@
     cracks: [],         // 현재 왁뿌볼의 금 목록
     respawnTimer: null,
     lastSound: null,    // 같은 소리가 연달아 나오지 않게 기억
+    hammerOwned: false,
+    hammerLevel: 0,
   };
+
+  const HAMMERS = [
+    { name: '나무 망치', cracks: 3, cost: 100 },
+    { name: '강화 나무 망치', cracks: 5, cost: 500 },
+    { name: '단단한 나무 망치', cracks: 8, cost: 2000 },
+    { name: '철제 보강 망치', cracks: 12, cost: 10000 },
+    { name: '강철 망치', cracks: 18, cost: 50000 },
+    { name: '중형 강철 망치', cracks: 27, cost: 250000 },
+    { name: '강화 강철 망치', cracks: 40, cost: 1000000 },
+    { name: '특수 합금 망치', cracks: 60, cost: 5000000 },
+    { name: '고급 합금 망치', cracks: 90, cost: 25000000 },
+    { name: '최종 망치', cracks: 135, cost: 100000000 },
+  ];
 
   /* ---------- 브라우저 자동 저장 ---------- */
   const SAVE_KEY = 'wax-ball:wakppuball:save';
-  const SAVE_VERSION = 2;
+  const SAVE_VERSION = 3;
 
   function saveProgress() {
     try {
@@ -64,6 +81,8 @@
         rebirths: state.rebirths,
         unlocked: state.unlocked,
         selected: state.selected,
+        hammerOwned: state.hammerOwned,
+        hammerLevel: state.hammerLevel,
       }));
     } catch (error) {
       // 저장소가 차단되거나 가득 차도 현재 플레이는 계속합니다.
@@ -76,7 +95,7 @@
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw);
-      if (!saved || (saved.version !== 1 && saved.version !== SAVE_VERSION) ||
+      if (!saved || ![1, 2, SAVE_VERSION].includes(saved.version) ||
           !Number.isSafeInteger(saved.gold) || saved.gold < 0 ||
           !Array.isArray(saved.unlocked) || saved.unlocked[0] !== true ||
           !saved.unlocked.every((value) => typeof value === 'boolean')) return;
@@ -96,6 +115,8 @@
       state.rebirths = Number.isSafeInteger(saved.rebirths) && saved.rebirths >= 0 ? saved.rebirths : 0;
       state.unlocked = unlocked;
       state.selected = selected;
+      state.hammerOwned = saved.hammerOwned === true;
+      state.hammerLevel = state.hammerOwned && Number.isInteger(saved.hammerLevel) && saved.hammerLevel >= 1 && saved.hammerLevel <= HAMMERS.length ? saved.hammerLevel : (state.hammerOwned ? 1 : 0);
     } catch (error) {
       // 손상된 데이터나 저장소 접근 오류가 있어도 게임을 시작할 수 있습니다.
       console.warn('왁뿌볼 저장 데이터를 불러오지 못했습니다.', error);
@@ -252,23 +273,24 @@
       ], { duration: 380, easing: 'ease-out' });
     }
     state.busy = false;
+    if (state.hammerOwned) hammerUseBtn.disabled = false;
   }
 
   /* ==========================================================================
      3. 클릭 처리
      ========================================================================== */
-  function onHit(clientX, clientY) {
+  function onHit(clientX, clientY, damage = 1, isHammer = false) {
     if (state.busy) return;
     const data = WAKPPU_BALLS[state.selected];
 
-    state.clicks += 1;
+    state.clicks = Math.min(data.clicks, state.clicks + damage);
     const total = data.clicks;
     const isFinal = state.clicks >= total;
     const v = state.clicks / total;      // 진행도 (화면엔 표시 안 함)
 
     hintEl.classList.add('gone');
     playHitSound(data, v, isFinal);      // ① 소리
-    squish(clientX, v);                  // ② 눌림
+    squish(clientX, v, isHammer);        // ② 눌림
     if (isFinal) {
       breakBall(data);                   // ③ 마지막: 깨짐
     } else {
@@ -276,6 +298,22 @@
       const p = toStage(clientX, clientY);
       spawnChips(p.x, p.y, v < 0.35 ? 2 : 4, 1, data);
     }
+  }
+
+  function useHammer() {
+    if (!state.hammerOwned || state.busy) return;
+    const rect = wrap.getBoundingClientRect();
+    onHit(rect.left + rect.width / 2, rect.top + rect.height / 2, HAMMERS[state.hammerLevel - 1].cracks, true);
+  }
+
+  function buyOrUpgradeHammer() {
+    const nextLevel = state.hammerOwned ? state.hammerLevel + 1 : 1;
+    const next = HAMMERS[nextLevel - 1];
+    if (!next || state.gold < next.cost) return;
+    state.gold -= next.cost;
+    state.hammerOwned = true;
+    state.hammerLevel = nextLevel;
+    updateAll();
   }
 
   /* 진행도에 맞는 소리 고르기: 톡→딱→쩍→와작→(마지막) 파괴음 */
@@ -305,10 +343,10 @@
 
   /* 살짝 눌리는 애니메이션 */
   let squishAnim = null;
-  function squish(clientX, v) {
+  function squish(clientX, v, isHammer = false) {
     const rect = wrap.getBoundingClientRect();
     const nx = clamp(((clientX - rect.left) / rect.width - 0.5) * 2, -1, 1);
-    const press = 0.06 + 0.03 * v;
+    const press = (isHammer ? 0.12 : 0.06) + 0.03 * v;
     if (squishAnim) squishAnim.cancel();
     squishAnim = wrap.animate([
       { transform: 'scale(1,1) rotate(0deg)' },
@@ -323,32 +361,32 @@
      ========================================================================== */
   function breakBall(data) {
     state.busy = true;
-    const shape = SHAPES[data.design.shape] || SHAPES.circle;
-
-    // 금을 즉시 전부 보이게 → 조각으로 흩어짐
+    // WebKit에서 마지막 균열을 한 프레임 이상 그린 뒤에만 SVG를 조각으로 교체합니다.
     svgEl.classList.add('instant');
     updateCracks(1);
+    requestAnimationFrame(() => setTimeout(() => finishBreak(data), 110));
+  }
+
+  function finishBreak(data) {
+    const shape = SHAPES[data.design.shape] || SHAPES.circle;
     makeShards(shape);
-
-    // 골드 획득
-    const reward = data.reward * rebirthMultiplier(state.rebirths);
-    state.gold += reward;
-    updateAll();
-    const center = ballCenter();
-    floatText('+' + fmt(reward) + 'G', center.x, center.y - wrap.offsetHeight * 0.32);
-
-    // 파괴 연출 (과하지 않게)
     wrap.classList.add('broken');
-    flash();
+    const center = ballCenter();
+    flash(data);
     spawnChips(center.x, center.y, 16, 3, data);
-
-    // 잠시 후 새 왁뿌볼 등장
+    // 파편이 실제로 보인 뒤 Gold를 지급하고, 끝난 뒤에만 다음 공을 만듭니다.
+    setTimeout(() => {
+      const reward = data.reward * rebirthMultiplier(state.rebirths);
+      state.gold += reward;
+      updateAll();
+      floatText('+' + fmt(reward) + 'G', center.x, center.y - wrap.offsetHeight * 0.32);
+    }, 260);
     clearTimeout(state.respawnTimer);
     state.respawnTimer = setTimeout(() => {
       wrap.classList.remove('broken');
       svgEl.classList.remove('instant');
       spawnBall(true);
-    }, RESPAWN_DELAY_MS);
+    }, Math.max(RESPAWN_DELAY_MS, 1050));
   }
 
   /* 왁뿌볼을 조각으로 쪼개서 날리기 */
@@ -473,15 +511,17 @@
   }
 
   /* 파괴 순간 짧은 섬광 */
-  function flash() {
+  function flash(data) {
     const c = ballCenter();
     flashEl.style.left = c.x + 'px';
     flashEl.style.top = c.y + 'px';
+    // Android에서 전체 화면에 가까운 흰 flash를 합성하면 깨져 보일 수 있어 볼 중심 빛만 사용합니다.
+    const opacity = data.id === 'blackhole' ? 0.14 : (data.id === 'sun' ? 0.52 : 0.28);
     flashEl.animate([
       { opacity: 0, transform: 'translate(-50%,-50%) scale(0.5)' },
-      { opacity: 0.75, transform: 'translate(-50%,-50%) scale(1)', offset: 0.25 },
-      { opacity: 0, transform: 'translate(-50%,-50%) scale(1.5)' },
-    ], { duration: 300, easing: 'ease-out' });
+      { opacity, transform: 'translate(-50%,-50%) scale(1)', offset: 0.25 },
+      { opacity: 0, transform: 'translate(-50%,-50%) scale(1.35)' },
+    ], { duration: data.id === 'sun' ? 360 : 260, easing: 'ease-out' });
   }
 
   /* ==========================================================================
@@ -514,7 +554,7 @@
   function openRebirth() {
     const cost = nextRebirthCost();
     rebirthText.textContent = cost === null
-      ? '10회 이후 환생 요구 Gold는 추후 공개됩니다.'
+      ? '최대 환생 달성! 25회 이후 환생은 아직 지원하지 않습니다.'
       : `${fmt(cost)}G를 모으면 환생할 수 있습니다. 환생하면 Gold와 해금한 왁뿌볼이 초기화되고, 보상 배율은 ×${fmt(rebirthMultiplier(state.rebirths + 1))}이 됩니다.`;
     rebirthConfirm.hidden = cost === null;
     rebirthConfirm.disabled = cost === null || state.gold < cost;
@@ -578,6 +618,22 @@
       unlockBtn.hidden = false;
       unlockBtn.textContent = nb.name + ' 해금 · ' + fmt(nb.price) + 'G';
       unlockBtn.disabled = state.gold < nb.price;
+    }
+
+    if (!state.hammerOwned) {
+      hammerUseBtn.hidden = true;
+      hammerBtn.textContent = '🪵 나무 망치 구매 · 100G';
+      hammerBtn.disabled = state.gold < HAMMERS[0].cost;
+    } else {
+      const hammer = HAMMERS[state.hammerLevel - 1];
+      hammerUseBtn.hidden = false;
+      hammerUseBtn.textContent = `🪵 Lv.${state.hammerLevel} 사용 · 균열 +${hammer.cracks}`;
+      hammerUseBtn.disabled = state.busy;
+      const next = HAMMERS[state.hammerLevel];
+      hammerBtn.textContent = next
+        ? `🪵 Lv.${state.hammerLevel + 1} 업그레이드 · ${fmt(next.cost)}G`
+        : `🪵 Lv.10 · 최대 레벨 · 균열 +${hammer.cracks}`;
+      hammerBtn.disabled = !next || state.gold < next.cost;
     }
 
     if (!modal.hidden) renderCollection();
@@ -645,6 +701,8 @@
   stage.addEventListener('contextmenu', (e) => e.preventDefault());
 
   unlockBtn.addEventListener('click', () => unlockBall(nextLockedIndex()));
+  hammerUseBtn.addEventListener('click', useHammer);
+  hammerBtn.addEventListener('click', buyOrUpgradeHammer);
   collectionBtn.addEventListener('click', openCollection);
   rebirthBtn.addEventListener('click', openRebirth);
   rebirthConfirm.addEventListener('click', doRebirth);
