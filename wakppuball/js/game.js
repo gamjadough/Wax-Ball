@@ -147,7 +147,15 @@
   /* ---------- 작은 도우미 함수 ---------- */
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const rand = (a, b) => a + Math.random() * (b - a);
-  const fmt = (n) => n.toLocaleString('ko-KR');
+  // Gold가 커져도 모든 화면에서 한 줄로 읽히도록 K/M/B/T 단위로 축약합니다.
+  function fmt(n) {
+    const value = Number(n) || 0;
+    const units = [[1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
+    for (const [base, suffix] of units) {
+      if (Math.abs(value) >= base) return (Math.round((value / base) * 10) / 10).toString().replace(/\.0$/, '') + suffix;
+    }
+    return value.toLocaleString('ko-KR');
+  }
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
   function mk(tag, attrs) {
