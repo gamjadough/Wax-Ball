@@ -30,6 +30,7 @@ body {
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
+.landscape-notice { display: none; }
 
 .maintenance { min-height: 100svh; display: grid; place-items: center; padding: 24px; text-align: center; }
 #maintenance[hidden] { display: none; }
@@ -232,6 +233,13 @@ body {
 
 @media (min-width: 560px) { .grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-height: 560px) { .name { font-size: 1.3rem; } .bottom { gap: 8px; padding-bottom: 12px; } }
+
+/* 모바일 가로 모드에서는 터치 위치·파괴 효과가 어긋날 수 있어 세로 전환을 안내합니다. */
+@media (orientation: landscape) and (max-height: 600px) {
+  #game, #maintenance { display: none !important; }
+  .landscape-notice { position: fixed; inset: 0; z-index: 100; display: grid; place-content: center; gap: 12px; padding: 24px; text-align: center; background: var(--bg-edge); color: var(--text); }
+  .landscape-notice span { font-size: 3rem; }.landscape-notice strong { font-size: 1.25rem; }.landscape-notice p { margin: 0; color: var(--muted); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .gem-sparkle, .gem-shine { animation: none; }
