@@ -217,6 +217,7 @@ body {
 .account-form label { display: grid; gap: 5px; color: var(--muted); font-size: .88rem; }
 .account-form input { min-width: 0; border: 1px solid #ffffff2e; border-radius: 10px; background: #10141d; color: #fff; padding: 10px; font: inherit; }
 .account-actions { display: flex; gap: 8px; }
+.account-note { margin: -2px 0 6px; color: var(--muted); font-size: .78rem; line-height: 1.45; }
 
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .card {

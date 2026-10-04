@@ -48,6 +48,8 @@
   const accountEmail = $('accountEmail');
   const accountPassword = $('accountPassword');
   const nicknameInput = $('nicknameInput');
+  const guestNicknameInput = $('guestNicknameInput');
+  const guestStartBtn = $('guestStartBtn');
   const signInBtn = $('signInBtn');
   const signUpBtn = $('signUpBtn');
   const signOutBtn = $('signOutBtn');
@@ -399,6 +401,20 @@
       await setNickname(); await restoreAccount(); accountModal.hidden = true;
     } catch (error) { accountMessage(error.message || '회원가입에 실패했습니다.'); }
     finally { signUpBtn.disabled = false; }
+  }
+  async function startGuest() {
+    const nickname = guestNicknameInput.value.trim();
+    if (!/^[가-힣a-zA-Z0-9_]{2,16}$/.test(nickname)) return accountMessage('닉네임은 한글·영문·숫자·_로 2~16자 입력해주세요.');
+    guestStartBtn.disabled = true;
+    try {
+      const { error } = await window.WakppuAuth.signInAnonymously();
+      if (error) throw error;
+      nicknameInput.value = nickname;
+      await setNickname();
+      await restoreAccount();
+      accountModal.hidden = true;
+    } catch (error) { accountMessage(error.message || '빠른 시작에 실패했습니다.'); }
+    finally { guestStartBtn.disabled = false; }
   }
 
   /* ==========================================================================
@@ -849,6 +865,7 @@
   accountBtn.addEventListener('click', openAccount);
   signInBtn.addEventListener('click', signIn);
   signUpBtn.addEventListener('click', signUp);
+  guestStartBtn.addEventListener('click', startGuest);
   signOutBtn.addEventListener('click', async () => { await window.WakppuAuth?.signOut(); state.account = null; state.remoteReady = false; renderAccount(); accountModal.hidden = true; });
   closeBtn.addEventListener('click', closeCollection);
   modal.addEventListener('click', (e) => { if (e.target === modal) closeCollection(); });

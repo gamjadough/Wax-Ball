@@ -34,6 +34,7 @@
       options: { emailRedirectTo: 'https://gamjadough.github.io/Wax-Ball/wakppuball/' },
     }),
     signIn: (email, password) => client.auth.signInWithPassword({ email, password }),
+    signInAnonymously: () => client.auth.signInAnonymously(),
     signOut: () => client.auth.signOut(),
   };
   client.auth.onAuthStateChange(() => window.dispatchEvent(new Event('wakppu-auth-changed')));
