@@ -5,7 +5,23 @@
   let pending=false;
   async function call(action,payload={}){if(pending)return null;pending=true;try{const result=await window.WakppuAuth.invoke(action,payload);if(result.target)info(result.target);status('완료했습니다.');return result;}catch(e){status(e.message);return null;}finally{pending=false;}}
   let refreshing=false;
-  async function refresh(){if(refreshing||!window.WakppuAuth)return;refreshing=true;try{const result=await window.WakppuAuth.invoke('status');$('adminBtn').hidden=result.role!=='admin';if($('adminBtn').hidden)$('admin').hidden=true;window.wakppuServerBlocked=result.maintenance&&result.role!=='admin';$('game').hidden=window.wakppuServerBlocked;$('maintenance').hidden=!$('game').hidden;$('serverAnnouncement').hidden=!result.announcement;if(result.announcement)$('serverAnnouncement').textContent=result.announcement.message;if(result.admin_revision!=null&&result.admin_revision!==WakppuGameTest.revision())await WakppuGameTest.restoreAccount();}catch(_){$('adminBtn').hidden=true;$('admin').hidden=true;}finally{refreshing=false;}}
+  async function refresh(){
+    if(refreshing||!window.WakppuAuth)return;
+    refreshing=true;
+    try{
+      const result=await window.WakppuAuth.invoke('status');
+      $('adminBtn').hidden=result.role!=='admin';
+      if($('adminBtn').hidden)$('admin').hidden=true;
+      window.wakppuServerBlocked=result.maintenance&&result.role!=='admin';
+      $('game').hidden=window.wakppuServerBlocked;
+      $('maintenance').hidden=!$('game').hidden;
+      document.querySelector('.maintenance-note').textContent=result.message||'잠시 후 다시 접속해주세요.';
+      $('serverAnnouncement').hidden=!result.announcement;
+      if(result.announcement)$('serverAnnouncement').textContent=result.announcement.message;
+      if(result.admin_revision!=null&&result.admin_revision!==WakppuGameTest.revision())await WakppuGameTest.restoreAccount();
+    }catch(_){$('adminBtn').hidden=true;$('admin').hidden=true;}
+    finally{refreshing=false;}
+  }
   $('adminBall').replaceChildren(...WAKPPU_BALLS.map(b=>new Option(b.name,b.id)));
   $('adminGold').type='text';$('adminGold').inputMode='numeric';$('adminGold').maxLength=19;
   $('adminQuery').placeholder='닉네임 또는 User ID';
