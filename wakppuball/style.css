@@ -32,6 +32,7 @@ body {
 }
 
 .maintenance { min-height: 100svh; display: grid; place-items: center; padding: 24px; text-align: center; }
+#maintenance[hidden] { display: none; }
 .maintenance-card { width: min(100%, 440px); padding: 38px 28px; border: 1px solid var(--line); border-radius: 26px; background: rgba(42,46,57,.94); box-shadow: 0 22px 55px rgba(0,0,0,.26); }
 .maintenance-icon { display: block; font-size: 3rem; margin-bottom: 14px; }
 .maintenance-card h1 { margin: 0; font-size: 1.55rem; }.maintenance-card p { color: var(--muted); line-height: 1.7; }.maintenance-note { font-size: .88rem; color: #d8c78e !important; }
