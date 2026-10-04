@@ -28,7 +28,11 @@
     client,
     invoke,
     session: () => client.auth.getSession(),
-    signUp: (email, password) => client.auth.signUp({ email, password }),
+    signUp: (email, password) => client.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: 'https://gamjadough.github.io/Wax-Ball/wakppuball/' },
+    }),
     signIn: (email, password) => client.auth.signInWithPassword({ email, password }),
     signOut: () => client.auth.signOut(),
   };
