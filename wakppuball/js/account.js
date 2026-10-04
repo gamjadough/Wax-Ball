@@ -7,6 +7,31 @@
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   });
 
+  let guestStartPromise;
+  function startGuest() {
+    if (guestStartPromise) return guestStartPromise;
+    const reuseOrCreate = async () => {
+      const { data, error } = await client.auth.getSession();
+      if (error) return { data, error };
+      if (data.session) return { data: { session: data.session, user: data.session.user }, error: null };
+      return client.auth.signInAnonymously();
+    };
+    // 같은 브라우저의 여러 탭에서도 최초 생성 요청을 순서대로 처리합니다.
+    guestStartPromise = (globalThis.navigator?.locks
+      ? navigator.locks.request('wakppu-guest-start', reuseOrCreate)
+      : reuseOrCreate()).finally(() => { guestStartPromise = null; });
+    return guestStartPromise;
+  }
+
+  async function signOut() {
+    const { data, error } = await client.auth.getSession();
+    if (error) return { error };
+    if (data.session?.user.is_anonymous) {
+      return { error: new Error('빠른 시작 계정은 이 브라우저에서 유지됩니다. 닉네임 변경을 사용해주세요.') };
+    }
+    return client.auth.signOut();
+  }
+
   async function invoke(action, payload = {}) {
     const { data: { session } } = await client.auth.getSession();
     if (!session && action !== 'status') throw new Error('로그인이 필요합니다.');
@@ -34,8 +59,8 @@
       options: { emailRedirectTo: 'https://gamjadough.github.io/Wax-Ball/wakppuball/' },
     }),
     signIn: (email, password) => client.auth.signInWithPassword({ email, password }),
-    signInAnonymously: () => client.auth.signInAnonymously(),
-    signOut: () => client.auth.signOut(),
+    signInAnonymously: startGuest,
+    signOut,
   };
   client.auth.onAuthStateChange(() => window.dispatchEvent(new Event('wakppu-auth-changed')));
 })();

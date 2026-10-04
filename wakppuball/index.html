@@ -4,14 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>왁뿌볼</title>
-  <link rel="stylesheet" href="style.css?v=20261004-admin-gold2">
+  <link rel="stylesheet" href="style.css?v=20261004-landscape-open1">
 </head>
 <body>
-  <aside class="landscape-notice" aria-live="polite">
-    <span aria-hidden="true">📱</span>
-    <strong>세로 화면으로 돌려주세요</strong>
-    <p>왁뿌볼은 세로 화면 플레이에 맞춰져 있습니다.</p>
-  </aside>
   <section id="maintenance" class="maintenance" aria-labelledby="maintenanceTitle" hidden>
     <div class="maintenance-card">
       <span class="maintenance-icon" aria-hidden="true">🔧</span>
@@ -104,11 +99,15 @@
       <div id="accountForm" class="account-form">
         <label>빠른 시작 닉네임<input id="guestNicknameInput" type="text" maxlength="16" placeholder="닉네임만 입력하고 바로 시작"></label>
         <button id="guestStartBtn" class="btn primary" type="button">닉네임으로 바로 시작</button>
-        <p class="account-note">빠른 시작은 이 기기에서만 유지됩니다. 관리자·기기 변경 저장은 이메일 계정을 사용하세요.</p>
+        <p class="account-note">빠른 시작 계정은 이 브라우저에서 계속 유지되며 닉네임만 변경할 수 있습니다. 브라우저 데이터를 삭제하면 복구할 수 없습니다. 관리자·다른 기기 이용은 처음부터 이메일 계정을 사용하세요.</p>
         <label>이메일<input id="accountEmail" type="email" autocomplete="email" placeholder="name@example.com"></label>
         <label>비밀번호<input id="accountPassword" type="password" autocomplete="current-password" minlength="6" placeholder="6자 이상"></label>
         <label>닉네임<input id="nicknameInput" type="text" maxlength="16" placeholder="2~16자, 한글/영문/숫자/_"></label>
         <div class="account-actions"><button id="signInBtn" class="btn" type="button">로그인</button><button id="signUpBtn" class="btn" type="button">회원가입</button></div>
+      </div>
+      <div id="nicknameEdit" class="account-form" hidden>
+        <label>변경할 닉네임<input id="renameNicknameInput" type="text" maxlength="16" placeholder="2~16자, 한글/영문/숫자/_"></label>
+        <button id="renameNicknameBtn" class="btn primary" type="button">닉네임 변경</button>
       </div>
       <button id="signOutBtn" class="btn" type="button" hidden>로그아웃</button>
     </div>
@@ -131,12 +130,12 @@
   <!-- 스크립트 순서가 중요해요: 데이터 → 사운드 → 그림 → 게임 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/server-config.js?v=20261004-account1"></script>
-  <script src="js/account.js?v=20261004-admin-gold2"></script>
+  <script src="js/account.js?v=20261004-guest-reuse1"></script>
   <script src="js/gold-format.js?v=20261004-admin-gold2"></script>
   <script src="js/balls-data.js?v=20261004-account1"></script>
   <script src="js/sound.js?v=20261002-progression1"></script>
   <script src="js/ball-art.js?v=20261002-progression1"></script>
-  <script src="js/game.js?v=20261004-admin-gold2"></script>
+  <script src="js/game.js?v=20261004-guest-reuse1"></script>
   <script src="js/admin-panel.js?v=20261004-admin-gold2"></script>
 </body>
 </html>

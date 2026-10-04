@@ -53,6 +53,9 @@
   const signInBtn = $('signInBtn');
   const signUpBtn = $('signUpBtn');
   const signOutBtn = $('signOutBtn');
+  const nicknameEdit = $('nicknameEdit');
+  const renameNicknameInput = $('renameNicknameInput');
+  const renameNicknameBtn = $('renameNicknameBtn');
 
   const NS = 'http://www.w3.org/2000/svg';
 
@@ -72,6 +75,7 @@
     hammerLevel: 0,
     honeyExpiresAt: 0,
     account: null,
+    accountNickname: '',
     remoteReady: false,
     adminRevision: 0,
     discovered: ['yellow'],
@@ -140,7 +144,8 @@
         saved.selected >= 0 && saved.selected < unlocked.length &&
         unlocked[saved.selected] ? saved.selected : 0;
       state.gold = WakppuGold.integer(saved.gold);
-      state.rebirths = Number.isSafeInteger(saved.rebirths) && saved.rebirths >= 0 ? saved.rebirths : 0;
+      state.rebirths = Number.isSafeInteger(saved.rebirths) && saved.rebirths >= 0 &&
+        saved.rebirths <= REBIRTH_COSTS.length ? saved.rebirths : 0;
       state.unlocked = unlocked;
       state.discovered = Array.isArray(saved.discovered) ? saved.discovered.filter(id=>WAKPPU_BALLS.some(b=>b.id===id)) : unlocked.map((v,i)=>v?WAKPPU_BALLS[i].id:null).filter(Boolean);
       state.selected = selected;
@@ -307,6 +312,7 @@
       ], { duration: 380, easing: 'ease-out' });
     }
     state.busy = false;
+    if (!modal.hidden) renderCollection();
   }
 
   function ballIdAt(index) { return WAKPPU_BALLS[index]?.id || 'yellow'; }
@@ -348,6 +354,7 @@
     try {
       const local = remotePayload();
       const data = await window.WakppuAuth.invoke('bootstrap');
+      state.accountNickname = data.player?.nickname || '';
       const saved = data.state;
       state.adminRevision = saved.admin_revision || 0;
       // 계정 도입 전의 이 기기 저장 데이터는 첫 로그인 때 한 번만 서버 계정으로 옮깁니다.
@@ -385,11 +392,24 @@
     const loggedIn = !!state.account;
     accountBtn.textContent = loggedIn ? '내 계정' : '계정';
     accountForm.hidden = loggedIn;
-    signOutBtn.hidden = !loggedIn;
-    if (loggedIn) accountStatus.textContent = `${state.account.email || '빠른 시작 계정'} 로그인됨\n진행도와 랭킹이 서버에 저장됩니다.`;
+    nicknameEdit.hidden = !loggedIn;
+    signOutBtn.hidden = !loggedIn || state.account.is_anonymous === true;
+    if (loggedIn) accountStatus.textContent = `${state.accountNickname || state.account.email || '빠른 시작 계정'} 로그인됨\n진행도와 랭킹이 서버에 저장됩니다.${state.account.is_anonymous ? '\n이 브라우저의 계정은 유지되고 닉네임만 변경됩니다.' : ''}`;
   }
-  function openAccount() { renderAccount(); accountModal.hidden = false; }
+  function openAccount() { renderAccount(); renameNicknameInput.value = state.accountNickname; accountModal.hidden = false; }
   function accountMessage(message) { accountStatus.textContent = message; }
+  async function renameNickname() {
+    const nickname = renameNicknameInput.value.trim();
+    if (!/^[가-힣a-zA-Z0-9_]{2,16}$/.test(nickname)) return accountMessage('닉네임은 한글·영문·숫자·_로 2~16자 입력해주세요.');
+    renameNicknameBtn.disabled = true;
+    try {
+      await window.WakppuAuth.invoke('set_nickname', { nickname });
+      state.accountNickname = nickname;
+      renderAccount();
+      accountMessage(`${nickname}(으)로 닉네임을 변경했습니다. 계정과 진행도는 유지됩니다.`);
+    } catch (error) { accountMessage(error.message || '닉네임 변경에 실패했습니다.'); }
+    finally { renameNicknameBtn.disabled = false; }
+  }
   async function setNickname() {
     const nickname = nicknameInput.value.trim();
     if (nickname) await window.WakppuAuth.invoke('set_nickname', { nickname });
@@ -701,7 +721,7 @@
   }
 
   function selectBall(index) {
-    if(window.wakppuServerBlocked)return;
+    if(state.busy || window.wakppuServerBlocked)return;
     if (!state.unlocked[index]) return;      // 해금 안 된 볼은 사용할 수 없어요
     state.selected = index;
     wrap.classList.remove('broken');
@@ -711,7 +731,7 @@
   }
 
   function unlockBall(index) {
-    if(window.wakppuServerBlocked)return;
+    if(state.busy || window.wakppuServerBlocked)return;
     if (index !== nextLockedIndex()) return; // 순서대로만 해금 가능
     const b = WAKPPU_BALLS[index];
     if (state.gold < b.price) return;
@@ -828,9 +848,9 @@
       if (open) {
         action = state.selected === i
           ? '<button class="btn small" disabled>사용 중</button>'
-          : `<button class="btn small primary" data-action="select" data-index="${i}">선택</button>`;
+          : `<button class="btn small primary" data-action="select" data-index="${i}" ${state.busy ? 'disabled' : ''}>선택</button>`;
       } else if (i === ni) {
-        const can = state.gold >= b.price;
+        const can = !state.busy && state.gold >= b.price;
         action = `<button class="btn small primary" data-action="unlock" data-index="${i}" ${can ? '' : 'disabled'}>해금 · ${fmt(b.price)}G</button>`;
       } else {
         action = '<button class="btn small" disabled>잠김</button>';
@@ -893,7 +913,15 @@
   signInBtn.addEventListener('click', signIn);
   signUpBtn.addEventListener('click', signUp);
   guestStartBtn.addEventListener('click', startGuest);
-  signOutBtn.addEventListener('click', async () => { window.WakppuGameTest.end(); await window.WakppuAuth?.signOut(); state.account = null; state.remoteReady = false; renderAccount(); accountModal.hidden = true; window.dispatchEvent(new Event('wakppu-account-restored')); });
+  renameNicknameBtn.addEventListener('click', renameNickname);
+  signOutBtn.addEventListener('click', async () => {
+    window.WakppuGameTest.end();
+    const result = await window.WakppuAuth?.signOut();
+    if (result?.error) return accountMessage(result.error.message);
+    state.account = null; state.accountNickname = ''; state.remoteReady = false;
+    renderAccount(); accountModal.hidden = true;
+    window.dispatchEvent(new Event('wakppu-account-restored'));
+  });
   closeBtn.addEventListener('click', closeCollection);
   modal.addEventListener('click', (e) => { if (e.target === modal) closeCollection(); });
   [rebirthModal, rankingModal, shopModal, accountModal].forEach((dialog) => dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.hidden = true; }));
@@ -933,7 +961,7 @@
     revision: () => state.adminRevision,
     run(mode, ballId, seconds) {
       clearTimeout(remoteSaveTimer);
-      if (!testSnapshot) testSnapshot = {gold:state.gold,rebirths:state.rebirths,unlocked:[...state.unlocked],discovered:[...state.discovered],selected:state.selected,hammerOwned:state.hammerOwned,hammerLevel:state.hammerLevel,honeyExpiresAt:state.honeyExpiresAt};
+      if (!testSnapshot) testSnapshot = {gold:state.gold,rebirths:state.rebirths,unlocked:[...state.unlocked],discovered:[...state.discovered],selected:state.selected,clicks:state.clicks,hammerOwned:state.hammerOwned,hammerLevel:state.hammerLevel,honeyExpiresAt:state.honeyExpiresAt};
       clearTimeout(state.respawnTimer);
       state.selected = Math.max(0, WAKPPU_BALLS.findIndex(b=>b.id===ballId));
       state.unlocked = WAKPPU_BALLS.map(()=>true);
@@ -943,7 +971,20 @@
       if(mode==='honey') state.honeyExpiresAt=Date.now()+Math.max(0,Math.min(600,seconds||0))*1000;
       updateAll();hintEl.textContent='관리자 테스트 모드 · 저장/보상 중지';hintEl.classList.remove('gone');
     },
-    end() {if(!testSnapshot)return; Object.assign(state,testSnapshot);testSnapshot=null;wrap.classList.remove('broken');svgEl.classList.remove('instant');spawnBall(false);updateAll();hintEl.textContent='왁뿌볼을 눌러 깨보세요';},
+    end() {
+      if (!testSnapshot) return;
+      const clicks = testSnapshot.clicks;
+      Object.assign(state, testSnapshot);
+      testSnapshot = null;
+      wrap.classList.remove('broken');
+      svgEl.classList.remove('instant');
+      spawnBall(false);
+      state.clicks = clicks;
+      updateCracks(clicks / WAKPPU_BALLS[state.selected].clicks);
+      updateAll();
+      hintEl.textContent = '왁뿌볼을 눌러 깨보세요';
+      hintEl.classList.toggle('gone', clicks > 0);
+    },
   };
   spawnBall(false);
   updateAll();
