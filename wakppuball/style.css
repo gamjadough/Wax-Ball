@@ -48,7 +48,8 @@ body {
 }
 
 /* ---------- 상단: 골드 ---------- */
-.top { display: flex; justify-content: center; padding-top: 22px; }
+.top { display: flex; justify-content: center; align-items: center; gap: 8px; padding-top: 22px; }
+.top-btn { padding: 9px 13px; font-size: .9rem; }
 .gold {
   display: inline-flex; align-items: center; gap: 10px;
   padding: 8px 22px 8px 14px;
@@ -204,6 +205,7 @@ body {
 .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .sheet-head h2 { margin: 0; font-size: 1.25rem; }
 .sheet.compact { width: min(100%, 460px); }
+.shop-item { padding: 15px; margin-top: 12px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel-2); }.shop-item h3 { margin: 0; }.shop-item .dialog-text { margin: 8px 0 13px; }
 .dialog-text { margin: 6px 0 18px; color: var(--muted); line-height: 1.65; }
 .ranking-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .ranking-list li { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 10px; align-items: center; padding: 11px 12px; border-radius: 12px; background: var(--panel-2); }

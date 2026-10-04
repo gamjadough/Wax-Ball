@@ -24,6 +24,8 @@
         <span id="goldValue" class="gold-value">0</span>
         <span class="gold-unit">G</span>
       </div>
+      <button id="shopBtn" class="btn top-btn" type="button">🛒 상점</button>
+      <button id="rebirthBtn" class="btn top-btn" type="button">환생</button>
     </header>
 
     <!-- 중앙: 왁뿌볼 -->
@@ -47,9 +49,6 @@
       <div class="actions">
         <button id="unlockBtn" class="btn primary" type="button"></button>
         <button id="collectionBtn" class="btn" type="button">도감</button>
-        <button id="rebirthBtn" class="btn" type="button">환생</button>
-        <button id="hammerUseBtn" class="btn" type="button" hidden>🪵 망치 사용</button>
-        <button id="hammerBtn" class="btn" type="button">🪵 나무 망치 · 100G</button>
         <button id="rankingBtn" class="btn" type="button">랭킹</button>
       </div>
     </footer>
@@ -79,6 +78,14 @@
       <div class="sheet-head"><h2 id="rankingTitle">온라인 랭킹</h2><button data-close="ranking" class="btn small" type="button">닫기</button></div>
       <p id="rankingStatus" class="dialog-text">랭킹을 불러오는 중…</p>
       <ol id="rankingList" class="ranking-list"></ol>
+    </div>
+  </div>
+
+  <div id="shop" class="modal" hidden>
+    <div class="sheet compact" role="dialog" aria-modal="true" aria-labelledby="shopTitle">
+      <div class="sheet-head"><h2 id="shopTitle">🛒 상점</h2><button data-close="shop" class="btn small" type="button">닫기</button></div>
+      <article class="shop-item"><h3>🍯 꿀</h3><p id="honeyInfo" class="dialog-text"></p><button id="honeyBtn" class="btn primary" type="button">구매 · 30G</button></article>
+      <article class="shop-item"><h3>🪵 망치</h3><p id="hammerInfo" class="dialog-text"></p><button id="hammerBtn" class="btn primary" type="button"></button></article>
     </div>
   </div>
 

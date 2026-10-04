@@ -35,8 +35,12 @@
   const rebirthConfirm = $('rebirthConfirm');
   const rankingStatus = $('rankingStatus');
   const rankingList = $('rankingList');
+  const shopBtn = $('shopBtn');
+  const shopModal = $('shop');
+  const honeyBtn = $('honeyBtn');
+  const honeyInfo = $('honeyInfo');
+  const hammerInfo = $('hammerInfo');
   const hammerBtn = $('hammerBtn');
-  const hammerUseBtn = $('hammerUseBtn');
 
   const NS = 'http://www.w3.org/2000/svg';
 
@@ -54,6 +58,7 @@
     lastSound: null,    // 같은 소리가 연달아 나오지 않게 기억
     hammerOwned: false,
     hammerLevel: 0,
+    honeyExpiresAt: 0,
   };
 
   const HAMMERS = [
@@ -83,6 +88,7 @@
         selected: state.selected,
         hammerOwned: state.hammerOwned,
         hammerLevel: state.hammerLevel,
+        honeyExpiresAt: state.honeyExpiresAt,
       }));
     } catch (error) {
       // 저장소가 차단되거나 가득 차도 현재 플레이는 계속합니다.
@@ -117,6 +123,7 @@
       state.selected = selected;
       state.hammerOwned = saved.hammerOwned === true;
       state.hammerLevel = state.hammerOwned && Number.isInteger(saved.hammerLevel) && saved.hammerLevel >= 1 && saved.hammerLevel <= HAMMERS.length ? saved.hammerLevel : (state.hammerOwned ? 1 : 0);
+      state.honeyExpiresAt = Number.isSafeInteger(saved.honeyExpiresAt) && saved.honeyExpiresAt > Date.now() ? saved.honeyExpiresAt : 0;
     } catch (error) {
       // 손상된 데이터나 저장소 접근 오류가 있어도 게임을 시작할 수 있습니다.
       console.warn('왁뿌볼 저장 데이터를 불러오지 못했습니다.', error);
@@ -273,15 +280,15 @@
       ], { duration: 380, easing: 'ease-out' });
     }
     state.busy = false;
-    if (state.hammerOwned) hammerUseBtn.disabled = false;
   }
 
   /* ==========================================================================
      3. 클릭 처리
      ========================================================================== */
-  function onHit(clientX, clientY, damage = 1, isHammer = false) {
+  function onHit(clientX, clientY, damage = null, isHammer = state.hammerOwned) {
     if (state.busy) return;
     const data = WAKPPU_BALLS[state.selected];
+    damage = damage ?? (state.hammerOwned ? HAMMERS[state.hammerLevel - 1].cracks : 1);
 
     state.clicks = Math.min(data.clicks, state.clicks + damage);
     const total = data.clicks;
@@ -300,12 +307,6 @@
     }
   }
 
-  function useHammer() {
-    if (!state.hammerOwned || state.busy) return;
-    const rect = wrap.getBoundingClientRect();
-    onHit(rect.left + rect.width / 2, rect.top + rect.height / 2, HAMMERS[state.hammerLevel - 1].cracks, true);
-  }
-
   function buyOrUpgradeHammer() {
     const nextLevel = state.hammerOwned ? state.hammerLevel + 1 : 1;
     const next = HAMMERS[nextLevel - 1];
@@ -314,6 +315,19 @@
     state.hammerOwned = true;
     state.hammerLevel = nextLevel;
     updateAll();
+  }
+
+  function honeyActive() { return state.honeyExpiresAt > Date.now(); }
+  function honeyMultiplier() { return honeyActive() ? 2 : 1; }
+  function buyHoney() {
+    if (state.gold < 30) return;
+    state.gold -= 30;
+    state.honeyExpiresAt = Date.now() + 10 * 60 * 1000;
+    updateAll();
+  }
+  function honeyTime() {
+    const seconds = Math.max(0, Math.ceil((state.honeyExpiresAt - Date.now()) / 1000));
+    return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
   }
 
   /* 진행도에 맞는 소리 고르기: 톡→딱→쩍→와작→(마지막) 파괴음 */
@@ -376,7 +390,7 @@
     spawnChips(center.x, center.y, 16, 3, data);
     // 파편이 실제로 보인 뒤 Gold를 지급하고, 끝난 뒤에만 다음 공을 만듭니다.
     setTimeout(() => {
-      const reward = data.reward * rebirthMultiplier(state.rebirths);
+      const reward = data.reward * rebirthMultiplier(state.rebirths) * honeyMultiplier();
       state.gold += reward;
       updateAll();
       floatText('+' + fmt(reward) + 'G', center.x, center.y - wrap.offsetHeight * 0.32);
@@ -565,6 +579,7 @@
     if (cost === null || state.gold < cost) return;
     state.gold = 0;
     state.rebirths += 1;
+    state.honeyExpiresAt = 0;
     state.unlocked = WAKPPU_BALLS.map((_, i) => i === 0);
     state.selected = 0;
     wrap.classList.remove('broken');
@@ -620,25 +635,30 @@
       unlockBtn.disabled = state.gold < nb.price;
     }
 
+    if (!modal.hidden) renderCollection();
+    if (!shopModal.hidden) renderShop();
+    saveProgress();
+  }
+
+  function renderShop() {
+    const active = honeyActive();
+    honeyInfo.textContent = active ? `🍯 꿀 활성화 · 남은 시간 ${honeyTime()}\nGold 획득량 ×2` : '가격 30G\nGold 획득량 ×2 · 지속시간 10분';
+    honeyBtn.textContent = active ? `활성 중 · ${honeyTime()}` : '구매 · 30G';
+    honeyBtn.disabled = active || state.gold < 30;
     if (!state.hammerOwned) {
-      hammerUseBtn.hidden = true;
-      hammerBtn.textContent = '🪵 나무 망치 구매 · 100G';
+      hammerInfo.textContent = '🪵 나무 망치\n균열 증가 +3';
+      hammerBtn.textContent = '구매 · 100G';
       hammerBtn.disabled = state.gold < HAMMERS[0].cost;
     } else {
       const hammer = HAMMERS[state.hammerLevel - 1];
-      hammerUseBtn.hidden = false;
-      hammerUseBtn.textContent = `🪵 Lv.${state.hammerLevel} 사용 · 균열 +${hammer.cracks}`;
-      hammerUseBtn.disabled = state.busy;
       const next = HAMMERS[state.hammerLevel];
-      hammerBtn.textContent = next
-        ? `🪵 Lv.${state.hammerLevel + 1} 업그레이드 · ${fmt(next.cost)}G`
-        : `🪵 Lv.10 · 최대 레벨 · 균열 +${hammer.cracks}`;
+      hammerInfo.textContent = next ? `현재 레벨: Lv.${state.hammerLevel}\n균열 증가: +${hammer.cracks}\n다음 Lv.${state.hammerLevel + 1}: +${next.cracks}` : `현재 레벨: Lv.10\n균열 증가: +${hammer.cracks}\n최대 레벨`;
+      hammerBtn.textContent = next ? `업그레이드 · ${fmt(next.cost)}G` : '최대 레벨';
       hammerBtn.disabled = !next || state.gold < next.cost;
     }
-
-    if (!modal.hidden) renderCollection();
-    saveProgress();
   }
+
+  function openShop() { renderShop(); shopModal.hidden = false; }
 
   /* ---------- 도감 ---------- */
   function renderCollection() {
@@ -701,21 +721,23 @@
   stage.addEventListener('contextmenu', (e) => e.preventDefault());
 
   unlockBtn.addEventListener('click', () => unlockBall(nextLockedIndex()));
-  hammerUseBtn.addEventListener('click', useHammer);
   hammerBtn.addEventListener('click', buyOrUpgradeHammer);
+  honeyBtn.addEventListener('click', buyHoney);
+  shopBtn.addEventListener('click', openShop);
   collectionBtn.addEventListener('click', openCollection);
   rebirthBtn.addEventListener('click', openRebirth);
   rebirthConfirm.addEventListener('click', doRebirth);
   rankingBtn.addEventListener('click', openRanking);
   closeBtn.addEventListener('click', closeCollection);
   modal.addEventListener('click', (e) => { if (e.target === modal) closeCollection(); });
-  [rebirthModal, rankingModal].forEach((dialog) => dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.hidden = true; }));
+  [rebirthModal, rankingModal, shopModal].forEach((dialog) => dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.hidden = true; }));
   document.querySelectorAll('[data-close]').forEach((button) => button.addEventListener('click', () => { $(button.dataset.close).hidden = true; }));
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (!modal.hidden) closeCollection();
     rebirthModal.hidden = true;
     rankingModal.hidden = true;
+    shopModal.hidden = true;
   });
 
   grid.addEventListener('click', (e) => {
@@ -741,4 +763,5 @@
   loadProgress();
   spawnBall(false);
   updateAll();
+  setInterval(() => { if (honeyActive() || !shopModal.hidden) updateAll(); }, 1000);
 })();
