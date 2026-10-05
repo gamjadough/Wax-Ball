@@ -1,5 +1,22 @@
 (() => {
   const $=id=>document.getElementById(id);let target=null;
+  const ANNOUNCEMENT_DISMISS_KEY='wakppuball:dismissed-announcement';
+  let activeAnnouncementId=null;
+  function announcementId(announcement){
+    return String(announcement.id??announcement.updated_at??announcement.created_at??announcement.message);
+  }
+  function renderAnnouncement(announcement){
+    const bar=$('serverAnnouncement');
+    if(!announcement?.message){activeAnnouncementId=null;bar.hidden=true;return;}
+    const id=announcementId(announcement);
+    activeAnnouncementId=id;
+    $('serverAnnouncementText').textContent=announcement.message;
+    try{bar.hidden=localStorage.getItem(ANNOUNCEMENT_DISMISS_KEY)===id;}catch(_){bar.hidden=false;}
+  }
+  $('serverAnnouncementClose').onclick=()=>{
+    if(activeAnnouncementId)try{localStorage.setItem(ANNOUNCEMENT_DISMISS_KEY,activeAnnouncementId);}catch(_){}
+    $('serverAnnouncement').hidden=true;
+  };
   function status(message){$('adminStatus').textContent=message;}
   function info(player){
     target=player.id;
@@ -35,8 +52,7 @@
       document.querySelector('.maintenance-note').textContent=banned
         ? `사유: ${result.moderation.last_reason||'관리자 제재'}\n종료: ${until?new Date(until).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})+' (한국 시간)':'영구 밴'}`
         : result.message||'잠시 후 다시 접속해주세요.';
-      $('serverAnnouncement').hidden=!result.announcement;
-      $('serverAnnouncement').textContent=result.announcement?.message||'';
+      renderAnnouncement(result.announcement);
       $('adminClearAnnouncement').disabled=!result.announcement;
       if(!window.wakppuServerBlocked&&(wasBlocked||(result.admin_revision!=null&&result.admin_revision!==WakppuGameTest.revision())))await WakppuGameTest.restoreAccount();
     }catch(_){$('adminBtn').hidden=true;$('admin').hidden=true;}
