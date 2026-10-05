@@ -2,9 +2,19 @@
 const SOUND_SETTINGS = { folder: 'sounds/', extension: '.mp3', poolSize: 4, usePlaceholderSound: true };
 const SOUND_PHASE_LIMITS = { early: 0.35, mid: 0.7 };
 const DEFAULT_SOUNDS = { early:['tap1','tap2','tap3'], mid:['tap3','crack1'], late:['crack1','crack2'], final:['break'], pitch:1, pitchRandom:.06, volume:.9, volumeRandom:.1 };
-// 망치로 진행 속도가 빨라진 만큼 환생은 기존 대비 4배의 장기 목표로 조정합니다.
-const REBIRTH_COSTS = [2000000,6000000,16000000,40000000,100000000,240000000,600000000,1600000000,4000000000,10000000000,30000000000,80000000000,200000000000,500000000000,1200000000000,3000000000000,8000000000000,20000000000000,48000000000000,120000000000000,300000000000000,800000000000000,2000000000000000,4800000000000000,12000000000000000];
-const rebirthMultiplier = (count) => Math.pow(2, count);
+// 25환생까지는 기존 밸런스를 유지합니다. 26~100환생은 매 10환생마다
+// 요구 Gold가 정확히 ×512가 되도록, 그 안에서는 9회 ×2 + 1회 유지로 부드럽게 올립니다.
+const LEGACY_REBIRTH_COSTS = [2000000n,6000000n,16000000n,40000000n,100000000n,240000000n,600000000n,1600000000n,4000000000n,10000000000n,30000000000n,80000000000n,200000000000n,500000000000n,1200000000000n,3000000000000n,8000000000000n,20000000000000n,48000000000000n,120000000000000n,300000000000000n,800000000000000n,2000000000000000n,4800000000000000n,12000000000000000n];
+const REBIRTH_COSTS = (() => {
+  const costs = [...LEGACY_REBIRTH_COSTS];
+  let cost = costs.at(-1);
+  for (let rebirth = 26; rebirth <= 100; rebirth += 1) {
+    if ((rebirth - 26) % 10 !== 9) cost *= 2n;
+    costs.push(cost);
+  }
+  return costs;
+})();
+const rebirthMultiplier = (count) => 2n ** BigInt(count);
 const WAKPPU_BALLS = [
   {id:'yellow',name:'노란색 왁뿌볼',grade:'일반',gradeColor:'#aeb5bd',price:0,clicks:5,reward:1,design:{art:'plain',shape:'circle',colors:{light:'#fff0a3',mid:'#f3c83e',dark:'#a97812'},crack:{dark:'#72520b',light:'#fff7c9'},chip:'#edbd2c'},sound:{}},
   {id:'green',name:'초록색 왁뿌볼',grade:'일반',gradeColor:'#aeb5bd',price:10,clicks:8,reward:10,design:{art:'plain',shape:'circle',colors:{light:'#c9f8b6',mid:'#5fcf63',dark:'#2a8a3f'},crack:{dark:'#1c5a2a',light:'#eaffe3'},chip:'#55c25c'},sound:{}},

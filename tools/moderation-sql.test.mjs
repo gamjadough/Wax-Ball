@@ -115,6 +115,16 @@ test('PostgreSQL migrations: visibility, bans, expiry, permissions and audit',as
     await db.exec(await readFile(new URL('../supabase/migrations/20261006_guest_lifecycle.sql',import.meta.url),'utf8'));
     assert.equal((await rpc(player,{action:'status'})).gold_event.multiplier,10);
     assert.equal((await db.query('select count(*)::int as n from guest_lifecycle')).rows[0].n,0);
+    await db.exec(await readFile(new URL('../supabase/migrations/20261006_rebirth_100_big_gold.sql',import.meta.url),'utf8'));
+    const hugeGold='3541774862152233910272000000000000000';
+    const currentRevision=(await rpc(player,{action:'bootstrap'})).state.admin_revision;
+    await rpc(player,{...body,gold:hugeGold,rebirths:100,admin_revision:currentRevision});
+    assert.equal((await rpc(player,{action:'bootstrap'})).state.gold,hugeGold);
+    assert.equal((await rpc(player,{action:'bootstrap'})).state.rebirths,100);
+    await rpc(admin,{action:'admin_gold',user_id:player,mode:'set',value:hugeGold});
+    await rpc(admin,{action:'admin_rebirths',user_id:player,mode:'set',value:100});
+    const updatedRevision=(await rpc(player,{action:'bootstrap'})).state.admin_revision;
+    await assert.rejects(rpc(player,{...body,gold:hugeGold,rebirths:101,admin_revision:updatedRevision}));
     const guestIds=Array.from({length:6},(_,i)=>`00000000-0000-0000-0000-${String(i+10).padStart(12,'0')}`);
     for(let i=0;i<guestIds.length;i++){
       await db.query(`insert into auth.users(id,is_anonymous,created_at) values($1,true,now()-$2::interval)`,[guestIds[i],i===0?'10 minutes':i===1?'31 minutes':'4 days']);

@@ -145,7 +145,7 @@
         <div class="guest-lifecycle-table"><table><thead><tr><th>닉네임</th><th>User ID</th><th>생성 시각</th><th>경과 시간</th><th>첫 플레이</th><th>상태</th><th>삭제 예정 시각</th></tr></thead><tbody id="guestLifecycleRows"></tbody></table></div>
         <div class="admin-controls"><button id="guestLifecyclePrevious" class="btn small" disabled>이전</button><button id="guestLifecycleNext" class="btn small" disabled>다음</button></div>
       </section>
-      <section><h3>Gold·환생 관리</h3><label>변경 방식<select id="adminChangeMode"><option value="set">직접 설정</option><option value="add">추가</option><option value="subtract">차감</option></select></label><label>Gold<input id="adminGold" type="number" min="0" step="1" value="10000"></label><button id="adminSetGold" class="btn">Gold 적용</button><label>환생 횟수 (0~25)<input id="adminRebirths" type="number" min="0" max="25" step="1" value="0"></label><button id="adminSetRebirths" class="btn">환생 적용</button></section>
+      <section><h3>Gold·환생 관리</h3><label>변경 방식<select id="adminChangeMode"><option value="set">직접 설정</option><option value="add">추가</option><option value="subtract">차감</option></select></label><label>Gold<input id="adminGold" type="number" min="0" step="1" value="10000"></label><button id="adminSetGold" class="btn">Gold 적용</button><label>환생 횟수 (0~100)<input id="adminRebirths" type="number" min="0" max="100" step="1" value="0"></label><button id="adminSetRebirths" class="btn">환생 적용</button></section>
       <section><h3>랭킹·이용 제한</h3>
         <p>랭킹 숨김은 플레이와 저장을 유지합니다. 밴된 계정은 플레이·저장·랭킹 참여가 제한됩니다.</p>
         <label>사유 (밴 시 필수)<textarea id="adminModerationReason" maxlength="500" rows="3" placeholder="랭킹 숨김 또는 밴 사유"></textarea></label>
@@ -166,12 +166,12 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/server-config.js?v=20261004-account1"></script>
   <script src="js/account.js?v=20261005-email-link1"></script>
-  <script src="js/gold-format.js?v=20261004-admin-gold2"></script>
-  <script src="js/balls-data.js?v=20261004-account1"></script>
+  <script src="js/gold-format.js?v=20261006-rebirth100"></script>
+  <script src="js/balls-data.js?v=20261006-rebirth100"></script>
   <script src="js/sound.js?v=20261002-progression1"></script>
   <script src="js/ball-art.js?v=20261002-progression1"></script>
   <script src="js/gold-event.js?v=20261005-event1"></script>
-  <script src="js/game.js?v=20261006-guest1"></script>
+  <script src="js/game.js?v=20261006-rebirth100"></script>
   <script src="js/admin-panel.js?v=20261006-selection1"></script>
   <script src="js/guest-lifecycle.js?v=20261006-guest1"></script>
 </body>

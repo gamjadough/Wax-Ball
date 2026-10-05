@@ -65,7 +65,7 @@ export function execute(store, actor, body) {
       const key=action==='admin_gold'?'gold':'rebirths';const n=Number(body.value);if(!Number.isSafeInteger(n)||n<0) error('0 이상의 정수를 입력하세요.');
       if(!['add','subtract','set'].includes(body.mode)) error('변경 방식 오류');
       const v=body.mode==='set'?n:body.mode==='add'?target.state[key]+n:target.state[key]-n;
-      if(!Number.isSafeInteger(v)||v<0||(key==='rebirths'&&v>25)) error('허용 범위를 벗어났습니다.');target.state[key]=v;
+      if(!Number.isSafeInteger(v)||v<0||(key==='rebirths'&&v>100)) error('허용 범위를 벗어났습니다.');target.state[key]=v;
     } else if(action==='admin_ban') {
       if(target.role==='admin') error('관리자 계정은 밴할 수 없습니다.');
       const reason=String(body.reason||'').trim();

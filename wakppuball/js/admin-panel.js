@@ -84,7 +84,7 @@
     finally{refreshing=false;}
   }
   $('adminBall').replaceChildren(...WAKPPU_BALLS.map(b=>new Option(b.name,b.id)));
-  $('adminGold').type='text';$('adminGold').inputMode='numeric';$('adminGold').maxLength=19;
+  $('adminGold').type='text';$('adminGold').inputMode='numeric';$('adminGold').maxLength=100;
   $('adminQuery').placeholder='닉네임 또는 User ID';
   function render(players){
     playerResults.clear();for(const player of players)playerResults.set(player.id,player);

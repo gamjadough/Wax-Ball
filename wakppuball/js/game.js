@@ -169,7 +169,7 @@
   /* ---------- 작은 도우미 함수 ---------- */
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const rand = (a, b) => a + Math.random() * (b - a);
-  // Gold가 커져도 모든 화면에서 한 줄로 읽히도록 K/M/B/T 단위로 축약합니다.
+  // Gold가 커져도 모든 화면에서 한 줄로 읽히도록 큰 수 단위로 축약합니다.
   function fmt(n) {
     return WakppuGold.compact(n);
   }
@@ -621,8 +621,8 @@
     // 파편이 실제로 보인 뒤 Gold를 지급하고, 끝난 뒤에만 다음 공을 만듭니다.
     setTimeout(() => {
       if(epoch!==animationEpoch || window.wakppuServerBlocked)return;
-      const reward = data.reward * rebirthMultiplier(state.rebirths) * honeyMultiplier() * (window.WakppuGoldEvent?.multiplier()||1);
-      if (!testSnapshot) state.gold += BigInt(reward);
+      const reward = BigInt(data.reward) * rebirthMultiplier(state.rebirths) * BigInt(honeyMultiplier()) * BigInt(window.WakppuGoldEvent?.multiplier()||1);
+      if (!testSnapshot) state.gold += reward;
       updateAll();
       floatText('+' + fmt(reward) + 'G', center.x, center.y - wrap.offsetHeight * 0.32);
     }, 260);
@@ -802,7 +802,7 @@
   function openRebirth() {
     const cost = nextRebirthCost();
     rebirthText.textContent = cost === null
-      ? '최대 환생 달성! 25회 이후 환생은 아직 지원하지 않습니다.'
+      ? '최대 환생 달성! 100회 이후 환생은 아직 지원하지 않습니다.'
       : `${fmt(cost)}G를 모으면 환생할 수 있습니다. 환생하면 Gold와 해금한 왁뿌볼이 초기화되고, 보상 배율은 ×${fmt(rebirthMultiplier(state.rebirths + 1))}이 됩니다.`;
     rebirthConfirm.hidden = cost === null;
     rebirthConfirm.disabled = cost === null || state.gold < cost;
