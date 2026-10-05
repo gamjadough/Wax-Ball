@@ -1,6 +1,8 @@
 -- Ranking visibility and account bans; preserves announcement removal and existing API actions.
 begin;
 alter table public.players add column if not exists ranking_hidden boolean not null default false;
+alter table public.moderation_cases drop constraint if exists moderation_cases_status_check;
+alter table public.moderation_cases add constraint moderation_cases_status_check check (status in ('active','review','suspended','banned'));
 -- Preserve the additive gold-event wrapper when it is already installed.
 do $migration$ begin
  if to_regprocedure('public.wakppu_api_before_events(jsonb)') is not null then

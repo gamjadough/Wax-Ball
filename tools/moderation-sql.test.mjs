@@ -22,7 +22,7 @@ test('PostgreSQL migrations: visibility, bans, expiry, permissions and audit',as
       create table game_states(user_id uuid primary key references players,gold bigint default 10000,rebirths smallint default 0,
         unlocked_ball_ids jsonb default '["yellow"]',discovered_ball_ids jsonb default '["yellow"]',selected_ball_id text default 'yellow',
         honey_expires_at timestamptz,updated_at timestamptz default now());
-      create table moderation_cases(user_id uuid primary key references players,status text not null default 'active' check(status in ('active','suspended','banned')),
+      create table moderation_cases(user_id uuid primary key references players,status text not null default 'active' check(status in ('active','review','suspended')),
         suspicion_score integer not null default 0,strikes integer not null default 0,suspended_until timestamptz,last_reason text,updated_at timestamptz default now());
       create table admin_audit_logs(id bigint generated always as identity primary key,admin_user_id uuid,target_user_id uuid,
         action text,reason text,details jsonb,created_at timestamptz default now());
@@ -31,6 +31,7 @@ test('PostgreSQL migrations: visibility, bans, expiry, permissions and audit',as
     `);
     for(const name of ['20261004_accounts_and_rankings.sql','20261004_admin_exact_gold.sql','20261005_clear_announcement.sql','20261005_ranking_visibility_bans.sql'])
       await db.exec(await readFile(new URL('../supabase/migrations/'+name,import.meta.url),'utf8'));
+    await db.exec(await readFile(new URL('../supabase/migrations/20261005_ban_status_constraint.sql',import.meta.url),'utf8'));
     async function rpc(user,body,anonymous=false){
       await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify(user?{sub:user,is_anonymous:anonymous}:{})]);
       const result=await db.query('select public.wakppu_api($1::jsonb) as data',[JSON.stringify(body)]);
@@ -83,6 +84,10 @@ test('PostgreSQL migrations: visibility, bans, expiry, permissions and audit',as
     await db.exec('reset role; set role anon');
     await assert.rejects(rpc(null,ban),{code:'PT401'});
     await db.exec('reset role');
+    const productionCheck=await readFile(new URL('./moderation-production-check.sql',import.meta.url),'utf8');
+    const beforeCheck=await db.query('select (select jsonb_agg(to_jsonb(p)) from players p) as players,(select jsonb_agg(to_jsonb(g)) from game_states g) as progress,(select count(*)::integer from admin_audit_logs) as logs');
+    await db.exec(productionCheck);
+    assert.deepEqual(await db.query('select (select jsonb_agg(to_jsonb(p)) from players p) as players,(select jsonb_agg(to_jsonb(g)) from game_states g) as progress,(select count(*)::integer from admin_audit_logs) as logs'),beforeCheck);
     // An existing event wrapper must survive a moderation upgrade as well.
     await db.exec(`
       alter function public.wakppu_api(jsonb) rename to wakppu_api_before_events;
