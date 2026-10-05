@@ -1,3 +1,4 @@
+import {hammerDamage} from './hammer-catalog.mjs';
 import {ballCatalog} from './event-ball-catalog.mjs';
 const catalog=await ballCatalog();
 export const ballIds = catalog.map(b=>b.id);

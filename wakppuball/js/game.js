@@ -89,18 +89,7 @@
     discovered: ['yellow'],
   };
 
-  const HAMMERS = [
-    { name: '나무 망치', cracks: 3, cost: 100 },
-    { name: '강화 나무 망치', cracks: 5, cost: 500 },
-    { name: '단단한 나무 망치', cracks: 8, cost: 2000 },
-    { name: '철제 보강 망치', cracks: 12, cost: 10000 },
-    { name: '강철 망치', cracks: 18, cost: 50000 },
-    { name: '중형 강철 망치', cracks: 27, cost: 250000 },
-    { name: '강화 강철 망치', cracks: 40, cost: 1000000 },
-    { name: '특수 합금 망치', cracks: 60, cost: 5000000 },
-    { name: '고급 합금 망치', cracks: 90, cost: 25000000 },
-    { name: '최종 망치', cracks: 135, cost: 100000000 },
-  ];
+  const HAMMERS = window.WakppuHammers;
 
   /* ---------- 브라우저 자동 저장 ---------- */
   const SAVE_KEY = window.WakppuAuth?.local ? 'wax-ball:wakppuball:local-test-save' : 'wax-ball:wakppuball:save';
@@ -972,7 +961,7 @@
     } else {
       const hammer = HAMMERS[state.hammerLevel - 1];
       const next = HAMMERS[state.hammerLevel];
-      hammerInfo.textContent = next ? `현재 레벨: Lv.${state.hammerLevel}\n균열 증가: +${hammer.cracks}\n다음 Lv.${state.hammerLevel + 1}: +${next.cracks}` : `현재 레벨: Lv.10\n균열 증가: +${hammer.cracks}\n최대 레벨`;
+      hammerInfo.textContent = next ? `현재 레벨: Lv.${state.hammerLevel}\n균열 증가: +${hammer.cracks}\n다음 Lv.${state.hammerLevel + 1}: +${next.cracks}` : `현재 레벨: Lv.${HAMMERS.length}\n균열 증가: +${hammer.cracks}\n최대 레벨`;
       hammerBtn.textContent = next ? `업그레이드 · ${fmt(next.cost)}G` : '최대 레벨';
       hammerBtn.disabled = !next || state.gold < next.cost;
     }
