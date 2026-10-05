@@ -29,7 +29,7 @@ try:
             page.screenshot(path=str(OUT/('whitehole-mobile-ready.png' if mobile else 'whitehole-ready.png')))
             page.locator('#ballSvg').click()
             # Repeated clicks during the animation cannot start another payout.
-            page.locator('#ballSvg').click()
+            page.locator('#ballSvg').click(force=True)
             assert gold(page)=='0'
             page.wait_for_function("document.getElementById('ballWrap').dataset.whiteholePhase==='charge'")
             if not mobile:page.screenshot(path=str(OUT/'whitehole-charge.png'))
@@ -61,11 +61,16 @@ try:
         ctx.close()
         fixture=dict(version=3,gold='0',rebirths=2,unlocked=[True]*14,discovered=['whitehole'],selected=13,hammerOwned=True,hammerLevel=10,honeyExpiresAt=int(time.time()*1000)+60000)
         ctx,page=page_for(fixture=fixture)
+        assert page.evaluate("WAKPPU_BALLS.find(ball=>ball.id==='whitehole').clicks")==300
+        trace(page)
         page.evaluate("""()=>{let now=Date.now();WakppuGoldEvent.update({gold_event:{id:'local',multiplier:10,starts_at:new Date(now-1000).toISOString(),ends_at:new Date(now+59000).toISOString()},server_time:new Date(now).toISOString()});}""")
         page.locator('#ballSvg').click();page.locator('#ballSvg').click()
+        assert gold(page)=='0'
+        assert page.evaluate('whiteholeTrace.length')==0
+        page.locator('#ballSvg').click()
         page.wait_for_function("JSON.parse(localStorage.getItem('wax-ball:wakppuball:local-test-save')).gold==='1200000000'")
         ctx.close();browser.close()
         assert not errors,errors
-    print('PASS whitehole: desktop/mobile/reduced motion, ordered effects and payout, no duplicate reward, exact 1경 unlock, save reload, interruption cleanup, rebirth/honey/event multipliers')
+    print('PASS whitehole: 300 clicks, max hammer destroys on third hit, desktop/mobile/reduced motion, ordered effects and payout, no duplicate reward, exact 1경 unlock, save reload, interruption cleanup, rebirth/honey/event multipliers')
 finally:
     server.terminate();server.wait(timeout=10)
