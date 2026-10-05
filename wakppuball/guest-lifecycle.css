@@ -1,0 +1,5 @@
+.guest-lifecycle-table { overflow-x:auto; }
+.guest-lifecycle-table table { border-collapse:collapse; width:100%; font-size:.8rem; }
+.guest-lifecycle-table th,.guest-lifecycle-table td { padding:8px; text-align:left; border-bottom:1px solid #ffffff26; white-space:nowrap; }
+.guest-lifecycle-table th { color:#f8dc94; }
+.guest-lifecycle-table td:nth-child(2) { font-family:monospace; }

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>왁뿌볼</title>
   <link rel="stylesheet" href="style.css?v=20261005-event1">
+  <link rel="stylesheet" href="guest-lifecycle.css?v=20261006-guest1">
   <link rel="stylesheet" href="admin-selection.css?v=20261006-selection1">
 </head>
 <body>
@@ -101,7 +102,7 @@
       <div id="accountForm" class="account-form">
         <label>빠른 시작 닉네임<input id="guestNicknameInput" type="text" maxlength="16" placeholder="닉네임만 입력하고 바로 시작"></label>
         <button id="guestStartBtn" class="btn primary" type="button">닉네임으로 바로 시작</button>
-        <p class="account-note">빠른 시작 계정은 이 브라우저에서 유지됩니다. 내 계정에서 이메일을 연결하면 기존 진행도를 다른 기기에서도 이어갈 수 있습니다.</p>
+        <p class="account-note">빠른 시작 계정은 이 브라우저에서 유지됩니다. 내 계정에서 이메일을 연결하면 기존 진행도를 다른 기기에서도 이어갈 수 있습니다. 새 계정은 공을 한 번도 누르지 않으면 30분 후 랭킹에서 제외되고 3일 후 삭제됩니다. 한 번이라도 플레이하거나 이메일을 연결하면 자동 삭제 대상에서 제외됩니다.</p>
         <label>이메일<input id="accountEmail" type="email" autocomplete="email" placeholder="name@example.com"></label>
         <label>비밀번호<input id="accountPassword" type="password" autocomplete="current-password" minlength="6" placeholder="6자 이상"></label>
         <label>닉네임<input id="nicknameInput" type="text" maxlength="16" placeholder="2~16자, 한글/영문/숫자/_"></label>
@@ -135,6 +136,15 @@
       <section><h3>🎉 전체 골드 타임</h3><p>30초 전 예고 → Gold 획득 ×10, 60초 → 자동 종료. 환생·꿀과 곱연산하며 중복 적용되지 않습니다.</p><p id="adminGoldEventInfo" role="status">이벤트 상태 확인 중…</p><div class="admin-controls"><button id="adminGoldEventStart" class="btn">Gold ×10 이벤트 시작</button><button id="adminGoldEventStop" class="btn" disabled>이벤트 즉시 종료</button></div></section>
       <section><h3>점검·공지</h3><label>점검 안내<input id="adminMaintenanceMessage" value="현재 게임이 업데이트 중입니다."></label><div class="account-actions"><button id="adminMaintenanceOn" class="btn">점검 ON</button><button id="adminMaintenanceOff" class="btn">점검 OFF</button></div><label>전체 공지<input id="adminAnnouncement" maxlength="500"></label><div class="account-actions"><button id="adminAnnounce" class="btn">공지 보내기</button><button id="adminClearAnnouncement" class="btn" disabled>공지 내리기</button></div></section>
       <section><h3>플레이어 검색</h3><label>닉네임 / User ID<input id="adminQuery" placeholder="테스트플레이어 또는 local-player"></label><button id="adminSearch" class="btn">검색</button><div id="adminResults"></div><p id="adminPlayerInfo">검색 결과에서 대상을 선택하세요.</p></section>
+      <section><h3>미플레이 빠른 시작 계정</h3>
+        <p>새 빠른 시작 계정은 공을 한 번도 누르지 않으면 생성 30분 후 랭킹에서 제외되고, 3일 후 자동 삭제됩니다. 첫 플레이·이메일 연결 계정과 기존 계정은 제외됩니다. 삭제 작업은 5분마다 실행됩니다.</p>
+        <label>조회 대상<select id="guestLifecycleFilter"><option value="unplayed">미플레이 정리 대상</option><option value="hidden">30분 경과 · 랭킹 제외</option><option value="due">3일 경과 · 삭제 대기</option><option value="protected">플레이·이메일·관리자 제외</option><option value="all">기록된 전체 계정</option></select></label>
+        <label>닉네임 / User ID<input id="guestLifecycleQuery" maxlength="100"></label>
+        <button id="guestLifecycleSearch" class="btn">계정 조회 / 새로고침</button>
+        <p id="guestLifecycleStatus" role="status">조회 버튼을 눌러 확인하세요. 기존 계정은 이 목록에 포함되지 않습니다.</p>
+        <div class="guest-lifecycle-table"><table><thead><tr><th>닉네임</th><th>User ID</th><th>생성 시각</th><th>경과 시간</th><th>첫 플레이</th><th>상태</th><th>삭제 예정 시각</th></tr></thead><tbody id="guestLifecycleRows"></tbody></table></div>
+        <div class="admin-controls"><button id="guestLifecyclePrevious" class="btn small" disabled>이전</button><button id="guestLifecycleNext" class="btn small" disabled>다음</button></div>
+      </section>
       <section><h3>Gold·환생 관리</h3><label>변경 방식<select id="adminChangeMode"><option value="set">직접 설정</option><option value="add">추가</option><option value="subtract">차감</option></select></label><label>Gold<input id="adminGold" type="number" min="0" step="1" value="10000"></label><button id="adminSetGold" class="btn">Gold 적용</button><label>환생 횟수 (0~25)<input id="adminRebirths" type="number" min="0" max="25" step="1" value="0"></label><button id="adminSetRebirths" class="btn">환생 적용</button></section>
       <section><h3>랭킹·이용 제한</h3>
         <p>랭킹 숨김은 플레이와 저장을 유지합니다. 밴된 계정은 플레이·저장·랭킹 참여가 제한됩니다.</p>
@@ -161,7 +171,8 @@
   <script src="js/sound.js?v=20261002-progression1"></script>
   <script src="js/ball-art.js?v=20261002-progression1"></script>
   <script src="js/gold-event.js?v=20261005-event1"></script>
-  <script src="js/game.js?v=20261005-email-link1"></script>
+  <script src="js/game.js?v=20261006-guest1"></script>
   <script src="js/admin-panel.js?v=20261006-selection1"></script>
+  <script src="js/guest-lifecycle.js?v=20261006-guest1"></script>
 </body>
 </html>

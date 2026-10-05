@@ -22,6 +22,7 @@ const server=http.createServer(async(req,res)=>{
         const admin=body.email==='dodoonglee@gmail.com';if(admin&&body.password!==password)return send(401,{error:'로컬 테스트 비밀번호가 틀립니다.'});
         const actor=admin?store.players[0]:body.email==='guest'?store.players[1]:store.players.find(p=>p.localAuth?.verified&&p.email===body.email);
         if(!actor||(!admin&&body.email!=='guest'&&(!actor.localAuth?.passwordHash||!timingSafeEqual(actor.localAuth.passwordHash,scryptSync(String(body.password),passwordSalt,32)))))return send(401,{error:'이메일 또는 비밀번호가 틀립니다.'});
+        if(body.email==='guest'&&!actor.lifecycle)actor.lifecycle={created_at:new Date().toISOString(),first_play_at:null};
         const token=randomBytes(24).toString('hex');sessions.set(token,actor);return send(200,{token,user:localUser(actor)});
       }
       const actor=sessions.get(req.headers.authorization?.replace(/^Bearer /,''));

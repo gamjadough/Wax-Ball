@@ -190,7 +190,7 @@ def main():
                 expect(page.locator('#adminClearAnnouncement')).to_be_disabled()
                 page.locator('#adminAnnouncement').fill('공지 해제 테스트')
                 page.locator('#adminAnnounce').click()
-                expect(page.locator('#serverAnnouncement')).to_have_text('공지 해제 테스트')
+                expect(page.locator('#serverAnnouncementText')).to_have_text('공지 해제 테스트')
                 expect(page.locator('#adminClearAnnouncement')).to_be_enabled()
                 page.locator('#adminClearAnnouncement').click()
                 expect(page.locator('#serverAnnouncement')).to_be_hidden()

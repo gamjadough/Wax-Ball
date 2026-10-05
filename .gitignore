@@ -1,3 +1,4 @@
 supabase/.temp/
 tools/.test-deps/
+tools/.lifecycle-test-deps/
 tools/test-results/

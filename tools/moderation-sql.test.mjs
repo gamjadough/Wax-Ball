@@ -15,17 +15,19 @@ test('PostgreSQL migrations: visibility, bans, expiry, permissions and audit',as
     await db.exec(`
       create role anon; create role authenticated;
       create schema auth;
+      create table auth.users(id uuid primary key,is_anonymous boolean default false,email text,raw_user_meta_data jsonb default '{}',created_at timestamptz default now());
       create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb$$;
       create function auth.uid() returns uuid language sql stable as $$select (auth.jwt()->>'sub')::uuid$$;
       grant usage on schema auth to anon,authenticated;
-      create table players(user_id uuid primary key,nickname text unique,role text,updated_at timestamptz default now());
-      create table game_states(user_id uuid primary key references players,gold bigint default 10000,rebirths smallint default 0,
+      create table players(user_id uuid primary key references auth.users on delete cascade,nickname text unique,role text,updated_at timestamptz default now());
+      create table game_states(user_id uuid primary key references players on delete cascade,gold bigint default 10000,rebirths smallint default 0,
         unlocked_ball_ids jsonb default '["yellow"]',discovered_ball_ids jsonb default '["yellow"]',selected_ball_id text default 'yellow',
         honey_expires_at timestamptz,updated_at timestamptz default now());
-      create table moderation_cases(user_id uuid primary key references players,status text not null default 'active' check(status in ('active','review','suspended')),
+      create table moderation_cases(user_id uuid primary key references players on delete cascade,status text not null default 'active' check(status in ('active','review','suspended')),
         suspicion_score integer not null default 0,strikes integer not null default 0,suspended_until timestamptz,last_reason text,updated_at timestamptz default now());
-      create table admin_audit_logs(id bigint generated always as identity primary key,admin_user_id uuid,target_user_id uuid,
+      create table admin_audit_logs(id bigint generated always as identity primary key,admin_user_id uuid references players,target_user_id uuid references players,
         action text,reason text,details jsonb,created_at timestamptz default now());
+      insert into auth.users(id) values('${admin}'),('${player}');
       insert into players values('${admin}','관리자','admin',now()),('${player}','플레이어','player',now());
       insert into game_states(user_id) values('${admin}'),('${player}');
     `);
@@ -107,6 +109,61 @@ test('PostgreSQL migrations: visibility, bans, expiry, permissions and audit',as
     assert.equal((await rpc(admin,{action:'rankings'})).length,1);
     await db.exec('set role authenticated');
     await assert.rejects(db.query('select public.wakppu_api_before_events($1::jsonb)',[JSON.stringify({action:'status'})]),{code:'42501'});
+    await db.exec('reset role');
+    await db.exec(await readFile(new URL('../supabase/migrations/20261006_guest_lifecycle.sql',import.meta.url),'utf8'));
+    // Reapplication preserves the wrapped event/moderation API and doesn't backfill legacy users.
+    await db.exec(await readFile(new URL('../supabase/migrations/20261006_guest_lifecycle.sql',import.meta.url),'utf8'));
+    assert.equal((await rpc(player,{action:'status'})).gold_event.multiplier,10);
+    assert.equal((await db.query('select count(*)::int as n from guest_lifecycle')).rows[0].n,0);
+    const guestIds=Array.from({length:6},(_,i)=>`00000000-0000-0000-0000-${String(i+10).padStart(12,'0')}`);
+    for(let i=0;i<guestIds.length;i++){
+      await db.query(`insert into auth.users(id,is_anonymous,created_at) values($1,true,now()-$2::interval)`,[guestIds[i],i===0?'10 minutes':i===1?'31 minutes':'4 days']);
+      await db.query("insert into players(user_id,nickname,role) values($1,$2,'player')",[guestIds[i],'새계정'+i]);
+      await db.query('insert into game_states(user_id,gold) values($1,0)',[guestIds[i]]);
+    }
+    await db.query("update auth.users set email='linked@example.test',is_anonymous=false where id=$1",[guestIds[3]]);
+    await db.query("update auth.users set raw_user_meta_data='{"+ '"wakppu_email_link_pending":true' +"}' where id=$1",[guestIds[4]]);
+    await db.query("update players set role='admin' where user_id=$1",[guestIds[5]]);
+    await assert.rejects(rpc(guestIds[0],{action:'admin_guest_accounts'}),{code:'PT403'});
+    await assert.rejects(rpc(null,{action:'admin_guest_accounts'}),{code:'PT401'});
+    await assert.rejects(rpc(admin,{action:'admin_guest_accounts'},true),{code:'PT403'});
+    const initial=await rpc(admin,{action:'admin_guest_accounts',filter:'all'});
+    assert.equal(initial.total,6);
+    assert.equal((await rpc(admin,{action:'admin_guest_accounts',filter:'hidden'})).total,2);
+    assert.equal((await rpc(admin,{action:'admin_guest_accounts',filter:'due'})).total,1);
+    assert.equal((await rpc(admin,{action:'admin_guest_accounts',query:'새계정1'})).total,1);
+    await assert.rejects(rpc(admin,{action:'admin_guest_accounts',filter:'invalid'}));
+    // Initial auto-save and status/bootstrap/nickname queries don't count as play.
+    await rpc(guestIds[0],{...body,gold:'0',admin_revision:0,current_clicks:0});
+    await rpc(guestIds[0],{action:'status'});
+    await rpc(guestIds[0],{action:'set_nickname',nickname:'무플레이'});
+    assert.equal((await db.query('select first_play_at from guest_lifecycle where user_id=$1',[guestIds[0]])).rows[0].first_play_at,null);
+    assert.equal((await rpc(admin,{action:'rankings'})).some(p=>p.nickname==='새계정1'),false);
+    await rpc(guestIds[1],{action:'mark_first_play',user_id:guestIds[2]});
+    const first=(await db.query('select first_play_at from guest_lifecycle where user_id=$1',[guestIds[1]])).rows[0].first_play_at;
+    await rpc(guestIds[1],{action:'mark_first_play'});
+    assert.deepEqual((await db.query('select first_play_at from guest_lifecycle where user_id=$1',[guestIds[1]])).rows[0].first_play_at,first);
+    assert.equal((await rpc(admin,{action:'rankings'})).some(p=>p.nickname==='새계정1'),true);
+    await rpc(admin,{action:'admin_ranking_visibility',user_id:guestIds[1],hidden:true});
+    assert.equal((await rpc(admin,{action:'rankings'})).some(p=>p.nickname==='새계정1'),false);
+    await rpc(admin,{action:'admin_ban',user_id:guestIds[0],mode:'permanent',reason:'test'});
+    await assert.rejects(rpc(guestIds[0],{action:'mark_first_play'}),{code:'PT403'});
+    assert.equal((await db.query('select first_play_at from guest_lifecycle where user_id=$1',[guestIds[0]])).rows[0].first_play_at,null);
+    await rpc(admin,{action:'admin_ranking_visibility',user_id:guestIds[2],hidden:true});
+    const auditBefore=(await db.query('select count(*)::int as n from admin_audit_logs')).rows[0].n;
+    assert.equal((await db.query('select wakppu_cleanup_unplayed_guests() as n')).rows[0].n,1);
+    assert.equal((await db.query('select count(*)::int as n from auth.users where id=$1',[guestIds[2]])).rows[0].n,0);
+    assert.equal((await db.query('select count(*)::int as n from game_states where user_id=$1',[guestIds[2]])).rows[0].n,0);
+    assert.equal((await db.query('select count(*)::int as n from admin_audit_logs')).rows[0].n,auditBefore);
+    assert.equal((await db.query("select count(*)::int as n from admin_audit_logs where target_user_id is null and details->>'deleted_target_user_id'=$1",[guestIds[2]])).rows[0].n,1);
+    assert.equal((await db.query('select wakppu_cleanup_unplayed_guests() as n')).rows[0].n,0);
+    // Any new play data also protects old cached clients and progress imports.
+    await rpc(admin,{action:'admin_unban',user_id:guestIds[0]});
+    await rpc(guestIds[0],{...body,gold:'1',admin_revision:2,current_clicks:0});
+    assert.ok((await db.query('select first_play_at from guest_lifecycle where user_id=$1',[guestIds[0]])).rows[0].first_play_at);
+    await db.exec('set role authenticated');
+    for(const fn of ['wakppu_cleanup_unplayed_guests()','wakppu_guest_accounts()','wakppu_api_before_guest_lifecycle(\'{}\'::jsonb)'])await assert.rejects(db.query('select public.'+fn),{code:'42501'});
+    await assert.rejects(db.query('select * from guest_lifecycle'),{code:'42501'});
     await db.exec('reset role');
   } finally { await db.close(); }
 });

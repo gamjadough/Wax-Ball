@@ -512,6 +512,7 @@
      ========================================================================== */
   function onHit(clientX, clientY, damage = null, isHammer = state.hammerOwned) {
     if (state.busy || window.wakppuServerBlocked) return;
+    if (!testSnapshot) window.dispatchEvent(new Event('wakppu-real-play'));
     const data = WAKPPU_BALLS[state.selected];
     damage = damage ?? (state.hammerOwned ? HAMMERS[state.hammerLevel - 1].cracks : 1);
 

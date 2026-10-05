@@ -4,6 +4,13 @@ export function isBanned(player, now=Date.now()) {
   return m?.status==='banned' || (m?.status==='suspended' &&
     (!m.suspended_until || Date.parse(m.suspended_until)>now));
 }
+export function guestLifecycleInfo(player,now=Date.now()) {
+  if(!player.lifecycle)return null;
+  const {created_at,first_play_at}=player.lifecycle;
+  const exemption=player.role==='admin'?'관리자':first_play_at?'플레이 기록 있음':player.email||player.localAuth?.pending||player.localAuth?.verified?'이메일 연결':null;
+  const hide_at=new Date(Date.parse(created_at)+1800000).toISOString(),delete_at=new Date(Date.parse(created_at)+259200000).toISOString();
+  return {id:player.id,nickname:player.nickname,created_at,first_play_at,eligible:!exemption,exemption,hide_at,delete_at,ranking_excluded:!exemption&&Date.parse(hide_at)<=now,delete_due:!exemption&&Date.parse(delete_at)<=now};
+}
 export function createStore() {
   const progress = () => ({gold:10000, rebirths:0, unlocked_ball_ids:['yellow'], discovered_ball_ids:['yellow'], selected_ball_id:'yellow', current_ball_id:'yellow', current_clicks:0, hammer_owned:false, hammer_level:0, honey_expires_at:null, progress_imported_at:'local'});
   return { maintenance:false, message:'현재 게임이 업데이트 중입니다.', announcement:null, logs:[], players:[
@@ -19,8 +26,15 @@ export function execute(store, actor, body) {
   if (action==='status') return {gold_event:store.gold_event||null,server_time:new Date().toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
   if (store.maintenance && actor.role!=='admin' && !action.startsWith('admin_')) error('점검 중입니다.',503);
   if (isBanned(actor)) error('이 계정은 이용이 제한되었습니다.',403);
+  if(action==='mark_first_play'){if(actor.lifecycle)actor.lifecycle.first_play_at||=new Date().toISOString();return {ok:true};}
+  if(action==='admin_guest_accounts'){
+    const filter=body.filter||'unplayed',page=Number(body.page||0),query=String(body.query||'').toLowerCase();
+    if(!['all','unplayed','hidden','due','protected'].includes(filter)||!Number.isInteger(page)||page<0||page>999999||query.length>100)error('잘못된 조회 조건입니다.');
+    const rows=store.players.map(p=>guestLifecycleInfo(p)).filter(Boolean).filter(p=>(p.nickname.toLowerCase().includes(query)||p.id.includes(query))&&(filter==='all'||filter==='unplayed'&&p.eligible||filter==='hidden'&&p.ranking_excluded||filter==='due'&&p.delete_due||filter==='protected'&&!p.eligible)).sort((a,b)=>a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));
+    return {total:rows.length,page,rows:rows.slice(page*50,(page+1)*50),server_time:new Date().toISOString(),cleanup_enabled:false};
+  }
   if (action==='bootstrap') return {player:{id:actor.id,nickname:actor.nickname,role:actor.role},state:actor.state,moderation:actor.moderation};
-  if (action==='rankings') return store.players.filter(p=>!p.ranking_hidden&&!isBanned(p)).map(p=>({nickname:p.nickname,gold:p.state.gold,rebirths:p.state.rebirths})).sort((a,b)=>b.rebirths-a.rebirths||b.gold-a.gold);
+  if (action==='rankings') return store.players.filter(p=>!p.ranking_hidden&&!isBanned(p)&&!guestLifecycleInfo(p)?.ranking_excluded).map(p=>({nickname:p.nickname,gold:p.state.gold,rebirths:p.state.rebirths})).sort((a,b)=>b.rebirths-a.rebirths||b.gold-a.gold);
   if (action==='set_nickname') {if(!/^[가-힣a-zA-Z0-9_]{2,16}$/.test(body.nickname)) error('닉네임 형식 오류'); actor.nickname=body.nickname;return {nickname:actor.nickname};}
   // 로컬 샘플 진행도에만 사용됩니다. 운영 저장 검증은 별도 게임 서버에서 처리해야 합니다.
   if (action==='save_progress') { if((body.admin_revision||0)!==(actor.state.admin_revision||0)) error('관리자가 변경한 진행도를 다시 불러옵니다.',409);for(const k of Object.keys(actor.state)) if(k in body && k!=='admin_revision') actor.state[k]=body[k];return {state:actor.state}; }
