@@ -63,6 +63,7 @@
     try{
       const result=await window.WakppuAuth.invoke('status');
       window.WakppuGoldEvent.update(result);
+      window.WakppuAdminBallEvent.update(result);
       $('adminBtn').hidden=result.role!=='admin';
       if($('adminBtn').hidden){$('admin').hidden=true;clearSelection();}
       const wasBlocked=window.wakppuServerBlocked;
@@ -83,6 +84,13 @@
     }catch(_){$('adminBtn').hidden=true;$('admin').hidden=true;clearSelection();}
     finally{refreshing=false;}
   }
+  $('adminBallEventStart').onclick=async()=>{
+    const duration_seconds=Number($('adminBallEventDuration').value),delay_seconds=Number($('adminBallEventDelay').value);
+    if(!Number.isInteger(duration_seconds)||duration_seconds<1||duration_seconds>86400||!Number.isInteger(delay_seconds)||delay_seconds<0||delay_seconds>86400)return status('시간을 허용 범위의 정수로 입력하세요.');
+    if(!confirm(`모든 플레이어에게 ${delay_seconds}초 후 관리자 왁뿌볼을 ${duration_seconds}초 동안 지급하시겠습니까?`))return;
+    if(await call('admin_ball_event',{mode:'start',duration_seconds,delay_seconds})){await refresh();status('관리자 왁뿌볼 이벤트를 설정했습니다.');}
+  };
+  $('adminBallEventStop').onclick=async()=>{if(!confirm('관리자 왁뿌볼 이벤트를 종료하시겠습니까?'))return;if(await call('admin_ball_event',{mode:'stop'}))await refresh();};
   $('adminBall').replaceChildren(...WAKPPU_BALLS.map(b=>new Option(b.name,b.id)));
   $('adminGold').type='text';$('adminGold').inputMode='numeric';$('adminGold').maxLength=100;
   $('adminQuery').placeholder='닉네임 또는 User ID';

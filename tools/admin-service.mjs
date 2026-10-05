@@ -1,4 +1,6 @@
-export const ballIds = ['yellow','green','strawberry','apple','chocolate','donut','rainbow','water','emerald','diamond','planet','sun','blackhole','whitehole'];
+import {ballCatalog} from './event-ball-catalog.mjs';
+const catalog=await ballCatalog();
+export const ballIds = catalog.map(b=>b.id);
 export function isBanned(player, now=Date.now()) {
   const m=player.moderation;
   return m?.status==='banned' || (m?.status==='suspended' &&
@@ -23,9 +25,26 @@ export function execute(store, actor, body) {
   const error = (message, status=400) => { throw Object.assign(new Error(message), {status}); };
   if (!actor) error('로그인이 필요합니다.',401);
   if (action.startsWith('admin_') && actor.role !== 'admin') error('admin only',403);
-  if (action==='status') return {gold_event:store.gold_event||null,server_time:new Date().toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
+  if (action==='status') return {admin_ball_event:store.maintenance?null:store.admin_ball_event||null,gold_event:store.gold_event||null,server_time:new Date().toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
   if (store.maintenance && actor.role!=='admin' && !action.startsWith('admin_')) error('점검 중입니다.',503);
   if (isBanned(actor)) error('이 계정은 이용이 제한되었습니다.',403);
+  if(action==='event_ball_hit'){
+    const e=store.admin_ball_event,now=Date.now();
+    if(store.maintenance||!e||e.id!==body.event_id||now<Date.parse(e.starts_at)||now>=Date.parse(e.ends_at))error('관리자 볼 이벤트가 종료되었거나 아직 시작되지 않았습니다.',409);
+    if(!/^[a-f0-9-]{36}$/.test(body.request_id||''))error('잘못된 타격 요청입니다.');
+    store.event_progress||=new Map();const key=actor.id+':'+e.id,p=store.event_progress.get(key)||{clicks:0};
+    if(p.request_id===body.request_id)return p.result;
+    const damage=actor.state.hammer_owned?[3,5,8,12,18,27,40,60,90,135][actor.state.hammer_level-1]||1:1;
+    const clicks=Math.min(600,p.clicks+damage);let reward=0n;
+    if(clicks===600){
+      const best=catalog.reduce((n,b)=>actor.state.unlocked_ball_ids.includes(b.id)&&BigInt(b.reward)>n?BigInt(b.reward):n,1n),g=store.gold_event;
+      reward=best*10n*(1n<<BigInt(actor.state.rebirths))*(Date.parse(actor.state.honey_expires_at)>now?2n:1n)*BigInt(g&&now>=Date.parse(g.starts_at)&&now<Date.parse(g.ends_at)?g.multiplier:1);
+      actor.state.gold=(BigInt(actor.state.gold)+reward).toString();
+    }
+    if(actor.lifecycle)actor.lifecycle.first_play_at||=new Date().toISOString();
+    const result={clicks,reward:reward.toString(),gold:String(actor.state.gold)};
+    store.event_progress.set(key,{clicks:clicks===600?0:clicks,request_id:body.request_id,result});return result;
+  }
   if(action==='mark_first_play'){if(actor.lifecycle)actor.lifecycle.first_play_at||=new Date().toISOString();return {ok:true};}
   if(action==='admin_guest_accounts'){
     const filter=body.filter||'unplayed',page=Number(body.page||0),query=String(body.query||'').toLowerCase();
@@ -42,7 +61,17 @@ export function execute(store, actor, body) {
   if (action==='admin_logs') return store.logs.slice(-100).reverse();
   let before, after;
   const target = store.players.find(p=>p.id===body.user_id);
-  if (action==='admin_gold_event') {
+  if(action==='admin_ball_event'){
+    if(!['start','stop'].includes(body.mode))error('이벤트 작업을 선택하세요.');before=store.admin_ball_event||null;
+    if(body.mode==='start'){
+      const duration=body.duration_seconds??300,delay=body.delay_seconds??0;
+      if(store.maintenance||before&&Date.parse(before.ends_at)>Date.now())error('점검 또는 기존 이벤트를 종료해주세요.',409);
+      if(!Number.isInteger(duration)||duration<1||duration>86400||!Number.isInteger(delay)||delay<0||delay>86400)error('시간 범위가 올바르지 않습니다.');
+      const now=Date.now();store.admin_ball_event={id:crypto.randomUUID(),starts_at:new Date(now+delay*1000).toISOString(),ends_at:new Date(now+(delay+duration)*1000).toISOString()};
+    }else store.admin_ball_event=null;
+    after=store.admin_ball_event;
+  }
+  else if (action==='admin_gold_event') {
     if(!['start','stop'].includes(body.mode))error('이벤트 작업을 선택하세요.');
     before=store.gold_event||null;
     if(body.mode==='start'){

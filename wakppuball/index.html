@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="guest-lifecycle.css?v=20261006-guest1">
   <link rel="stylesheet" href="whitehole.css?v=20261006-whitehole1">
   <link rel="stylesheet" href="admin-selection.css?v=20261006-selection1">
+  <link rel="stylesheet" href="admin-ball.css?v=20261007-admin-ball1">
 </head>
 <body>
   <section id="maintenance" class="maintenance" aria-labelledby="maintenanceTitle" hidden>
@@ -134,6 +135,7 @@
     <div class="sheet admin-sheet" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
       <div class="sheet-head"><h2 id="adminTitle">관리자 패널</h2><button data-close="admin" class="btn small">닫기</button></div>
       <p id="adminStatus" role="status"></p>
+      <section><h3>👑 관리자 왁뿌볼 이벤트</h3><p>모든 플레이어에게 자동 등장합니다. 600회 · 반복 파괴 가능 · 최고 해금 볼 보상 ×10에 기존 배율 적용. 도감에서 자유롭게 변경할 수 있습니다.</p><label>진행 시간 (1~86,400초)<input id="adminBallEventDuration" type="number" min="1" max="86400" value="300"></label><label>시작 전 대기 시간 (0~86,400초)<input id="adminBallEventDelay" type="number" min="0" max="86400" value="0"></label><p id="adminBallEventInfo" role="status"></p><div class="admin-controls"><button id="adminBallEventStart" class="btn">관리자 볼 이벤트 시작</button><button id="adminBallEventStop" class="btn" disabled>관리자 볼 이벤트 종료</button></div></section>
       <section><h3>🎉 전체 골드 타임</h3><p>설정한 시간 동안 모든 플레이어의 Gold 획득 배율을 높입니다. 환생·꿀 배율과 곱해지며, 진행 시간 종료 시 자동으로 해제됩니다.</p><label>Gold 배율 (1~1,000배)<input id="adminEventMultiplier" type="number" min="1" max="1000" step="1" value="10"></label><label>진행 시간 (1~86,400초)<input id="adminEventDuration" type="number" min="1" max="86400" step="1" value="60"></label><label>시작 전 대기 시간 (0~86,400초 · 0이면 즉시 시작)<input id="adminEventDelay" type="number" min="0" max="86400" step="1" value="30"></label><p id="adminGoldEventInfo" role="status">이벤트 상태 확인 중…</p><div class="admin-controls"><button id="adminGoldEventStart" class="btn">설정한 이벤트 시작</button><button id="adminGoldEventStop" class="btn" disabled>이벤트 즉시 종료</button></div></section>
       <section><h3>점검·공지</h3><label>점검 안내<input id="adminMaintenanceMessage" value="현재 게임이 업데이트 중입니다."></label><div class="account-actions"><button id="adminMaintenanceOn" class="btn">점검 ON</button><button id="adminMaintenanceOff" class="btn">점검 OFF</button></div><label>전체 공지<input id="adminAnnouncement" maxlength="500"></label><div class="account-actions"><button id="adminAnnounce" class="btn">공지 보내기</button><button id="adminClearAnnouncement" class="btn" disabled>공지 내리기</button></div></section>
       <section><h3>플레이어 검색</h3><label>닉네임 / User ID<input id="adminQuery" placeholder="테스트플레이어 또는 local-player"></label><button id="adminSearch" class="btn">검색</button><div id="adminResults"></div><p id="adminPlayerInfo">검색 결과에서 대상을 선택하세요.</p></section>
@@ -159,6 +161,7 @@
       <section><h3>관리자 작업 기록</h3><button id="adminLoadLogs" class="btn">기록 새로고침</button><pre id="adminLogs"></pre></section>
     </div>
   </div>
+  <div id="adminBallEventBanner" role="status" hidden></div>
   <div id="serverAnnouncement" class="server-announcement" hidden role="status" aria-live="polite">
     <span id="serverAnnouncementText"></span>
     <button id="serverAnnouncementClose" type="button" aria-label="공지 닫기">닫기</button>
@@ -168,13 +171,14 @@
   <script src="js/server-config.js?v=20261004-account1"></script>
   <script src="js/account.js?v=20261005-email-link1"></script>
   <script src="js/gold-format.js?v=20261007-large-units1"></script>
-  <script src="js/balls-data.js?v=20261006-whitehole1"></script>
+  <script src="js/balls-data.js?v=20261007-admin-ball1"></script>
   <script src="js/sound.js?v=20261002-progression1"></script>
-  <script src="js/ball-art.js?v=20261006-whitehole1"></script>
+  <script src="js/ball-art.js?v=20261007-admin-ball1"></script>
   <script src="js/gold-event.js?v=20261006-custom-event1"></script>
   <script src="js/whitehole-effects.js?v=20261006-whitehole1"></script>
-  <script src="js/game.js?v=20261006-whitehole1"></script>
-  <script src="js/admin-panel.js?v=20261006-custom-event1"></script>
+  <script src="js/admin-ball-event.js?v=20261007-admin-ball1"></script>
+  <script src="js/game.js?v=20261007-admin-ball1"></script>
+  <script src="js/admin-panel.js?v=20261007-admin-ball1"></script>
   <script src="js/guest-lifecycle.js?v=20261006-guest1"></script>
 </body>
 </html>

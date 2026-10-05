@@ -109,9 +109,55 @@
   let testSnapshot = null;
   let animationEpoch = 0;
   let whiteholeEffect = null;
+  let eventSelected=false,eventId=null,eventSeen=null,eventRequest=false,eventAward=null,eventClicks=0;
+  let adminFade=null,displayEventReward=0n;
+  const ordinaryClicks=new Map();
+  function eventActive(){return WakppuAdminBallEvent.current().phase==='active';}
+  function eventBaseReward(){return WAKPPU_BALLS.reduce((best,b,i)=>state.unlocked[i]&&BigInt(b.reward)>best?BigInt(b.reward):best,1n)*10n;}
+  function currentBall(){return eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:WAKPPU_BALLS[state.selected];}
+  function eventPreferenceKey(){return SAVE_KEY+':event-choice:'+state.account?.id;}
+  function switchEvent(use,remember=true){
+    if(use&&(!eventActive()||testSnapshot||!state.remoteReady||eventRequest))return;
+    if(use===eventSelected)return;
+    if(eventSelected)eventClicks=state.busy?0:state.clicks;else ordinaryClicks.set(state.selected,state.clicks);
+    eventSelected=use;displayEventReward=0n;wrap.classList.remove('broken','admin-ball-breaking');svgEl.classList.remove('instant');spawnBall(true);
+    state.clicks=use?eventClicks:(ordinaryClicks.get(state.selected)||0);updateCracks(state.clicks/currentBall().clicks);updateAll();
+    if(remember)try{localStorage.setItem(eventPreferenceKey(),JSON.stringify({id:eventId,use}));}catch(_){}
+  }
+  function syncBallEvent(){
+    const s=WakppuAdminBallEvent.current();
+    if(s.phase==='active'&&state.remoteReady&&!testSnapshot){
+      if(eventRequest||(state.busy&&!eventSelected))return;
+      if(eventSeen!==s.event.id){
+        if(eventSelected)switchEvent(false);eventSeen=s.event.id;eventId=s.event.id;eventClicks=0;
+        let choice;try{choice=JSON.parse(localStorage.getItem(eventPreferenceKey()));}catch(_){}
+        if(choice?.id!==eventId||choice.use!==false)switchEvent(true);
+      }else eventId=s.event.id;
+    }else if(s.phase!=='active'||!state.remoteReady||testSnapshot){if(eventSelected)switchEvent(false);eventId=null;eventClicks=0;}
+    if(!modal.hidden)renderCollection();
+  }
+  window.addEventListener('wakppu-admin-ball-event',syncBallEvent);
+  window.addEventListener('wakppu-account-restored',syncBallEvent);
+  async function hitEvent(x,y){
+    if(eventRequest||state.busy||!eventActive()||!state.remoteReady)return;
+    eventRequest=true;const id=eventId,epoch=animationEpoch,account=state.account?.id;
+    clearTimeout(remoteSaveTimer);
+    try{
+      await WakppuAuth.invoke('save_progress',remotePayload());
+      const request={event_id:id,request_id:crypto.randomUUID()};let result;
+      try{result=await WakppuAuth.invoke('event_ball_hit',request);}
+      catch(error){if(error.status)throw error;result=await WakppuAuth.invoke('event_ball_hit',request);}
+      if(account!==state.account?.id)return;
+      if(result.reward&&BigInt(result.reward)>0n)state.gold=BigInt(result.gold);
+      if(epoch!==animationEpoch||!eventSelected){updateAll();return;}
+      eventAward=result.reward?BigInt(result.reward):null;displayEventReward=eventAward||0n;
+      onHit(x,y,result.clicks-state.clicks,state.hammerOwned,true);
+    }catch(error){await restoreAccount();hintEl.textContent=error.message||'이벤트 상태를 확인해주세요.';hintEl.classList.remove('gone');}
+    finally{eventRequest=false;syncBallEvent();if(!state.busy)saveProgress();}
+  }
 
   function saveProgress() {
-    if (testSnapshot || window.wakppuServerBlocked) return;
+    if (testSnapshot || eventRequest || (eventSelected && state.busy) || window.wakppuServerBlocked) return;
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         version: SAVE_VERSION,
@@ -297,10 +343,11 @@
      2. 왁뿌볼 등장시키기
      ========================================================================== */
   function spawnBall(animate) {
+    adminFade?.cancel();adminFade=null;
     whiteholeEffect?.cancel();whiteholeEffect=null;
     animationEpoch++;
     clearTimeout(state.respawnTimer);
-    const data = WAKPPU_BALLS[state.selected];
+    const data = currentBall();
     const shape = SHAPES[data.design.shape] || SHAPES.circle;
     const uid = makeUid();
 
@@ -322,6 +369,7 @@
       ], { duration: 380, easing: 'ease-out' });
     }
     state.busy = false;
+    setTimeout(syncBallEvent,0);
     if (!modal.hidden) renderCollection();
   }
 
@@ -336,7 +384,7 @@
       discovered_ball_ids: state.discovered,
       selected_ball_id: ballIdAt(state.selected),
       current_ball_id: ballIdAt(state.selected),
-      current_clicks: state.clicks,
+      current_clicks: eventSelected?(ordinaryClicks.get(state.selected)||0):state.clicks,
       hammer_owned: state.hammerOwned,
       hammer_level: state.hammerLevel,
       honey_expires_at: honeyActive() ? new Date(state.honeyExpiresAt).toISOString() : null,
@@ -355,6 +403,7 @@
 
   async function restoreAccount() {
     if (!window.WakppuAuth) return;
+    if(eventSelected)switchEvent(false,false);eventSeen=null;eventId=null;ordinaryClicks.clear();
     if(testSnapshot) window.WakppuGameTest.end();
     state.remoteReady = false;
     clearTimeout(remoteSaveTimer);
@@ -512,13 +561,15 @@
   /* ==========================================================================
      3. 클릭 처리
      ========================================================================== */
-  function onHit(clientX, clientY, damage = null, isHammer = state.hammerOwned) {
+  function onHit(clientX, clientY, damage = null, isHammer = state.hammerOwned, authorizedEvent=false) {
     if (state.busy || window.wakppuServerBlocked) return;
+    if(eventSelected&&!authorizedEvent){hitEvent(clientX,clientY);return;}
     if (!testSnapshot) window.dispatchEvent(new Event('wakppu-real-play'));
-    const data = WAKPPU_BALLS[state.selected];
+    const data = currentBall();
     damage = damage ?? (state.hammerOwned ? HAMMERS[state.hammerLevel - 1].cracks : 1);
 
     state.clicks = Math.min(data.clicks, state.clicks + damage);
+    if(!eventSelected&&ordinaryClicks.has(state.selected))ordinaryClicks.set(state.selected,state.clicks);
     const total = data.clicks;
     const isFinal = state.clicks >= total;
     const v = state.clicks / total;      // 진행도 (화면엔 표시 안 함)
@@ -536,7 +587,7 @@
   }
 
   function buyOrUpgradeHammer() {
-    if(window.wakppuServerBlocked)return;
+    if(eventRequest||(eventSelected&&state.busy)||window.wakppuServerBlocked)return;
     const nextLevel = state.hammerOwned ? state.hammerLevel + 1 : 1;
     const next = HAMMERS[nextLevel - 1];
     if (!next || state.gold < next.cost) return;
@@ -549,7 +600,7 @@
   function honeyActive() { return state.honeyExpiresAt > Date.now(); }
   function honeyMultiplier() { return honeyActive() ? 2 : 1; }
   function buyHoney() {
-    if(window.wakppuServerBlocked)return;
+    if(eventRequest||(eventSelected&&state.busy)||window.wakppuServerBlocked)return;
     if (state.gold < 30) return;
     state.gold -= 30n;
     state.honeyExpiresAt = Date.now() + 10 * 60 * 1000;
@@ -604,11 +655,25 @@
      4. 깨지는 연출
      ========================================================================== */
   function breakBall(data) {
+    if(!eventSelected)ordinaryClicks.delete(state.selected);
     const epoch=animationEpoch;
     state.busy = true;
     // WebKit에서 마지막 균열을 한 프레임 이상 그린 뒤에만 SVG를 조각으로 교체합니다.
     svgEl.classList.add('instant');
     updateCracks(1);
+    if(data.id==='admin-event'){
+      const earned=eventAward;eventAward=null;wrap.classList.add('admin-ball-breaking');
+      const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const fade=adminFade=svgEl.animate(reduced?[{opacity:1},{opacity:0}]:[{opacity:1,transform:'scale(1)'},{opacity:.4,transform:'scale(.96)',offset:.65},{opacity:0,transform:'scale(.8)'}],{duration:1100,easing:'ease-in',fill:'forwards'});
+      const epoch=animationEpoch;
+      state.respawnTimer=setTimeout(()=>{
+        fade.cancel();wrap.classList.remove('admin-ball-breaking');
+        if(epoch!==animationEpoch||!eventSelected)return;
+        displayEventReward=0n;
+        if(earned!==null){updateAll();const c=ballCenter();floatText('+'+fmt(earned)+'G',c.x,c.y-wrap.offsetHeight*.32);}
+        eventClicks=0;spawnBall(true);updateAll();
+      },1150);return;
+    }
     if(data.id==='whitehole'){
       whiteholeEffect?.cancel();
       whiteholeEffect=WakppuWhitehole.play({wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,
@@ -794,12 +859,14 @@
   }
 
   function selectBall(index) {
-    if(state.busy || window.wakppuServerBlocked)return;
-    if (!state.unlocked[index]) return;      // 해금 안 된 볼은 사용할 수 없어요
+    if(state.busy || eventRequest || window.wakppuServerBlocked)return;
+    if (!state.unlocked[index]) return;
+    if(eventSelected)switchEvent(false);      // 해금 안 된 볼은 사용할 수 없어요
     state.selected = index;
     wrap.classList.remove('broken');
     svgEl.classList.remove('instant');
-    spawnBall(true);                         // 진행 중이던 볼은 버리고 새로 시작
+    spawnBall(true);
+    if(ordinaryClicks.has(index)){state.clicks=ordinaryClicks.get(index);updateCracks(state.clicks/currentBall().clicks);}                         // 이벤트 교체 전 진행도 복원
     updateAll();
   }
 
@@ -826,9 +893,10 @@
     rebirthModal.hidden = false;
   }
   function doRebirth() {
-    if(window.wakppuServerBlocked)return;
+    if(eventRequest||state.busy||window.wakppuServerBlocked)return;
     const cost = nextRebirthCost();
     if (cost === null || state.gold < cost) return;
+    if(eventSelected)switchEvent(false);ordinaryClicks.clear();
     state.gold = 0n;
     state.rebirths += 1;
     state.honeyExpiresAt = 0;
@@ -862,9 +930,9 @@
      7. 화면 갱신
      ========================================================================== */
   function updateAll() {
-    const data = WAKPPU_BALLS[state.selected];
+    const data = currentBall();
 
-    goldEl.textContent = fmt(state.gold);
+    goldEl.textContent = fmt(state.gold-(eventSelected&&state.busy?displayEventReward:0n));
     goldEl.classList.remove('bump');
     void goldEl.offsetWidth;                 // 애니메이션 다시 시작용
     goldEl.classList.add('bump');
@@ -919,7 +987,7 @@
       const open = state.unlocked[i];
       let action;
       if (open) {
-        action = state.selected === i
+        action = !eventSelected && state.selected === i
           ? '<button class="btn small" disabled>사용 중</button>'
           : `<button class="btn small primary" data-action="select" data-index="${i}" ${state.busy ? 'disabled' : ''}>선택</button>`;
       } else if (i === ni) {
@@ -928,7 +996,7 @@
       } else {
         action = '<button class="btn small" disabled>잠김</button>';
       }
-      return `<article class="card ${open ? '' : 'locked'} ${state.selected === i ? 'current' : ''}">
+      return `<article class="card ${open ? '' : 'locked'} ${!eventSelected && state.selected === i ? 'current' : ''}">
         <div class="thumb">${buildBallThumb(b)}</div>
         <div class="card-body">
           <span class="grade" style="--grade:${b.gradeColor}">${b.grade}</span>
@@ -939,6 +1007,8 @@
         </div>
       </article>`;
     }).join('');
+    const b={...ADMIN_EVENT_BALL,reward:eventBaseReward()},active=eventActive();
+    grid.insertAdjacentHTML('beforeend',`<article class="card ${active?'':'locked'} ${eventSelected?'current':''}"><div class="thumb">${buildBallThumb(b)}</div><div class="card-body"><span class="grade" style="--grade:${b.gradeColor}">관리자</span><h3>${b.name}</h3><p class="meta">기본 파괴 보상 +${fmt(b.reward)}G · 기존 배율 적용</p><p class="meta">${active?'이벤트 지급 · 반복 파괴 가능':'이벤트 전용 · 일반 해금 불가'}</p><button class="btn small" data-action="event" ${!active||eventSelected||state.busy||!state.remoteReady?'disabled':''}>${eventSelected?'사용 중':active?'이벤트 볼 선택':'이벤트 종료'}</button></div></article>`);
   }
 
   function openCollection() {
@@ -1014,6 +1084,7 @@
   grid.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-action]');
     if (!btn) return;
+    if(btn.dataset.action==='event'){switchEvent(true);closeCollection();return;}
     const index = Number(btn.dataset.index);
     if (btn.dataset.action === 'select') selectBall(index);
     if (btn.dataset.action === 'unlock') unlockBall(index);
@@ -1047,6 +1118,7 @@
     restoreAccount,
     revision: () => state.adminRevision,
     run(mode, ballId, seconds) {
+      if(eventSelected)switchEvent(false);
       clearTimeout(remoteSaveTimer);
       if (!testSnapshot) testSnapshot = {gold:state.gold,rebirths:state.rebirths,unlocked:[...state.unlocked],discovered:[...state.discovered],selected:state.selected,clicks:state.clicks,hammerOwned:state.hammerOwned,hammerLevel:state.hammerLevel,honeyExpiresAt:state.honeyExpiresAt};
       clearTimeout(state.respawnTimer);

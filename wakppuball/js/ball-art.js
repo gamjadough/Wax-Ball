@@ -85,6 +85,9 @@ function radialGrad(id, c) {
    디자인별 그림 (ART)
    ========================================================================== */
 const ART = {
+  adminEvent(uid) {
+    return {defs:`<radialGradient id="${uid}-void"><stop stop-color="#160e18"/><stop offset=".8" stop-color="#08060c"/><stop offset="1" stop-color="#250c1c"/></radialGradient>`,art:`<circle cx="100" cy="100" r="82" fill="url(#${uid}-void)"/><g class="admin-ball-rune" fill="none" stroke="#b83350" stroke-width="1.5"><path d="M68 37L91 63 79 91 106 115 92 157M130 44L113 76 137 108 116 146M44 87L70 103 54 127M151 75L129 90"/><path d="M88 87L100 75 112 88 100 101Z"/><circle cx="100" cy="88" r="3" fill="#b83350"/></g>`};
+  },
   /* ----- 일반: 초록 기본 왁뿌볼 (무늬 없음) ----- */
   plain(uid, ball) {
     return {

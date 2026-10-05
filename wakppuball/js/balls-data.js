@@ -31,3 +31,6 @@ const WAKPPU_BALLS = [
   {id:'blackhole',name:'블랙홀 왁뿌볼',grade:'차원',gradeColor:'#ca9bff',price:50000000,clicks:180,reward:5000000,design:{art:'blackhole',shape:'circle',gloss:false,crack:{dark:'#26063f',light:'#bd8cff'},chip:['#32104e','#7d45c5','#e2c4ff']},sound:{pitch:.58,volume:1}},
   {id:'whitehole',name:'화이트홀 왁뿌볼',grade:'차원',gradeColor:'#ca9bff',price:10000000000000000n,clicks:300,reward:15000000,design:{art:'whitehole',shape:'circle',gloss:false,crack:{dark:'#397d9d',light:'#ffffff'},chip:['#ffffff','#a9e9ff','#d9c9ff']},sound:{pitch:1.12,volume:.9}},
 ];
+
+// 이벤트 볼은 일반 해금·환생·관리자 해금 목록에 포함하지 않습니다.
+const ADMIN_EVENT_BALL={id:'admin-event',name:'관리자 왁뿌볼',grade:'관리자',gradeColor:'#dc5267',clicks:600,reward:0,design:{art:'adminEvent',shape:'circle',gloss:false,crack:{dark:'#390713',light:'#a82c46'},chip:['#120912','#541329','#8a2941']},sound:{pitch:.5,volume:.65}};

@@ -1,0 +1,9 @@
+#adminBallEventBanner { position:fixed;bottom:0;left:0;right:0;z-index:20;padding:7px 12px; color:#f0b4bb; background:#200c14; text-align:center; font-size:.8rem;pointer-events:none }
+.local-admin-ball-preview #adminBallEventBanner {display:none}
+.admin-ball-rune { animation:admin-rune 4s ease-in-out infinite; }
+.admin-ball-breaking .admin-ball-rune { animation:none; opacity:1; }
+@keyframes admin-rune { 0%,100% {opacity:.35} 50% {opacity:.75} }
+.admin-ball-preview {position:fixed;left:12px;right:12px;top:86px;z-index:200;background:#180d18ed;border:1px solid #7a263c;border-radius:12px;padding:10px;text-align:center;color:#edc1c9;max-width:680px;margin:auto;font-size:.8rem}
+.admin-ball-preview .btn {margin:3px}
+@media (max-width:600px) {.admin-ball-preview{top:112px}}
+@media (prefers-reduced-motion:reduce) {.admin-ball-rune{animation:none;opacity:.5}}
