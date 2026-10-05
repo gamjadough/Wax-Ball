@@ -1,9 +1,14 @@
 export const ballIds = ['yellow','green','strawberry','apple','chocolate','donut','rainbow','water','emerald','diamond','planet','sun','blackhole'];
+export function isBanned(player, now=Date.now()) {
+  const m=player.moderation;
+  return m?.status==='banned' || (m?.status==='suspended' &&
+    (!m.suspended_until || Date.parse(m.suspended_until)>now));
+}
 export function createStore() {
   const progress = () => ({gold:10000, rebirths:0, unlocked_ball_ids:['yellow'], discovered_ball_ids:['yellow'], selected_ball_id:'yellow', current_ball_id:'yellow', current_clicks:0, hammer_owned:false, hammer_level:0, honey_expires_at:null, progress_imported_at:'local'});
   return { maintenance:false, message:'현재 게임이 업데이트 중입니다.', announcement:null, logs:[], players:[
     {id:'local-admin', nickname:'감자떡 (로컬 테스트)', role:'admin', email:'dodoonglee@gmail.com', state:progress(), moderation:{status:'active'}},
-    {id:'local-player', nickname:'테스트플레이어', role:'player', state:progress(), moderation:{status:'suspended'}},
+    {id:'local-player', nickname:'테스트플레이어', role:'player', state:progress(), moderation:{status:'active'}},
   ]};
 }
 export function execute(store, actor, body) {
@@ -11,14 +16,15 @@ export function execute(store, actor, body) {
   const error = (message, status=400) => { throw Object.assign(new Error(message), {status}); };
   if (!actor) error('로그인이 필요합니다.',401);
   if (action.startsWith('admin_') && actor.role !== 'admin') error('admin only',403);
-  if (action==='status') return {maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role};
+  if (action==='status') return {maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
   if (store.maintenance && actor.role!=='admin' && !action.startsWith('admin_')) error('점검 중입니다.',503);
+  if (isBanned(actor)) error('이 계정은 이용이 제한되었습니다.',403);
   if (action==='bootstrap') return {player:{id:actor.id,nickname:actor.nickname,role:actor.role},state:actor.state,moderation:actor.moderation};
-  if (action==='rankings') return store.players.map(p=>({nickname:p.nickname,gold:p.state.gold,rebirths:p.state.rebirths})).sort((a,b)=>b.rebirths-a.rebirths||b.gold-a.gold);
+  if (action==='rankings') return store.players.filter(p=>!p.ranking_hidden&&!isBanned(p)).map(p=>({nickname:p.nickname,gold:p.state.gold,rebirths:p.state.rebirths})).sort((a,b)=>b.rebirths-a.rebirths||b.gold-a.gold);
   if (action==='set_nickname') {if(!/^[가-힣a-zA-Z0-9_]{2,16}$/.test(body.nickname)) error('닉네임 형식 오류'); actor.nickname=body.nickname;return {nickname:actor.nickname};}
   // 로컬 샘플 진행도에만 사용됩니다. 운영 저장 검증은 별도 게임 서버에서 처리해야 합니다.
-  if (action==='save_progress') { if(actor.moderation.status==='suspended') error('정지된 계정입니다.',403); for(const k of Object.keys(actor.state)) if(k in body) actor.state[k]=body[k];return {state:actor.state}; }
-  if (action==='admin_search') {const q=String(body.query||'').toLowerCase();return store.players.filter(p=>[p.id,p.nickname].some(v=>v.toLowerCase().includes(q))).map(p=>({id:p.id,nickname:p.nickname,state:p.state,moderation:p.moderation}));}
+  if (action==='save_progress') { if((body.admin_revision||0)!==(actor.state.admin_revision||0)) error('관리자가 변경한 진행도를 다시 불러옵니다.',409);for(const k of Object.keys(actor.state)) if(k in body && k!=='admin_revision') actor.state[k]=body[k];return {state:actor.state}; }
+  if (action==='admin_search') {const q=String(body.query||'').toLowerCase();return store.players.filter(p=>[p.id,p.nickname].some(v=>v.toLowerCase().includes(q))).map(p=>({id:p.id,nickname:p.nickname,ranking_hidden:p.ranking_hidden===true,state:p.state,moderation:p.moderation}));}
   if (action==='admin_logs') return store.logs.slice(-100).reverse();
   let before, after;
   const target = store.players.find(p=>p.id===body.user_id);
@@ -28,22 +34,35 @@ export function execute(store, actor, body) {
     else {const message=String(body.message||'').trim();if(!message||message.length>500) error('공지는 1~500자입니다.');before=store.announcement;after=store.announcement={message,author:actor.nickname,time:new Date().toISOString()};}
   }
   else if (action==='admin_test') {if(!ballIds.includes(body.ball_id)) error('잘못된 볼'); return {authorized:true,ball_id:body.ball_id};}
-  else if (['admin_gold','admin_rebirths','admin_unlock','admin_discovery','admin_unban'].includes(action)) {
+  else if (['admin_gold','admin_rebirths','admin_unlock','admin_discovery','admin_unban','admin_ban','admin_ranking_visibility'].includes(action)) {
     if(!target) error('대상 계정 없음',404);
-    before=structuredClone({state:target.state,moderation:target.moderation});
+    before=structuredClone({state:target.state,moderation:target.moderation,ranking_hidden:target.ranking_hidden===true});
     if(action==='admin_gold'||action==='admin_rebirths') {
       const key=action==='admin_gold'?'gold':'rebirths';const n=Number(body.value);if(!Number.isSafeInteger(n)||n<0) error('0 이상의 정수를 입력하세요.');
       if(!['add','subtract','set'].includes(body.mode)) error('변경 방식 오류');
       const v=body.mode==='set'?n:body.mode==='add'?target.state[key]+n:target.state[key]-n;
       if(!Number.isSafeInteger(v)||v<0||(key==='rebirths'&&v>25)) error('허용 범위를 벗어났습니다.');target.state[key]=v;
-    } else if(action==='admin_unban') target.moderation={status:'active',suspicion_score:0,suspended_until:null};
+    } else if(action==='admin_ban') {
+      if(target.role==='admin') error('관리자 계정은 밴할 수 없습니다.');
+      const reason=String(body.reason||'').trim();
+      if(!reason||reason.length>500) error('밴 사유는 1~500자입니다.');
+      if(!['temporary','permanent'].includes(body.mode)) error('밴 종류를 선택하세요.');
+      if(body.mode==='temporary'&&(!Number.isInteger(body.duration_hours)||body.duration_hours<1||body.duration_hours>8760)) error('밴 기간은 1~8760시간입니다.');
+      target.moderation={...target.moderation,status:body.mode==='permanent'?'banned':'suspended',
+        suspended_until:body.mode==='permanent'?null:new Date(Date.now()+body.duration_hours*3600000).toISOString(),last_reason:reason};
+    } else if(action==='admin_ranking_visibility') {
+      if(typeof body.hidden!=='boolean') error('랭킹 숨김 여부를 선택하세요.');
+      if(String(body.reason||'').length>500) error('사유는 500자 이내입니다.');
+      target.ranking_hidden=body.hidden;
+    } else if(action==='admin_unban') target.moderation={...target.moderation,status:'active',suspicion_score:0,suspended_until:null,last_reason:'관리자 밴 해제'};
     else {
       if(!['all','one','reset_one','reset_all'].includes(body.mode)) error('변경 방식 오류');
       if(body.mode.includes('one')&&!ballIds.includes(body.ball_id)) error('잘못된 볼');
       if(action==='admin_unlock') {if(!['all','one'].includes(body.mode)) error('변경 방식 오류');const ids=body.mode==='all'?ballIds:ballIds.slice(0,ballIds.indexOf(body.ball_id)+1);target.state.unlocked_ball_ids=[...new Set([...target.state.unlocked_ball_ids,...ids])];target.state.discovered_ball_ids=[...new Set([...target.state.discovered_ball_ids,...ids])];}
       else {const current=target.state.discovered_ball_ids;target.state.discovered_ball_ids=body.mode==='all'?[...ballIds]:body.mode==='reset_all'?[]:body.mode==='reset_one'?current.filter(id=>id!==body.ball_id):[...new Set([...current,body.ball_id])];}
     }
-    after=structuredClone({state:target.state,moderation:target.moderation});
+    if(['admin_ban','admin_unban','admin_ranking_visibility'].includes(action))target.state.admin_revision=(target.state.admin_revision||0)+1;
+    after=structuredClone({state:target.state,moderation:target.moderation,ranking_hidden:target.ranking_hidden===true});
   } else error('unknown action',404);
-  store.logs.push({admin:actor.id,action,target:target?.id||null,before,after,time:new Date().toISOString()});return {ok:true,target:target?{id:target.id,nickname:target.nickname,state:target.state,moderation:target.moderation}:null};
+  store.logs.push({admin:actor.id,action,target:target?.id||null,reason:String(body.reason||''),before,after,time:new Date().toISOString()});return {ok:true,target:target?{id:target.id,nickname:target.nickname,ranking_hidden:target.ranking_hidden===true,state:target.state,moderation:target.moderation}:null};
 }
