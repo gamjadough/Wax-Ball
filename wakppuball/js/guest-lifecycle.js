@@ -8,13 +8,14 @@
     try{
       const session=(await WakppuAuth.session()).data.session;
       const id=session?.user?.id;
-      if(!id||done.has(id))return;
+      if(!id)return;
+      if(done.has(id)){playRequested=false;return;}
       const key='wakppu:first-play:'+id;
       if(playRequested){playRequested=false;pending.add(id);try{localStorage.setItem(key,'pending');}catch(_){}}
       let stored=false;try{stored=localStorage.getItem(key)==='pending';}catch(_){}
       if(!pending.has(id)&&!stored)return;
       await WakppuAuth.invoke('mark_first_play');
-      done.add(id);pending.delete(id);try{localStorage.removeItem(key);}catch(_){}
+      done.add(id);playRequested=false;pending.delete(id);try{localStorage.removeItem(key);}catch(_){}
     }catch(_){/* Retry persisted first play after reconnection. */}
     finally{sending=false;}
   }
