@@ -1,4 +1,17 @@
 (function(root) {
+  // Short-scale names grow by 1,000. Abbreviations follow the existing game style.
+  const suffixes=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','Ud',
+    'Dd','Td','Qad','Qid','Sxd','Spd','Ocd','Nod','Vg','Uvg','Dvg','Tvg',
+    'Qavg','Qivg','Sxvg','Spvg','Ocvg','Novg','Tg'];
+  const bases=suffixes.map((_,index)=>1000n**BigInt(index));
+  function decimal(tenth) { return `${tenth/10n}${tenth%10n?'.'+tenth%10n:''}`; }
+  function scientific(n) {
+    let exponent=n.toString().length-1;
+    const base=10n**BigInt(exponent);
+    let tenth=(n*10n+base/2n)/base;
+    if(tenth>=100n){tenth=10n;exponent++;}
+    return `${decimal(tenth)}e${exponent}`;
+  }
   function integer(value) {
     if (typeof value === 'bigint') return value;
     if (typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value)) return BigInt(value);
@@ -7,20 +20,17 @@
   }
   function compact(value) {
     let n; try { n=integer(value); } catch (_) { return '—'; }
-    // 짧은 영어권 idle 게임 표기: K, M, B, T 이후 Qa~Ud까지 3자리씩 확장합니다.
-    const units=[
-      [1000000000000000000000000000000000000n,'Ud'],
-      [1000000000000000000000000000000000n,'Dc'],
-      [1000000000000000000000000000000n,'No'],
-      [1000000000000000000000000000n,'Oc'],
-      [1000000000000000000000000n,'Sp'],
-      [1000000000000000000000n,'Sx'],
-      [1000000000000000000n,'Qi'],
-      [1000000000000000n,'Qa'],
-      [1000000000000n,'T'],[1000000000n,'B'],[1000000n,'M'],[1000n,'K'],
-    ];
-    for (const [base,suffix] of units) if(n>=base) {const tenth=(n*10n+base/2n)/base;return `${tenth/10n}${tenth%10n?'.'+tenth%10n:''}${suffix}`;}
-    return n.toLocaleString('ko-KR');
+    if(n<1000n)return n.toLocaleString('ko-KR');
+    let tier=Math.floor((n.toString().length-1)/3);
+    if(tier>=suffixes.length)return scientific(n);
+    let base=bases[tier],tenth=(n*10n+base/2n)/base;
+    // Round 999.95 of one unit up to the next instead of displaying 1000Ud.
+    if(tenth>=10000n){
+      tier++;
+      if(tier>=suffixes.length)return scientific(n);
+      base=bases[tier];tenth=(n*10n+base/2n)/base;
+    }
+    return `${decimal(tenth)}${suffixes[tier]}`;
   }
   root.WakppuGold={integer,compact};
 })(typeof window==='undefined'?globalThis:window);

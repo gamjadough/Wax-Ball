@@ -13,3 +13,17 @@ test('K/M/B/T/Qa/Qi and integer-safe boundaries',()=>{
   assert.equal(JSON.parse(JSON.stringify({gold:integer('9007199254740993').toString()})).gold,'9007199254740993');
   assert.equal(compact('bad'),'—');
 });
+test('units beyond Ud and scientific fallback remain exact for BigInt and saved strings',()=>{
+  const units=[[39,'Dd'],[42,'Td'],[45,'Qad'],[48,'Qid'],[51,'Sxd'],[54,'Spd'],[57,'Ocd'],[60,'Nod'],[63,'Vg'],[66,'Uvg'],[69,'Dvg'],[72,'Tvg'],[75,'Qavg'],[78,'Qivg'],[81,'Sxvg'],[84,'Spvg'],[87,'Ocvg'],[90,'Novg'],[93,'Tg']];
+  for(const [exponent,suffix] of units){
+    const base=10n**BigInt(exponent);
+    assert.equal(compact(base),`1${suffix}`);
+    assert.equal(compact((base*123n/100n).toString()),`1.2${suffix}`);
+    assert.equal(compact(base-1n),`1${suffix}`);
+  }
+  assert.equal(compact(999949n*10n**33n),'999.9Ud');
+  assert.equal(compact(999950n*10n**33n),'1Dd');
+  assert.equal(compact(10n**96n),'1e96');
+  assert.equal(compact(10n**100n-1n),'1e100');
+  assert.equal(compact(123n*10n**118n),'1.2e120');
+});
