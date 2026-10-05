@@ -17,6 +17,9 @@
   }
   window.WakppuAdminBallEvent={current,update(data){
     const t=Date.parse(data.server_time),e=data.admin_ball_event;
+    if(!Number.isFinite(t)||!Object.prototype.hasOwnProperty.call(data,'admin_ball_event'))return;
+    // A status request issued before Start/Stop can finish after the mutation response.
+    if(Number.isFinite(t)&&t<serverTime)return;
     snapshot=Number.isFinite(t)&&e?.id&&Number.isFinite(Date.parse(e.starts_at))&&Date.parse(e.ends_at)>Date.parse(e.starts_at)?e:null;
     serverTime=t;received=clock();render();
   }};

@@ -25,7 +25,8 @@ try:
             page.locator('#ballSvg').click(force=True)
             page.wait_for_function('(v)=>JSON.parse(localStorage.getItem("wax-ball:wakppuball:local-test-save")).gold===v',arg=expected)
             expect(page.locator('#ballName')).to_have_text('관리자 왁뿌볼')
-        for mobile,reduced in ([(False,False)] if '--desktop' in sys.argv else [(False,False),(True,False),(True,True)]):
+        cases=[] if '--confirm-blocked' in sys.argv else ([(False,False)] if '--desktop' in sys.argv else [(False,False),(True,False),(True,True)])
+        for mobile,reduced in cases:
             ctx=browser.new_context(viewport={'width':390 if mobile else 1100,'height':844},is_mobile=mobile,has_touch=mobile,reduced_motion='reduce' if reduced else 'no-preference')
             ctx.route('**/*',lambda r:r.continue_() if r.request.url.startswith(base) else r.fulfill(status=200,body='',content_type='text/javascript'))
             page=ctx.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
@@ -98,8 +99,21 @@ try:
             expect(page.locator('#ballName')).to_have_text('관리자 왁뿌볼')
             page.wait_for_function("document.getElementById('ballName').textContent==='화이트홀 왁뿌볼'")
             ctx.close()
+        # Embedded browsers may dismiss native confirm() without displaying it.
+        blocked=browser.new_context();blocked.add_init_script('window.confirm=()=>false;')
+        blocked.route('**/*',lambda r:r.continue_() if r.request.url.startswith(base) else r.fulfill(status=200,body='',content_type='text/javascript'))
+        page=blocked.new_page();page.goto(base+'/?preview=adminball');page.wait_for_load_state('networkidle')
+        expect(page.locator('#ballName')).to_have_text('관리자 왁뿌볼')
+        page.get_by_role('button',name='이벤트 종료',exact=True).click()
+        expect(page.locator('#ballName')).to_have_text('화이트홀 왁뿌볼')
+        page.locator('#adminBtn').click();page.locator('#adminBallEventStart').click()
+        expect(page.locator('#ballName')).to_have_text('관리자 왁뿌볼',timeout=5000)
+        expect(page.locator('#adminBallEventInfo')).to_contain_text('남은 시간')
+        page.locator('#adminBallEventStop').click()
+        expect(page.locator('#ballName')).to_have_text('화이트홀 왁뿌볼')
+        blocked.close()
         assert not errors,errors
         browser.close()
-    print('PASS admin event ball: '+('desktop' if '--desktop' in sys.argv else 'desktop/mobile/reduced motion')+', five-hit boundary, repeats, 12B multipliers, response loss retry, late guest join, reload preference, ordinary progress restore, scheduled start, concurrent gold event, expiry and administrator controls')
+    print('PASS blocked native confirmation: event starts and stops' if '--confirm-blocked' in sys.argv else 'PASS admin event ball: '+('desktop' if '--desktop' in sys.argv else 'desktop/mobile/reduced motion')+', five-hit boundary, repeats, 12B multipliers, response loss retry, late guest join, reload preference, ordinary progress restore, scheduled start, concurrent gold event, expiry and administrator controls, blocked confirmation')
 finally:
     server.terminate();server.wait(timeout=10)

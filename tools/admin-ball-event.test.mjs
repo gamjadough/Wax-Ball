@@ -3,6 +3,19 @@ import assert from 'node:assert/strict';
 import {createStore,execute,ballIds} from './admin-service.mjs';
 import {ballCatalog} from './event-ball-catalog.mjs';
 import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
+test('event responses are applied immediately and older in-flight status cannot undo them',async()=>{
+ let clock=0;const context={performance:{now:()=>clock},document:{getElementById:()=>null},setInterval:()=>{},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},dispatchEvent:()=>{}};context.window=context;
+ vm.runInNewContext(await readFile(new URL('../wakppuball/js/admin-ball-event.js',import.meta.url),'utf8'),context);
+ const event={id:'event',starts_at:'2026-10-05T00:00:00Z',ends_at:'2026-10-05T00:05:00Z'};
+ context.WakppuAdminBallEvent.update({admin_ball_event:event,server_time:'2026-10-05T00:00:01Z'});
+ assert.equal(context.WakppuAdminBallEvent.current().phase,'active');
+ context.WakppuAdminBallEvent.update({admin_ball_event:null,server_time:'2026-10-05T00:00:00Z'});
+ assert.equal(context.WakppuAdminBallEvent.current().phase,'active');
+ context.WakppuAdminBallEvent.update({admin_ball_event:null,server_time:'2026-10-05T00:00:02Z'});
+ context.WakppuAdminBallEvent.update({admin_ball_event:event,server_time:'2026-10-05T00:00:01Z'});
+ assert.equal(context.WakppuAdminBallEvent.current().phase,'idle');
+});
 test('catalog matches the real migration and excludes the event ball',async()=>{
  const sql=await readFile(new URL('../supabase/migrations/20261007_admin_ball_event.sql',import.meta.url),'utf8');
  for(const b of await ballCatalog())assert.ok(sql.includes(`('${b.id}',${b.reward})`));

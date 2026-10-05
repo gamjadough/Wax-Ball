@@ -120,5 +120,5 @@ export function execute(store, actor, body) {
     if(['admin_ban','admin_unban','admin_ranking_visibility'].includes(action))target.state.admin_revision=(target.state.admin_revision||0)+1;
     after=structuredClone({state:target.state,moderation:target.moderation,ranking_hidden:target.ranking_hidden===true});
   } else error('unknown action',404);
-  store.logs.push({admin:actor.id,action,target:target?.id||null,reason:String(body.reason||''),before,after,time:new Date().toISOString()});return {ok:true,target:target?{id:target.id,nickname:target.nickname,ranking_hidden:target.ranking_hidden===true,state:target.state,moderation:target.moderation}:null};
+  store.logs.push({admin:actor.id,action,target:target?.id||null,reason:String(body.reason||''),before,after,time:new Date().toISOString()});return {ok:true,...(action==='admin_ball_event'?{admin_ball_event:store.admin_ball_event,server_time:new Date().toISOString()}:{}),target:target?{id:target.id,nickname:target.nickname,ranking_hidden:target.ranking_hidden===true,state:target.state,moderation:target.moderation}:null};
 }
