@@ -304,6 +304,10 @@ const ART = {
     return { defs: `<radialGradient id="${uid}-void"><stop stop-color="#040008" offset="0"/><stop stop-color="#12001f" offset=".48"/><stop stop-color="#5b157f" offset=".78"/><stop stop-color="#d49cff" offset="1"/></radialGradient>`,
       art: `<rect width="200" height="200" fill="#080014"/><circle cx="100" cy="100" r="83" fill="url(#${uid}-void)"/>${ring(85,'#f1c6ff','.58',-22)}${ring(66,'#7e3cc5','.7',34)}${ring(49,'#e7abff','.32',-8)}<circle cx="100" cy="100" r="32" fill="#010003"/><path d="M24 112 C54 50 144 155 178 74" fill="none" stroke="#bd82ff" stroke-width="6" opacity=".5" filter="url(#${uid}-b4)"/>` };
   },
+  whitehole(uid) {
+    return { defs:`<radialGradient id="${uid}-white-core" cx="44%" cy="40%" r="65%"><stop offset="0" stop-color="#fff"/><stop offset=".36" stop-color="#f3fdff"/><stop offset=".68" stop-color="#bfeafa"/><stop offset=".9" stop-color="#729ecb"/><stop offset="1" stop-color="#4d527f"/></radialGradient><radialGradient id="${uid}-white-light"><stop stop-color="#fff"/><stop offset=".5" stop-color="#f4fdff"/><stop offset="1" stop-color="#a8ecff" stop-opacity="0"/></radialGradient>`,
+      art:`<rect width="200" height="200" fill="#3e4778"/><circle cx="100" cy="100" r="91" fill="url(#${uid}-white-core)"/><g fill="none" stroke-linecap="round"><ellipse cx="100" cy="100" rx="85" ry="36" stroke="#b5a8f4" stroke-width="5" transform="rotate(-25 100 100)" opacity=".8"/><ellipse cx="100" cy="100" rx="79" ry="29" stroke="#fff" stroke-width="3" transform="rotate(-25 100 100)" opacity=".9"/><ellipse cx="100" cy="100" rx="67" ry="53" stroke="#a7dfff" stroke-width="2" transform="rotate(37 100 100)"/><path d="M100 20 Q124 70 100 100 Q59 107 28 143 M178 59 Q137 83 100 100 Q104 142 139 177" stroke="#f3fdff" stroke-width="5" opacity=".6"/></g><circle cx="100" cy="100" r="49" fill="url(#${uid}-white-light)"/><circle cx="100" cy="100" r="22" fill="#fff"/><g fill="#fff"><circle cx="63" cy="56" r="2"/><circle cx="148" cy="119" r="2.5"/><circle cx="60" cy="147" r="1.5"/></g>` };
+  },
 };
 
 /* ==========================================================================

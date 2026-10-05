@@ -1,0 +1,8 @@
+.whitehole-charging .crack { stroke:#fff; stroke-opacity:1; filter:drop-shadow(0 0 2px #a6eaff) drop-shadow(0 0 5px #fff); }
+.whitehole-glow,.whitehole-wave,.whitehole-particle { position:absolute; pointer-events:none; border-radius:50%; }
+.whitehole-glow { background:radial-gradient(circle,#fff 0%,#e3faff99 24%,#9adeff33 49%,transparent 70%); }
+.whitehole-wave { border:2px solid #bcefff; box-shadow:0 0 12px #d8f6ff88,inset 0 0 12px #d8f6ff55; }
+.whitehole-particle { width:5px; height:5px; box-shadow:0 0 7px #e3faff; }
+.local-whitehole-preview { position:fixed; left:12px; right:12px; top:72px; z-index:200; max-width:660px; margin:auto; padding:10px; border:1px solid #a9dbff66; border-radius:12px; background:#111b2ef0; color:#e6faff; text-align:center; }
+.local-whitehole-preview p { margin:0 0 8px; font-size:.8rem; }
+.local-whitehole-preview .btn { margin:3px; }

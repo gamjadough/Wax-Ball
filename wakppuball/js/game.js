@@ -108,6 +108,7 @@
   let remoteSaveTimer = null;
   let testSnapshot = null;
   let animationEpoch = 0;
+  let whiteholeEffect = null;
 
   function saveProgress() {
     if (testSnapshot || window.wakppuServerBlocked) return;
@@ -296,6 +297,7 @@
      2. 왁뿌볼 등장시키기
      ========================================================================== */
   function spawnBall(animate) {
+    whiteholeEffect?.cancel();whiteholeEffect=null;
     animationEpoch++;
     clearTimeout(state.respawnTimer);
     const data = WAKPPU_BALLS[state.selected];
@@ -607,6 +609,16 @@
     // WebKit에서 마지막 균열을 한 프레임 이상 그린 뒤에만 SVG를 조각으로 교체합니다.
     svgEl.classList.add('instant');
     updateCracks(1);
+    if(data.id==='whitehole'){
+      whiteholeEffect?.cancel();
+      whiteholeEffect=WakppuWhitehole.play({wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,
+        valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,
+        shatter:()=>{makeShards(SHAPES.circle);wrap.classList.add('broken');},
+        reward:()=>awardBreakReward(data),
+        respawn:()=>{wrap.classList.remove('broken');svgEl.classList.remove('instant');spawnBall(true);if(!testSnapshot)hintEl.textContent='왁뿌볼을 눌러 깨보세요';}
+      });
+      return;
+    }
     requestAnimationFrame(() => setTimeout(() => {if(epoch===animationEpoch)finishBreak(data);}, 110));
   }
 
@@ -621,10 +633,7 @@
     // 파편이 실제로 보인 뒤 Gold를 지급하고, 끝난 뒤에만 다음 공을 만듭니다.
     setTimeout(() => {
       if(epoch!==animationEpoch || window.wakppuServerBlocked)return;
-      const reward = BigInt(data.reward) * rebirthMultiplier(state.rebirths) * BigInt(honeyMultiplier()) * BigInt(window.WakppuGoldEvent?.multiplier()||1);
-      if (!testSnapshot) state.gold += reward;
-      updateAll();
-      floatText('+' + fmt(reward) + 'G', center.x, center.y - wrap.offsetHeight * 0.32);
+      awardBreakReward(data);
     }, 260);
     clearTimeout(state.respawnTimer);
     state.respawnTimer = setTimeout(() => {
@@ -632,6 +641,14 @@
       svgEl.classList.remove('instant');
       spawnBall(true);
     }, Math.max(RESPAWN_DELAY_MS, 1050));
+  }
+
+  function awardBreakReward(data){
+    const center=ballCenter();
+    const reward=BigInt(data.reward)*rebirthMultiplier(state.rebirths)*BigInt(honeyMultiplier())*BigInt(window.WakppuGoldEvent?.multiplier()||1);
+    if(!testSnapshot)state.gold+=reward;
+    updateAll();
+    floatText('+'+fmt(reward)+'G',center.x,center.y-wrap.offsetHeight*.32);
   }
 
   /* 왁뿌볼을 조각으로 쪼개서 날리기 */
@@ -1016,6 +1033,17 @@
 
   loadProgress();
   window.WakppuGameTest = {
+    prepareLocalWhitehole(mode='last') {
+      if(!window.WakppuAuth?.local)return;
+      if(testSnapshot)this.end();
+      state.gold=mode==='unlock'?10000000000000000n:0n;state.rebirths=0;
+      state.unlocked=WAKPPU_BALLS.map((b)=>mode!=='unlock'||b.id!=='whitehole');
+      state.discovered=WAKPPU_BALLS.map(b=>b.id);state.selected=WAKPPU_BALLS.findIndex(b=>b.id===(mode==='unlock'?'blackhole':'whitehole'));
+      state.hammerOwned=false;state.hammerLevel=0;state.honeyExpiresAt=0;
+      wrap.classList.remove('broken');svgEl.classList.remove('instant');spawnBall(false);
+      if(mode==='last'){state.clicks=WAKPPU_BALLS[state.selected].clicks-1;updateCracks(state.clicks/WAKPPU_BALLS[state.selected].clicks);}
+      updateAll();hintEl.textContent=mode==='last'?'공을 한 번 누르면 화이트홀 파괴 연출이 시작됩니다.':'로컬 화이트홀 테스트';hintEl.classList.remove('gone');
+    },
     restoreAccount,
     revision: () => state.adminRevision,
     run(mode, ballId, seconds) {

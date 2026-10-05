@@ -124,7 +124,7 @@ def main():
                 page.locator('#rebirthConfirm').click()
                 assert saved(page)['gold']=='0'
                 assert saved(page)['rebirths']==1
-                assert saved(page)['unlocked']==[True]+[False]*12
+                assert saved(page)['unlocked']==[True]+[False]*(page.evaluate('WAKPPU_BALLS.length')-1)
                 hit(page)
                 expect(page.locator('#goldValue')).to_have_text('2')
 

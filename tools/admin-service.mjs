@@ -1,4 +1,4 @@
-export const ballIds = ['yellow','green','strawberry','apple','chocolate','donut','rainbow','water','emerald','diamond','planet','sun','blackhole'];
+export const ballIds = ['yellow','green','strawberry','apple','chocolate','donut','rainbow','water','emerald','diamond','planet','sun','blackhole','whitehole'];
 export function isBanned(player, now=Date.now()) {
   const m=player.moderation;
   return m?.status==='banned' || (m?.status==='suspended' &&

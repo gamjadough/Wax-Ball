@@ -175,5 +175,20 @@ test('PostgreSQL migrations: visibility, bans, expiry, permissions and audit',as
     for(const fn of ['wakppu_cleanup_unplayed_guests()','wakppu_guest_accounts()','wakppu_api_before_guest_lifecycle(\'{}\'::jsonb)'])await assert.rejects(db.query('select public.'+fn),{code:'42501'});
     await assert.rejects(db.query('select * from guest_lifecycle'),{code:'42501'});
     await db.exec('reset role');
+    await db.exec(await readFile(new URL('../supabase/migrations/20261006_rebirth_100_big_gold.sql',import.meta.url),'utf8'));
+    const whiteholeMigration=await readFile(new URL('../supabase/migrations/20261006_z_whitehole.sql',import.meta.url),'utf8');
+    await db.exec(whiteholeMigration);await db.exec(whiteholeMigration);
+    await assert.rejects(rpc(player,{action:'admin_test',ball_id:'whitehole'}),{code:'PT403'});
+    assert.equal((await rpc(admin,{action:'admin_test',ball_id:'whitehole'})).authorized,true);
+    await rpc(admin,{action:'admin_unlock',user_id:player,mode:'one',ball_id:'whitehole'});
+    const whiteholeState=(await rpc(player,{action:'bootstrap'})).state;
+    assert.equal(whiteholeState.unlocked_ball_ids.includes('whitehole'),true);
+    const savedGold='10000000015000000';
+    await rpc(player,{action:'save_progress',gold:savedGold,admin_revision:whiteholeState.admin_revision,rebirths:0,unlocked_ball_ids:whiteholeState.unlocked_ball_ids,discovered_ball_ids:['whitehole'],selected_ball_id:'whitehole',hammer_level:0});
+    assert.equal((await rpc(player,{action:'bootstrap'})).state.gold,savedGold);
+    assert.equal((await rpc(player,{action:'bootstrap'})).state.selected_ball_id,'whitehole');
+    assert.equal((await rpc(player,{action:'status'})).gold_event.multiplier,10);
+    assert.equal((await rpc(admin,{action:'admin_guest_accounts',filter:'all'})).total,5);
+    await assert.rejects(rpc(player,{action:'save_progress',gold:'0',admin_revision:whiteholeState.admin_revision,rebirths:0,unlocked_ball_ids:['yellow','fakehole'],selected_ball_id:'fakehole'}));
   } finally { await db.close(); }
 });

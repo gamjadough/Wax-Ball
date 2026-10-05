@@ -65,7 +65,8 @@ test('Gold 수정은 다른 진행도 유지, 잘못된 값 거절, 변경 전�
 });
 test('환생 범위·정지 해제·도감 초기화와 해금 분리',()=>{
   const s=createStore(),a=s.players[0],p=s.players[1];execute(s,a,{action:'admin_rebirths',user_id:p.id,mode:'set',value:5});assert.equal(p.state.rebirths,5);
-  assert.throws(()=>execute(s,a,{action:'admin_rebirths',user_id:p.id,mode:'set',value:26}));
+  execute(s,a,{action:'admin_rebirths',user_id:p.id,mode:'set',value:100});assert.equal(p.state.rebirths,100);
+  assert.throws(()=>execute(s,a,{action:'admin_rebirths',user_id:p.id,mode:'set',value:101}));
   execute(s,a,{action:'admin_unlock',user_id:p.id,mode:'all'});assert.deepEqual(p.state.unlocked_ball_ids,ballIds);
   execute(s,a,{action:'admin_discovery',user_id:p.id,mode:'reset_all'});assert.deepEqual(p.state.discovered_ball_ids,[]);assert.deepEqual(p.state.unlocked_ball_ids,ballIds);
   execute(s,a,{action:'admin_unban',user_id:p.id});assert.equal(p.moderation.status,'active');
