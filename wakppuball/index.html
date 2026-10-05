@@ -134,7 +134,7 @@
     <div class="sheet admin-sheet" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
       <div class="sheet-head"><h2 id="adminTitle">관리자 패널</h2><button data-close="admin" class="btn small">닫기</button></div>
       <p id="adminStatus" role="status"></p>
-      <section><h3>🎉 전체 골드 타임</h3><p>30초 전 예고 → Gold 획득 ×10, 60초 → 자동 종료. 환생·꿀과 곱연산하며 중복 적용되지 않습니다.</p><p id="adminGoldEventInfo" role="status">이벤트 상태 확인 중…</p><div class="admin-controls"><button id="adminGoldEventStart" class="btn">Gold ×10 이벤트 시작</button><button id="adminGoldEventStop" class="btn" disabled>이벤트 즉시 종료</button></div></section>
+      <section><h3>🎉 전체 골드 타임</h3><p>설정한 시간 동안 모든 플레이어의 Gold 획득 배율을 높입니다. 환생·꿀 배율과 곱해지며, 진행 시간 종료 시 자동으로 해제됩니다.</p><label>Gold 배율 (1~1,000배)<input id="adminEventMultiplier" type="number" min="1" max="1000" step="1" value="10"></label><label>진행 시간 (1~86,400초)<input id="adminEventDuration" type="number" min="1" max="86400" step="1" value="60"></label><label>시작 전 대기 시간 (0~86,400초 · 0이면 즉시 시작)<input id="adminEventDelay" type="number" min="0" max="86400" step="1" value="30"></label><p id="adminGoldEventInfo" role="status">이벤트 상태 확인 중…</p><div class="admin-controls"><button id="adminGoldEventStart" class="btn">설정한 이벤트 시작</button><button id="adminGoldEventStop" class="btn" disabled>이벤트 즉시 종료</button></div></section>
       <section><h3>점검·공지</h3><label>점검 안내<input id="adminMaintenanceMessage" value="현재 게임이 업데이트 중입니다."></label><div class="account-actions"><button id="adminMaintenanceOn" class="btn">점검 ON</button><button id="adminMaintenanceOff" class="btn">점검 OFF</button></div><label>전체 공지<input id="adminAnnouncement" maxlength="500"></label><div class="account-actions"><button id="adminAnnounce" class="btn">공지 보내기</button><button id="adminClearAnnouncement" class="btn" disabled>공지 내리기</button></div></section>
       <section><h3>플레이어 검색</h3><label>닉네임 / User ID<input id="adminQuery" placeholder="테스트플레이어 또는 local-player"></label><button id="adminSearch" class="btn">검색</button><div id="adminResults"></div><p id="adminPlayerInfo">검색 결과에서 대상을 선택하세요.</p></section>
       <section><h3>미플레이 빠른 시작 계정</h3>
@@ -171,10 +171,10 @@
   <script src="js/balls-data.js?v=20261006-whitehole1"></script>
   <script src="js/sound.js?v=20261002-progression1"></script>
   <script src="js/ball-art.js?v=20261006-whitehole1"></script>
-  <script src="js/gold-event.js?v=20261005-event1"></script>
+  <script src="js/gold-event.js?v=20261006-custom-event1"></script>
   <script src="js/whitehole-effects.js?v=20261006-whitehole1"></script>
   <script src="js/game.js?v=20261006-whitehole1"></script>
-  <script src="js/admin-panel.js?v=20261006-selection1"></script>
+  <script src="js/admin-panel.js?v=20261006-custom-event1"></script>
   <script src="js/guest-lifecycle.js?v=20261006-guest1"></script>
 </body>
 </html>

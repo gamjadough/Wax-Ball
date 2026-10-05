@@ -9,7 +9,7 @@ test('server permissions, 30s announcement / 60s event, duplicate prevention and
   const s=createStore(),admin=s.players[0],player=s.players[1],before=structuredClone(s.players);
   assert.throws(()=>execute(s,player,{action:'admin_gold_event',mode:'start'}),{status:403});
   assert.throws(()=>execute(s,null,{action:'admin_gold_event',mode:'start'}),{status:401});
-  execute(s,admin,{action:'admin_gold_event',mode:'start',multiplier:1000,duration:999});
+  execute(s,admin,{action:'admin_gold_event',mode:'start'});
   const e=s.gold_event,start=Date.parse(e.starts_at),end=Date.parse(e.ends_at);
   assert.equal(end-start,60000);assert.equal(e.multiplier,10);
   assert.equal(phase(e,start-30000).seconds,30);assert.equal(phase(e,start-1).multiplier,1);
@@ -31,5 +31,16 @@ test('late join / reload, server clock instead of device time, connection loss a
   assert.equal(100*4*2*root.WakppuGoldEvent.multiplier(),8000);
   now=12001;assert.equal(root.WakppuGoldEvent.multiplier(),1);
   root.WakppuGoldEvent.update({gold_event:null,server_time:new Date(start+21000).toISOString()});assert.equal(root.WakppuGoldEvent.multiplier(),1);
-  assert.equal(phase({...event,multiplier:100},start).multiplier,1);
+  assert.equal(phase({...event,multiplier:100},start).multiplier,100);
+  assert.equal(phase({...event,multiplier:1001},start).multiplier,1);
+});
+test('custom multiplier, duration, zero delay and server input validation',()=>{
+  const s=createStore(),admin=s.players[0];
+  for(const options of [{multiplier:0},{multiplier:1001},{multiplier:1.5},{duration_seconds:0},{duration_seconds:86401},{delay_seconds:-1},{delay_seconds:86401}])assert.throws(()=>execute(s,admin,{action:'admin_gold_event',mode:'start',...options}),{status:400});
+  execute(s,admin,{action:'admin_gold_event',mode:'start',multiplier:7,duration_seconds:125,delay_seconds:0});
+  const event=s.gold_event,start=Date.parse(event.starts_at),end=Date.parse(event.ends_at);
+  assert.equal(end-start,125000);assert.equal(phase(event,start).multiplier,7);assert.equal(phase(event,end).multiplier,1);
+  execute(s,admin,{action:'admin_gold_event',mode:'stop'});
+  execute(s,admin,{action:'admin_gold_event',mode:'start',multiplier:1000,duration_seconds:86400,delay_seconds:86400});
+  assert.equal(phase(s.gold_event,Date.parse(s.gold_event.starts_at)).multiplier,1000);
 });

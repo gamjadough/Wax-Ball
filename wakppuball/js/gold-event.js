@@ -2,8 +2,8 @@
   'use strict';
   function phase(event,now){
     const start=Date.parse(event?.starts_at),end=Date.parse(event?.ends_at);
-    if(!event||event.multiplier!==10||!Number.isFinite(start)||end-start!==60000||now>=end)return {phase:'idle',multiplier:1,seconds:0};
-    return now<start?{phase:'scheduled',multiplier:1,seconds:Math.ceil((start-now)/1000)}:{phase:'active',multiplier:10,seconds:Math.ceil((end-now)/1000)};
+    if(!event||!Number.isInteger(event.multiplier)||event.multiplier<1||event.multiplier>1000||!Number.isFinite(start)||!Number.isFinite(end)||end-start<1000||end-start>86400000||now>=end)return {phase:'idle',multiplier:1,seconds:0};
+    return now<start?{phase:'scheduled',multiplier:1,seconds:Math.ceil((start-now)/1000)}:{phase:'active',multiplier:event.multiplier,seconds:Math.ceil((end-now)/1000)};
   }
   let snapshot=null,serverTime=0,received=0;
   const clock=()=>root.performance?.now?.()??Date.now();
@@ -11,7 +11,8 @@
   function render(){
     if(!root.document)return;
     const state=current(),banner=document.getElementById('goldEventBanner'),info=document.getElementById('adminGoldEventInfo');
-    const text=state.phase==='scheduled'?`🎉 관리자 골드 타임! ${state.seconds}초 후 시작 · Gold ×10, 60초`:state.phase==='active'?`🎉 관리자 골드 타임! Gold ×10 · 남은 시간 ${String(Math.floor(state.seconds/60)).padStart(2,'0')}:${String(state.seconds%60).padStart(2,'0')}`:'현재 진행 중인 이벤트가 없습니다.';
+    const duration=Math.round((Date.parse(snapshot?.ends_at)-Date.parse(snapshot?.starts_at))/1000);
+    const text=state.phase==='scheduled'?`🎉 관리자 골드 타임! ${state.seconds}초 후 시작 · Gold ×${snapshot.multiplier}, ${duration}초`:state.phase==='active'?`🎉 관리자 골드 타임! Gold ×${state.multiplier} · 남은 시간 ${String(Math.floor(state.seconds/60)).padStart(2,'0')}:${String(state.seconds%60).padStart(2,'0')}`:'현재 진행 중인 이벤트가 없습니다.';
     if(banner){banner.hidden=state.phase==='idle';banner.textContent=text;banner.dataset.phase=state.phase;}
     if(info)info.textContent=text;
     const start=document.getElementById('adminGoldEventStart'),stop=document.getElementById('adminGoldEventStop');

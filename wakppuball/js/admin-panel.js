@@ -113,8 +113,12 @@
   };
   bind('adminSetGold','admin_gold',()=>({mode:$('adminChangeMode').value,value:$('adminGold').value.trim()}),'선택한 플레이어의 Gold를 변경하시겠습니까?');
   $('adminGoldEventStart').onclick=async()=>{
-    if(!confirm('모든 플레이어에게 30초 예고 후 Gold ×10 이벤트를 60초간 진행하시겠습니까?'))return;
-    if(await call('admin_gold_event',{mode:'start'})){await refresh();status('30초 예고를 시작했습니다. 이벤트는 60초 후 자동 종료됩니다.');}
+    const fields=[['adminEventMultiplier',1,1000],['adminEventDuration',1,86400],['adminEventDelay',0,86400]];
+    for(const [id,min,max] of fields){const input=$(id),value=Number(input.value);if(input.value.trim()===''||!Number.isInteger(value)||value<min||value>max){status('배율과 시간은 표시된 범위의 정수로 입력하세요.');input.reportValidity();input.focus();return;}}
+    const multiplier=Number($('adminEventMultiplier').value),duration_seconds=Number($('adminEventDuration').value),delay_seconds=Number($('adminEventDelay').value);
+    if(!confirm(`모든 플레이어에게 ${delay_seconds}초 대기 후 Gold ×${multiplier} 이벤트를 ${duration_seconds}초간 진행하시겠습니까?`))return;
+    const result=await call('admin_gold_event',{mode:'start',multiplier,duration_seconds,delay_seconds});
+    if(result){window.WakppuGoldEvent.update(result);await refresh();status(`Gold ×${multiplier} 이벤트를 설정했습니다. 대기 ${delay_seconds}초 · 진행 ${duration_seconds}초`);}
   };
   $('adminGoldEventStop').onclick=async()=>{
     if(!confirm('예고/진행 중인 전체 골드 이벤트를 즉시 종료하시겠습니까?'))return;

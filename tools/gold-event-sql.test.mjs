@@ -20,7 +20,11 @@ test('real PostgreSQL event permissions, singleton, fixed schedule, expiry, audi
    insert into game_states(user_id) values('${admin}'),('${player}');`);
   for(const name of ['20261004_accounts_and_rankings.sql','20261004_admin_exact_gold.sql','20261005_clear_announcement.sql','20261005_ranking_visibility_bans.sql','20261005_z_gold_event.sql'])await db.exec(await readFile(new URL('../supabase/migrations/'+name,import.meta.url),'utf8'));
   async function rpc(user,body,anonymous=false){await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify(user?{sub:user,is_anonymous:anonymous}:{})]);return (await db.query('select wakppu_api($1::jsonb) as data',[JSON.stringify(body)])).rows[0].data;}
-  const start={action:'admin_gold_event',mode:'start',multiplier:1000};
+  await db.exec(`alter function public.wakppu_api(jsonb) rename to wakppu_api_before_guest_lifecycle;
+   create function public.wakppu_api(b jsonb) returns jsonb language sql security definer set search_path=public,pg_temp as $$select public.wakppu_api_before_guest_lifecycle(b)$$;
+   revoke all on function public.wakppu_api(jsonb) from public; grant execute on function public.wakppu_api(jsonb) to anon,authenticated;`);
+  await db.exec(await readFile(new URL('../supabase/migrations/20261006_zz_custom_gold_event.sql',import.meta.url),'utf8'));
+  const start={action:'admin_gold_event',mode:'start'};
   await assert.rejects(rpc(null,start),{code:'PT401'});await assert.rejects(rpc(player,start),{code:'PT403'});await assert.rejects(rpc(admin,start,true),{code:'PT403'});
   const result=await rpc(admin,start),event=result.gold_event;
   assert.equal(event.multiplier,10);assert.equal(Date.parse(event.starts_at)-Date.parse(result.server_time),30000);assert.equal(Date.parse(event.ends_at)-Date.parse(event.starts_at),60000);
@@ -35,5 +39,12 @@ test('real PostgreSQL event permissions, singleton, fixed schedule, expiry, audi
   const logs=await rpc(admin,{action:'admin_logs'});assert.equal(logs.filter(x=>x.action.startsWith('ADMIN_GOLD_EVENT')).length,3);
   const grants=(await db.query("select has_function_privilege('authenticated','public.wakppu_api_before_events(jsonb)','execute') as core,has_function_privilege('authenticated','public.wakppu_api(jsonb)','execute') as wrapper")).rows[0];assert.equal(grants.core,false);assert.equal(grants.wrapper,true);
   await db.exec('set role authenticated');await assert.rejects(rpc(player,start),{code:'PT403'});await db.exec('reset role');
+  await rpc(admin,{action:'admin_gold_event',mode:'stop'});
+  for(const options of [{multiplier:0},{multiplier:1001},{multiplier:1.5},{duration_seconds:0},{duration_seconds:86401},{delay_seconds:-1},{delay_seconds:86401}])await assert.rejects(rpc(admin,{...start,...options}),{code:'PT400'});
+  const custom=await rpc(admin,{...start,multiplier:7,duration_seconds:125,delay_seconds:0});
+  assert.equal(custom.gold_event.multiplier,7);
+  assert.equal(Date.parse(custom.gold_event.starts_at)-Date.parse(custom.server_time),0);
+  assert.equal(Date.parse(custom.gold_event.ends_at)-Date.parse(custom.gold_event.starts_at),125000);
+  assert.deepEqual((await rpc(player,{action:'status'})).gold_event,custom.gold_event);
  }finally{await db.close();}
 });

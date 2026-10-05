@@ -48,7 +48,9 @@ export function execute(store, actor, body) {
     if(body.mode==='start'){
       if(store.maintenance)error('점검 모드를 끈 뒤 이벤트를 시작하세요.',409);
       if(before&&Date.parse(before.ends_at)>Date.now())error('이미 예고/진행 중인 이벤트가 있습니다.',409);
-      const now=Date.now();store.gold_event={id:crypto.randomUUID(),multiplier:10,starts_at:new Date(now+30000).toISOString(),ends_at:new Date(now+90000).toISOString()};
+      const multiplier=body.multiplier??10,duration=body.duration_seconds??60,delay=body.delay_seconds??30;
+      if(!Number.isInteger(multiplier)||multiplier<1||multiplier>1000||!Number.isInteger(duration)||duration<1||duration>86400||!Number.isInteger(delay)||delay<0||delay>86400)error('배율과 시간은 허용 범위의 정수로 입력하세요.');
+      const now=Date.now();store.gold_event={id:crypto.randomUUID(),multiplier,starts_at:new Date(now+delay*1000).toISOString(),ends_at:new Date(now+(delay+duration)*1000).toISOString()};
     }else store.gold_event=null;
     after=store.gold_event;
   }
