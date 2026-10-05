@@ -220,7 +220,7 @@ def main():
                 page.locator('#signInBtn').click()
                 expect(page.locator('#adminBtn')).to_be_visible()
                 page.locator('#adminBtn').click()
-                page.locator('#adminResults button').filter(has_text='local-player').click()
+                page.locator('#adminResults button[data-player-id="local-player"]').click()
                 page.locator('#adminModerationReason').fill('브라우저 제재 테스트')
                 page.locator('#adminHideRanking').click()
                 expect(page.locator('#adminPlayerInfo')).to_contain_text('랭킹: 숨김')
