@@ -56,6 +56,14 @@
   const nicknameEdit = $('nicknameEdit');
   const renameNicknameInput = $('renameNicknameInput');
   const renameNicknameBtn = $('renameNicknameBtn');
+  const emailLinkForm = $('emailLinkForm');
+  const emailPasswordForm = $('emailPasswordForm');
+  const linkEmailInput = $('linkEmailInput');
+  const linkEmailBtn = $('linkEmailBtn');
+  const checkEmailLinkBtn = $('checkEmailLinkBtn');
+  const linkPasswordInput = $('linkPasswordInput');
+  const linkPasswordConfirm = $('linkPasswordConfirm');
+  const completeEmailLinkBtn = $('completeEmailLinkBtn');
 
   const NS = 'http://www.w3.org/2000/svg';
 
@@ -393,11 +401,58 @@
     accountBtn.textContent = loggedIn ? '내 계정' : '계정';
     accountForm.hidden = loggedIn;
     nicknameEdit.hidden = !loggedIn;
-    signOutBtn.hidden = !loggedIn || state.account.is_anonymous === true;
-    if (loggedIn) accountStatus.textContent = `${state.accountNickname || state.account.email || '빠른 시작 계정'} 로그인됨\n진행도와 랭킹이 서버에 저장됩니다.${state.account.is_anonymous ? '\n이 브라우저의 계정은 유지되고 닉네임만 변경됩니다.' : ''}`;
+    const guest = state.account?.is_anonymous === true;
+    const linking = !!state.account?.user_metadata?.wakppu_email_link_pending;
+    emailLinkForm.hidden = !guest;
+    emailPasswordForm.hidden = !loggedIn || guest || !linking;
+    checkEmailLinkBtn.hidden = !guest || !linking;
+    signOutBtn.hidden = !loggedIn || guest || linking;
+    if (loggedIn) accountStatus.textContent = `${state.accountNickname || state.account.email || '빠른 시작 계정'} 로그인됨\n진행도와 랭킹이 서버에 저장됩니다.${guest ? '\n이메일 연결·인증·비밀번호 설정 후 로그아웃할 수 있습니다.' : state.account.email ? '\n연결 이메일: '+state.account.email : ''}`;
   }
   function openAccount() { renderAccount(); renameNicknameInput.value = state.accountNickname; accountModal.hidden = false; }
   function accountMessage(message) { accountStatus.textContent = message; }
+  async function linkEmail() {
+    const email = linkEmailInput.value.trim();
+    if (!email || !linkEmailInput.checkValidity()) return accountMessage('올바른 이메일 주소를 입력해주세요.');
+    linkEmailBtn.disabled = true;
+    try {
+      const {data,error} = await window.WakppuAuth.linkEmail(email);
+      if (error) throw error;
+      if (data?.user) state.account = data.user;
+      renderAccount();
+      accountMessage(window.WakppuAuth.local ? '로컬 샘플 인증입니다. 인증 완료 확인을 누르세요. 실제 메일은 발송되지 않습니다.' : '인증 메일을 보냈습니다. 메일의 링크를 누른 뒤 이 화면에서 인증 완료 확인을 눌러주세요.');
+    } catch(error) { accountMessage(error.message || '이메일 연결에 실패했습니다.'); }
+    finally {linkEmailBtn.disabled = false;}
+  }
+  async function checkEmailLink() {
+    checkEmailLinkBtn.disabled = true;
+    try {
+      const {data,error} = await window.WakppuAuth.refreshUser();
+      if (error) throw error;
+      if(data?.session?.user?.id===state.account?.id) {
+        state.account=data.session.user;
+        renderAccount();
+        window.dispatchEvent(new Event('wakppu-account-restored'));
+      } else await restoreAccount();
+      if(state.account?.is_anonymous) accountMessage('메일의 인증 링크를 먼저 눌러주세요. 인증이 끝나야 비밀번호를 설정할 수 있습니다.');
+    } catch(error) { accountMessage(error.message || '이메일 인증 상태를 확인하지 못했습니다.'); }
+    finally {checkEmailLinkBtn.disabled = false;}
+  }
+  async function completeEmailLink() {
+    const password = linkPasswordInput.value;
+    if (password.length < 6) return accountMessage('비밀번호는 6자 이상 입력해주세요.');
+    if (password !== linkPasswordConfirm.value) return accountMessage('비밀번호 확인이 일치하지 않습니다.');
+    completeEmailLinkBtn.disabled = true;
+    try {
+      const {data,error} = await window.WakppuAuth.completeEmailLink(password);
+      if(error) throw error;
+      if(data?.user) state.account = data.user;
+      linkPasswordInput.value = ''; linkPasswordConfirm.value = '';
+      renderAccount();
+      accountMessage('이메일 연결이 완료됐습니다. 기존 계정과 진행도가 유지되며 이메일·비밀번호로 다시 로그인할 수 있습니다.');
+    } catch(error) { accountMessage(error.message || '비밀번호 설정에 실패했습니다.'); }
+    finally {completeEmailLinkBtn.disabled = false;}
+  }
   async function renameNickname() {
     const nickname = renameNicknameInput.value.trim();
     if (!/^[가-힣a-zA-Z0-9_]{2,16}$/.test(nickname)) return accountMessage('닉네임은 한글·영문·숫자·_로 2~16자 입력해주세요.');
@@ -914,6 +969,9 @@
   signUpBtn.addEventListener('click', signUp);
   guestStartBtn.addEventListener('click', startGuest);
   renameNicknameBtn.addEventListener('click', renameNickname);
+  linkEmailBtn.addEventListener('click', linkEmail);
+  checkEmailLinkBtn.addEventListener('click', checkEmailLink);
+  completeEmailLinkBtn.addEventListener('click', completeEmailLink);
   signOutBtn.addEventListener('click', async () => {
     window.WakppuGameTest.end();
     const result = await window.WakppuAuth?.signOut();
@@ -988,7 +1046,13 @@
   };
   spawnBall(false);
   updateAll();
-  window.addEventListener('wakppu-auth-changed', restoreAccount);
+  window.addEventListener('wakppu-auth-changed', (event) => {
+    const user=event.detail?.user;
+    if(user&&user.id===state.account?.id&&state.remoteReady){
+      state.account=user;renderAccount();
+      window.dispatchEvent(new Event('wakppu-account-restored'));
+    }else restoreAccount();
+  });
   restoreAccount();
   setInterval(() => { if (honeyActive() || !shopModal.hidden) updateAll(); }, 1000);
 })();

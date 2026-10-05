@@ -30,6 +30,7 @@ def fixture(**changes):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--node', default='node')
+    parser.add_argument('--only', help='Run one named regression check')
     args = parser.parse_args()
     OUT.mkdir(exist_ok=True)
     with socket.socket() as sock:
@@ -49,6 +50,8 @@ def main():
             browser = p.chromium.launch(channel='msedge', headless=True)
 
             def check(name, test, saved=None, mobile=False):
+                if args.only and name != args.only:
+                    return
                 context = browser.new_context(viewport={'width':390 if mobile else 1100,
                                                        'height':844 if mobile else 820},
                                               is_mobile=mobile, has_touch=mobile)
@@ -257,6 +260,50 @@ def main():
                 expect(page.locator('#adminPlayerInfo')).to_contain_text('이용 상태: 정상')
                 guest.close()
 
+            def email_link(page):
+                page.locator('#accountBtn').click()
+                page.locator('#guestNicknameInput').fill('이메일테스트')
+                page.locator('#guestStartBtn').click()
+                expect(page.locator('#account')).to_be_hidden()
+                original_id=page.evaluate('async()=> (await WakppuAuth.session()).data.session.user.id')
+                # Let the existing 500ms game-save debounce settle before the baseline.
+                page.wait_for_timeout(650)
+                original_state=page.evaluate("async()=> (await WakppuAuth.invoke('bootstrap')).state")
+                page.locator('#accountBtn').click()
+                expect(page.locator('#signOutBtn')).to_be_hidden()
+                page.locator('#linkEmailInput').fill('dodoonglee@gmail.com')
+                page.locator('#linkEmailBtn').click()
+                expect(page.locator('#accountStatus')).to_contain_text('이미 사용 중인 이메일')
+                page.locator('#linkEmailInput').fill('guest-link@example.test')
+                page.locator('#linkEmailBtn').click()
+                expect(page.locator('#checkEmailLinkBtn')).to_be_visible()
+                page.reload()
+                page.locator('#accountBtn').click()
+                expect(page.locator('#checkEmailLinkBtn')).to_be_visible()
+                page.locator('#checkEmailLinkBtn').click()
+                expect(page.locator('#emailPasswordForm')).to_be_visible()
+                expect(page.locator('#signOutBtn')).to_be_hidden()
+                page.locator('#linkPasswordInput').fill('local-sample-password')
+                page.locator('#linkPasswordConfirm').fill('different-password')
+                page.locator('#completeEmailLinkBtn').click()
+                expect(page.locator('#accountStatus')).to_contain_text('일치하지 않습니다')
+                page.locator('#linkPasswordConfirm').fill('local-sample-password')
+                page.locator('#completeEmailLinkBtn').click()
+                expect(page.locator('#signOutBtn')).to_be_visible()
+                assert page.evaluate('async()=> (await WakppuAuth.session()).data.session.user.id')==original_id
+                after=page.evaluate("async()=> (await WakppuAuth.invoke('bootstrap')).state")
+                assert after==original_state, {'before':original_state,'after':after}
+                page.screenshot(path=str(OUT/'email-link-complete.png'),full_page=True)
+                page.locator('#signOutBtn').click()
+                page.locator('#accountBtn').click()
+                page.locator('#accountEmail').fill('guest-link@example.test')
+                page.locator('#accountPassword').fill('local-sample-password')
+                page.locator('#signInBtn').click()
+                expect(page.locator('#account')).to_be_hidden()
+                assert page.evaluate('async()=> (await WakppuAuth.session()).data.session.user.id')==original_id
+                after=page.evaluate("async()=> (await WakppuAuth.invoke('bootstrap')).state")
+                assert after==original_state, {'before':original_state,'after':after}
+
             check('mobile-core', core, mobile=True)
             check('shop-unlock-save', shop_unlock, fixture(gold='2000'))
             check('rebirth', rebirth, fixture(gold='2000000', unlocked=[True,True]+[False]*11, selected=1))
@@ -269,6 +316,7 @@ def main():
             check('guest-ranking-permission', guest)
             check('admin-test-isolation', admin)
             check('ranking-hide-ban-ui', moderation)
+            check('guest-email-link-and-relogin', email_link)
             browser.close()
         (OUT/'browser-results.json').write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding='utf-8')
         for item in results:

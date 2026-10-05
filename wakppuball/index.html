@@ -100,7 +100,7 @@
       <div id="accountForm" class="account-form">
         <label>빠른 시작 닉네임<input id="guestNicknameInput" type="text" maxlength="16" placeholder="닉네임만 입력하고 바로 시작"></label>
         <button id="guestStartBtn" class="btn primary" type="button">닉네임으로 바로 시작</button>
-        <p class="account-note">빠른 시작 계정은 이 브라우저에서 계속 유지되며 닉네임만 변경할 수 있습니다. 브라우저 데이터를 삭제하면 복구할 수 없습니다. 관리자·다른 기기 이용은 처음부터 이메일 계정을 사용하세요.</p>
+        <p class="account-note">빠른 시작 계정은 이 브라우저에서 유지됩니다. 내 계정에서 이메일을 연결하면 기존 진행도를 다른 기기에서도 이어갈 수 있습니다.</p>
         <label>이메일<input id="accountEmail" type="email" autocomplete="email" placeholder="name@example.com"></label>
         <label>비밀번호<input id="accountPassword" type="password" autocomplete="current-password" minlength="6" placeholder="6자 이상"></label>
         <label>닉네임<input id="nicknameInput" type="text" maxlength="16" placeholder="2~16자, 한글/영문/숫자/_"></label>
@@ -109,6 +109,18 @@
       <div id="nicknameEdit" class="account-form" hidden>
         <label>변경할 닉네임<input id="renameNicknameInput" type="text" maxlength="16" placeholder="2~16자, 한글/영문/숫자/_"></label>
         <button id="renameNicknameBtn" class="btn primary" type="button">닉네임 변경</button>
+      </div>
+      <div id="emailLinkForm" class="account-form" hidden>
+        <p class="account-note">이메일을 연결해도 계정과 진행도는 유지됩니다. 사용 중인 다른 계정의 이메일은 연결할 수 없습니다.</p>
+        <label>연결할 이메일<input id="linkEmailInput" type="email" autocomplete="email" placeholder="name@example.com"></label>
+        <button id="linkEmailBtn" class="btn" type="button">이메일 인증 메일 보내기</button>
+      </div>
+      <button id="checkEmailLinkBtn" class="btn" type="button" hidden>인증 완료 확인</button>
+      <div id="emailPasswordForm" class="account-form" hidden>
+        <p class="account-note">이메일 인증이 완료됐습니다. 로그인에 사용할 비밀번호를 설정해주세요.</p>
+        <label>새 비밀번호<input id="linkPasswordInput" type="password" autocomplete="new-password" minlength="6" placeholder="6자 이상"></label>
+        <label>새 비밀번호 확인<input id="linkPasswordConfirm" type="password" autocomplete="new-password" minlength="6"></label>
+        <button id="completeEmailLinkBtn" class="btn primary" type="button">비밀번호 설정·연결 완료</button>
       </div>
       <button id="signOutBtn" class="btn" type="button" hidden>로그아웃</button>
     </div>
@@ -139,13 +151,13 @@
   <!-- 스크립트 순서가 중요해요: 데이터 → 사운드 → 그림 → 게임 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/server-config.js?v=20261004-account1"></script>
-  <script src="js/account.js?v=20261004-guest-reuse1"></script>
+  <script src="js/account.js?v=20261005-email-link1"></script>
   <script src="js/gold-format.js?v=20261004-admin-gold2"></script>
   <script src="js/balls-data.js?v=20261004-account1"></script>
   <script src="js/sound.js?v=20261002-progression1"></script>
   <script src="js/ball-art.js?v=20261002-progression1"></script>
   <script src="js/gold-event.js?v=20261005-event1"></script>
-  <script src="js/game.js?v=20261005-event1"></script>
+  <script src="js/game.js?v=20261005-email-link1"></script>
   <script src="js/admin-panel.js?v=20261005-event1"></script>
 </body>
 </html>
