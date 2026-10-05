@@ -16,7 +16,7 @@ export function execute(store, actor, body) {
   const error = (message, status=400) => { throw Object.assign(new Error(message), {status}); };
   if (!actor) error('로그인이 필요합니다.',401);
   if (action.startsWith('admin_') && actor.role !== 'admin') error('admin only',403);
-  if (action==='status') return {maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
+  if (action==='status') return {gold_event:store.gold_event||null,server_time:new Date().toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
   if (store.maintenance && actor.role!=='admin' && !action.startsWith('admin_')) error('점검 중입니다.',503);
   if (isBanned(actor)) error('이 계정은 이용이 제한되었습니다.',403);
   if (action==='bootstrap') return {player:{id:actor.id,nickname:actor.nickname,role:actor.role},state:actor.state,moderation:actor.moderation};
@@ -28,7 +28,17 @@ export function execute(store, actor, body) {
   if (action==='admin_logs') return store.logs.slice(-100).reverse();
   let before, after;
   const target = store.players.find(p=>p.id===body.user_id);
-  if (action==='admin_maintenance') {before={enabled:store.maintenance,message:store.message};store.maintenance=body.enabled===true;store.message=String(body.message||store.message).slice(0,500);after={enabled:store.maintenance,message:store.message};}
+  if (action==='admin_gold_event') {
+    if(!['start','stop'].includes(body.mode))error('이벤트 작업을 선택하세요.');
+    before=store.gold_event||null;
+    if(body.mode==='start'){
+      if(store.maintenance)error('점검 모드를 끈 뒤 이벤트를 시작하세요.',409);
+      if(before&&Date.parse(before.ends_at)>Date.now())error('이미 예고/진행 중인 이벤트가 있습니다.',409);
+      const now=Date.now();store.gold_event={id:crypto.randomUUID(),multiplier:10,starts_at:new Date(now+30000).toISOString(),ends_at:new Date(now+90000).toISOString()};
+    }else store.gold_event=null;
+    after=store.gold_event;
+  }
+  else if (action==='admin_maintenance') {before={enabled:store.maintenance,message:store.message};store.maintenance=body.enabled===true;store.message=String(body.message||store.message).slice(0,500);after={enabled:store.maintenance,message:store.message};}
   else if (action==='admin_announcement') {
     if(body.clear===true){before=store.announcement;after=store.announcement=null;}
     else {const message=String(body.message||'').trim();if(!message||message.length>500) error('공지는 1~500자입니다.');before=store.announcement;after=store.announcement={message,author:actor.nickname,time:new Date().toISOString()};}

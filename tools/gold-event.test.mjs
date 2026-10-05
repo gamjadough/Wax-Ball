@@ -1,0 +1,35 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import {createStore,execute} from './admin-service.mjs';
+import '../wakppuball/js/gold-event.js';
+const phase=globalThis.WakppuGoldEvent.phase;
+test('server permissions, 30s announcement / 60s event, duplicate prevention and audit',()=>{
+  const s=createStore(),admin=s.players[0],player=s.players[1],before=structuredClone(s.players);
+  assert.throws(()=>execute(s,player,{action:'admin_gold_event',mode:'start'}),{status:403});
+  assert.throws(()=>execute(s,null,{action:'admin_gold_event',mode:'start'}),{status:401});
+  execute(s,admin,{action:'admin_gold_event',mode:'start',multiplier:1000,duration:999});
+  const e=s.gold_event,start=Date.parse(e.starts_at),end=Date.parse(e.ends_at);
+  assert.equal(end-start,60000);assert.equal(e.multiplier,10);
+  assert.equal(phase(e,start-30000).seconds,30);assert.equal(phase(e,start-1).multiplier,1);
+  assert.equal(phase(e,start).multiplier,10);assert.equal(phase(e,end-1).multiplier,10);
+  assert.equal(phase(e,end).multiplier,1);
+  assert.throws(()=>execute(s,admin,{action:'admin_gold_event',mode:'start'}),{status:409});
+  assert.deepEqual(s.players,before);assert.equal(s.logs.length,1);
+  assert.deepEqual(execute(s,player,{action:'status'}).gold_event,e);
+  execute(s,admin,{action:'admin_gold_event',mode:'stop'});assert.equal(s.gold_event,null);assert.equal(s.logs.length,2);
+  s.maintenance=true;assert.throws(()=>execute(s,admin,{action:'admin_gold_event',mode:'start'}),{status:409});
+});
+test('late join / reload, server clock instead of device time, connection loss and no stacking',()=>{
+  let now=0;const root={performance:{now:()=>now}};
+  vm.runInNewContext(readFileSync(new URL('../wakppuball/js/gold-event.js',import.meta.url),'utf8'),{window:root,Date});
+  const start=Date.parse('2026-10-05T00:00:00Z'),event={multiplier:10,starts_at:new Date(start).toISOString(),ends_at:new Date(start+60000).toISOString()};
+  const data={gold_event:event,server_time:new Date(start+20000).toISOString()};
+  root.WakppuGoldEvent.update(data);root.WakppuGoldEvent.update(data);
+  assert.equal(root.WakppuGoldEvent.current().seconds,40);assert.equal(root.WakppuGoldEvent.multiplier(),10);
+  assert.equal(100*4*2*root.WakppuGoldEvent.multiplier(),8000);
+  now=12001;assert.equal(root.WakppuGoldEvent.multiplier(),1);
+  root.WakppuGoldEvent.update({gold_event:null,server_time:new Date(start+21000).toISOString()});assert.equal(root.WakppuGoldEvent.multiplier(),1);
+  assert.equal(phase({...event,multiplier:100},start).multiplier,1);
+});

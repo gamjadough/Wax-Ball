@@ -20,6 +20,7 @@
     refreshing=true;
     try{
       const result=await window.WakppuAuth.invoke('status');
+      window.WakppuGoldEvent.update(result);
       $('adminBtn').hidden=result.role!=='admin';
       if($('adminBtn').hidden)$('admin').hidden=true;
       const wasBlocked=window.wakppuServerBlocked;
@@ -56,6 +57,14 @@
     if(result){$('adminAnnouncement').value='';await refresh();status('공지를 내렸습니다.');}
   };
   bind('adminSetGold','admin_gold',()=>({mode:$('adminChangeMode').value,value:$('adminGold').value.trim()}),'선택한 플레이어의 Gold를 변경하시겠습니까?');
+  $('adminGoldEventStart').onclick=async()=>{
+    if(!confirm('모든 플레이어에게 30초 예고 후 Gold ×10 이벤트를 60초간 진행하시겠습니까?'))return;
+    if(await call('admin_gold_event',{mode:'start'})){await refresh();status('30초 예고를 시작했습니다. 이벤트는 60초 후 자동 종료됩니다.');}
+  };
+  $('adminGoldEventStop').onclick=async()=>{
+    if(!confirm('예고/진행 중인 전체 골드 이벤트를 즉시 종료하시겠습니까?'))return;
+    if(await call('admin_gold_event',{mode:'stop'})){await refresh();status('전체 골드 이벤트를 종료했습니다.');}
+  };
   bind('adminSetRebirths','admin_rebirths',()=>({mode:$('adminChangeMode').value,value:Number($('adminRebirths').value)}),'선택한 플레이어의 환생 횟수를 변경하시겠습니까?');
   bind('adminUnban','admin_unban',()=>({}));
   bind('adminHideRanking','admin_ranking_visibility',()=>({hidden:true,reason:$('adminModerationReason').value.trim()}),'선택한 플레이어를 랭킹에서 숨기시겠습니까?');
@@ -73,5 +82,7 @@
   async function test(mode){const result=await call('admin_test',{ball_id:$('adminBall').value});if(result){window.WakppuGameTest.run(mode,result.ball_id,Number($('adminHoneySeconds').value));$('admin').hidden=true;}}
   $('adminTestBall').onclick=()=>test('ball');$('adminTestLast').onclick=()=>test('last');$('adminTestBreak').onclick=()=>test('break');$('adminTestHoney').onclick=()=>test('honey');$('adminEndTest').onclick=()=>{window.WakppuGameTest.end();status('실제 진행도를 복원했습니다.');};
   $('adminLoadLogs').onclick=async()=>{const logs=await call('admin_logs');if(logs)$('adminLogs').textContent=JSON.stringify(logs,null,2);};
-  window.addEventListener('wakppu-account-restored',refresh);setInterval(refresh,10000);refresh();
+  window.addEventListener('wakppu-account-restored',refresh);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
+  window.addEventListener('focus',refresh);setInterval(refresh,3000);refresh();
 })();

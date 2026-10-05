@@ -565,7 +565,7 @@
     // 파편이 실제로 보인 뒤 Gold를 지급하고, 끝난 뒤에만 다음 공을 만듭니다.
     setTimeout(() => {
       if(epoch!==animationEpoch || window.wakppuServerBlocked)return;
-      const reward = data.reward * rebirthMultiplier(state.rebirths) * honeyMultiplier();
+      const reward = data.reward * rebirthMultiplier(state.rebirths) * honeyMultiplier() * (window.WakppuGoldEvent?.multiplier()||1);
       if (!testSnapshot) state.gold += BigInt(reward);
       updateAll();
       floatText('+' + fmt(reward) + 'G', center.x, center.y - wrap.offsetHeight * 0.32);
