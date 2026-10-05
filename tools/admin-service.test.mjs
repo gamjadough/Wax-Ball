@@ -1,6 +1,21 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createStore,execute,ballIds} from './admin-service.mjs';
+test('공지 등록·해제·재등록과 권한 차단 및 작업 기록',()=>{
+  const s=createStore(),a=s.players[0],p=s.players[1];
+  execute(s,a,{action:'admin_announcement',message:'테스트 공지'});
+  const before=structuredClone(s.announcement),progress=structuredClone(s.players);
+  for(const actor of [p,null]) assert.throws(()=>execute(s,actor,{action:'admin_announcement',clear:true}));
+  assert.deepEqual(s.announcement,before);
+  assert.throws(()=>execute(s,a,{action:'admin_announcement',message:''}));
+  execute(s,a,{action:'admin_announcement',clear:true});
+  assert.equal(execute(s,p,{action:'status'}).announcement,null);
+  assert.deepEqual(s.logs[1].before,before);assert.equal(s.logs[1].after,null);
+  assert.deepEqual(s.players,progress);
+  execute(s,a,{action:'admin_announcement',clear:true});
+  execute(s,a,{action:'admin_announcement',message:'새 공지'});
+  assert.equal(s.announcement.message,'새 공지');
+});
 test('일반 유저와 미로그인 요청은 모든 관리자 기능에서 거절',()=>{
   const s=createStore();for(const action of ['admin_search','admin_logs','admin_gold','admin_rebirths','admin_unlock','admin_discovery','admin_unban','admin_test','admin_maintenance','admin_announcement']) {
     assert.throws(()=>execute(s,s.players[1],{action}),{status:403});assert.throws(()=>execute(s,null,{action}),{status:401});

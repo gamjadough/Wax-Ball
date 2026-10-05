@@ -17,7 +17,8 @@
       $('maintenance').hidden=!$('game').hidden;
       document.querySelector('.maintenance-note').textContent=result.message||'잠시 후 다시 접속해주세요.';
       $('serverAnnouncement').hidden=!result.announcement;
-      if(result.announcement)$('serverAnnouncement').textContent=result.announcement.message;
+      $('serverAnnouncement').textContent=result.announcement?.message||'';
+      $('adminClearAnnouncement').disabled=!result.announcement;
       if(result.admin_revision!=null&&result.admin_revision!==WakppuGameTest.revision())await WakppuGameTest.restoreAccount();
     }catch(_){$('adminBtn').hidden=true;$('admin').hidden=true;}
     finally{refreshing=false;}
@@ -32,6 +33,10 @@
   bind('adminMaintenanceOn','admin_maintenance',()=>({enabled:true,message:$('adminMaintenanceMessage').value}),'점검 모드를 켜시겠습니까?');
   bind('adminMaintenanceOff','admin_maintenance',()=>({enabled:false}));
   bind('adminAnnounce','admin_announcement',()=>({message:$('adminAnnouncement').value}));
+  $('adminClearAnnouncement').onclick=async()=>{
+    const result=await call('admin_announcement',{clear:true});
+    if(result){$('adminAnnouncement').value='';await refresh();status('공지를 내렸습니다.');}
+  };
   bind('adminSetGold','admin_gold',()=>({mode:$('adminChangeMode').value,value:$('adminGold').value.trim()}),'선택한 플레이어의 Gold를 변경하시겠습니까?');
   bind('adminSetRebirths','admin_rebirths',()=>({mode:$('adminChangeMode').value,value:Number($('adminRebirths').value)}),'선택한 플레이어의 환생 횟수를 변경하시겠습니까?');
   bind('adminUnban','admin_unban',()=>({}));

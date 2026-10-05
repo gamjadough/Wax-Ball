@@ -23,7 +23,10 @@ export function execute(store, actor, body) {
   let before, after;
   const target = store.players.find(p=>p.id===body.user_id);
   if (action==='admin_maintenance') {before={enabled:store.maintenance,message:store.message};store.maintenance=body.enabled===true;store.message=String(body.message||store.message).slice(0,500);after={enabled:store.maintenance,message:store.message};}
-  else if (action==='admin_announcement') {const message=String(body.message||'').trim();if(!message||message.length>500) error('공지는 1~500자입니다.');before=store.announcement;after=store.announcement={message,author:actor.nickname,time:new Date().toISOString()};}
+  else if (action==='admin_announcement') {
+    if(body.clear===true){before=store.announcement;after=store.announcement=null;}
+    else {const message=String(body.message||'').trim();if(!message||message.length>500) error('공지는 1~500자입니다.');before=store.announcement;after=store.announcement={message,author:actor.nickname,time:new Date().toISOString()};}
+  }
   else if (action==='admin_test') {if(!ballIds.includes(body.ball_id)) error('잘못된 볼'); return {authorized:true,ball_id:body.ball_id};}
   else if (['admin_gold','admin_rebirths','admin_unlock','admin_discovery','admin_unban'].includes(action)) {
     if(!target) error('대상 계정 없음',404);
