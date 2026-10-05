@@ -21,6 +21,8 @@ test('local event: roles, 600 hits, max hammer five hits, repeated rewards, expi
  for(let i=1;i<=4;i++)assert.equal(call(hit()).reward,'0');
  const final=hit(),r=call(final);assert.equal(r.reward,'12000000000');assert.deepEqual(call(final),r);
  assert.equal(call(hit()).clicks,135);
+ p.state.hammer_level=30;
+ assert.equal(call(hit()).clicks,600);
  execute(s,admin,{action:'admin_ball_event',mode:'stop'});assert.throws(()=>call(final));
  assert.equal(s.logs.at(-1).action,'admin_ball_event');
 });

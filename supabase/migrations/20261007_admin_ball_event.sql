@@ -55,7 +55,7 @@ begin
   insert into wakppu_event_ball_progress(user_id,event_id) values(u,e->>'id') on conflict do nothing;
   select * into p from wakppu_event_ball_progress where user_id=u and event_id=e->>'id' for update;
   if p.request_id=b->>'request_id' then return p.response; end if;
-  damage:=case when s.hammer_owned and s.hammer_level between 1 and 10 then (array[3,5,8,12,18,27,40,60,90,135])[s.hammer_level] else 1 end;
+  damage:=public.wakppu_hammer_damage(s.hammer_owned,s.hammer_level);
   hits:=least(600,p.clicks+damage);
   if hits=600 then
    select coalesce(max(c.reward),1) into best from wakppu_ball_rewards c where s.unlocked_ball_ids ? c.ball_id;

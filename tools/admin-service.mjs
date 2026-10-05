@@ -35,7 +35,7 @@ export function execute(store, actor, body) {
     if(!/^[a-f0-9-]{36}$/.test(body.request_id||''))error('잘못된 타격 요청입니다.');
     store.event_progress||=new Map();const key=actor.id+':'+e.id,p=store.event_progress.get(key)||{clicks:0};
     if(p.request_id===body.request_id)return p.result;
-    const damage=actor.state.hammer_owned?[3,5,8,12,18,27,40,60,90,135][actor.state.hammer_level-1]||1:1;
+    const damage=hammerDamage(actor.state.hammer_owned,actor.state.hammer_level);
     const clicks=Math.min(600,p.clicks+damage);let reward=0n;
     if(clicks===600){
       const best=catalog.reduce((n,b)=>actor.state.unlocked_ball_ids.includes(b.id)&&BigInt(b.reward)>n?BigInt(b.reward):n,1n),g=store.gold_event;

@@ -194,6 +194,7 @@ test('PostgreSQL migrations: visibility, bans, expiry, permissions and audit',as
     await db.exec(await readFile(new URL('../supabase/migrations/20261006_zz_custom_gold_event.sql',import.meta.url),'utf8'));
     const eventMigration=await readFile(new URL('../supabase/migrations/20261007_admin_ball_event.sql',import.meta.url),'utf8');
     await db.exec(eventMigration);await db.exec(eventMigration);
+    await db.exec(await readFile(new URL('../supabase/migrations/20261007_hammer_level_30.sql',import.meta.url),'utf8'));
     const eventStart={action:'admin_ball_event',mode:'start',delay_seconds:0,duration_seconds:300};
     await assert.rejects(rpc(player,eventStart),{code:'PT403'});
     await assert.rejects(rpc(admin,eventStart,true),{code:'PT403'});
