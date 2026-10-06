@@ -195,6 +195,13 @@ test('PostgreSQL migrations: visibility, bans, expiry, permissions and audit',as
     const eventMigration=await readFile(new URL('../supabase/migrations/20261007_admin_ball_event.sql',import.meta.url),'utf8');
     await db.exec(eventMigration);await db.exec(eventMigration);
     await db.exec(await readFile(new URL('../supabase/migrations/20261007_hammer_level_30.sql',import.meta.url),'utf8'));
+    // Upgrade an already installed wrapper, preserving subsequent hammer changes.
+    const oldDefinition=(await db.query("select pg_get_functiondef('public.wakppu_api(jsonb)'::regprocedure) as definition")).rows[0].definition.replace("delete from wakppu_event_ball_progress where event_id is distinct from e->>'id';",'delete from wakppu_event_ball_progress;');
+    await db.exec(oldDefinition);
+    const cleanupMigration=await readFile(new URL('../supabase/migrations/20261007_admin_ball_cleanup_where.sql',import.meta.url),'utf8');
+    await db.exec(cleanupMigration);await db.exec(cleanupMigration);
+    const patchedDefinition=(await db.query("select pg_get_functiondef('public.wakppu_api(jsonb)'::regprocedure) as definition")).rows[0].definition;
+    assert.equal(patchedDefinition,oldDefinition.replace('delete from wakppu_event_ball_progress;',"delete from wakppu_event_ball_progress where event_id is distinct from e->>'id';"));
     const eventStart={action:'admin_ball_event',mode:'start',delay_seconds:0,duration_seconds:300};
     await assert.rejects(rpc(player,eventStart),{code:'PT403'});
     await assert.rejects(rpc(admin,eventStart,true),{code:'PT403'});
@@ -225,6 +232,7 @@ test('PostgreSQL migrations: visibility, bans, expiry, permissions and audit',as
     await db.query("update server_settings set admin_ball_event=jsonb_set(admin_ball_event,'{ends_at}',to_jsonb(clock_timestamp()-interval '1 second'))");
     await assert.rejects(rpc(player,hit()),{code:'PT409'});
     await rpc(admin,{action:'admin_ball_event',mode:'stop'});
+    assert.equal((await db.query('select count(*)::int as n from wakppu_event_ball_progress')).rows[0].n,0);
     assert.equal((await rpc(player,{action:'status'})).admin_ball_event,null);
     assert.ok((await rpc(admin,{action:'admin_logs'})).some(x=>x.action==='ADMIN_BALL_EVENT_STOP'));
     await db.exec('set role authenticated');

@@ -42,7 +42,7 @@ begin
   end if;
   update server_settings set admin_ball_event=e where id=true;
   -- Old progress is no longer reachable after a new event and does not need to accumulate.
-  delete from wakppu_event_ball_progress;
+  delete from wakppu_event_ball_progress where event_id is distinct from e->>'id';
   insert into admin_audit_logs(admin_user_id,action,reason,details) values(u,'ADMIN_BALL_EVENT_'||upper(b->>'mode'),'관리자 왁뿌볼 이벤트',jsonb_build_object('before',previous,'after',e));
   return jsonb_build_object('ok',true,'admin_ball_event',e,'server_time',instant);
  elsif a='event_ball_hit' then
