@@ -40,6 +40,8 @@
   const shopModal = $('shop');
   const honeyBtn = $('honeyBtn');
   const honeyInfo = $('honeyInfo');
+  const coatingBtn = $('coatingBtn');
+  const coatingInfo = $('coatingInfo');
   const hammerInfo = $('hammerInfo');
   const hammerBtn = $('hammerBtn');
   const accountBtn = $('accountBtn');
@@ -83,6 +85,7 @@
     hammerOwned: false,
     hammerLevel: 0,
     honeyExpiresAt: 0,
+    coatingExpiresAt: 0,
     account: null,
     accountNickname: '',
     remoteReady: false,
@@ -104,7 +107,7 @@
   const ordinaryClicks=new Map();
   function eventActive(){return WakppuAdminBallEvent.current().phase==='active';}
   function eventBaseReward(){return WAKPPU_BALLS.reduce((best,b,i)=>state.unlocked[i]&&BigInt(b.reward)>best?BigInt(b.reward):best,1n)*10n;}
-  function currentBall(){return eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:WAKPPU_BALLS[state.selected];}
+  function currentBall(){const ball=eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:WAKPPU_BALLS[state.selected];return coatingActive()?{...ball,clicks:ball.clicks*2}:ball;}
   function eventPreferenceKey(){return SAVE_KEY+':event-choice:'+state.account?.id;}
   function switchEvent(use,remember=true){
     if(use&&(!eventActive()||testSnapshot||!state.remoteReady||eventRequest))return;
@@ -141,7 +144,7 @@
       if(result.reward&&BigInt(result.reward)>0n)state.gold=BigInt(result.gold);
       if(epoch!==animationEpoch||!eventSelected){updateAll();return;}
       eventAward=result.reward?BigInt(result.reward):null;displayEventReward=eventAward||0n;
-      onHit(x,y,result.clicks-state.clicks,state.hammerOwned,true);
+      onHit(x,y,result.clicks-state.clicks,state.hammerOwned,true,result.required_clicks);
     }catch(error){await restoreAccount();hintEl.textContent=error.message||'이벤트 상태를 확인해주세요.';hintEl.classList.remove('gone');}
     finally{eventRequest=false;syncBallEvent();if(!state.busy)saveProgress();}
   }
@@ -159,6 +162,7 @@
         hammerOwned: state.hammerOwned,
         hammerLevel: state.hammerLevel,
         honeyExpiresAt: state.honeyExpiresAt,
+        coatingExpiresAt: state.coatingExpiresAt,
       }));
       queueRemoteSave();
     } catch (error) {
@@ -197,6 +201,7 @@
       state.hammerOwned = saved.hammerOwned === true;
       state.hammerLevel = state.hammerOwned && Number.isInteger(saved.hammerLevel) && saved.hammerLevel >= 1 && saved.hammerLevel <= HAMMERS.length ? saved.hammerLevel : (state.hammerOwned ? 1 : 0);
       state.honeyExpiresAt = Number.isSafeInteger(saved.honeyExpiresAt) && saved.honeyExpiresAt > Date.now() ? saved.honeyExpiresAt : 0;
+      state.coatingExpiresAt = Number.isSafeInteger(saved.coatingExpiresAt) && saved.coatingExpiresAt > Date.now() ? saved.coatingExpiresAt : 0;
     } catch (error) {
       // 손상된 데이터나 저장소 접근 오류가 있어도 게임을 시작할 수 있습니다.
       console.warn('왁뿌볼 저장 데이터를 불러오지 못했습니다.', error);
@@ -378,6 +383,7 @@
       hammer_owned: state.hammerOwned,
       hammer_level: state.hammerLevel,
       honey_expires_at: honeyActive() ? new Date(state.honeyExpiresAt).toISOString() : null,
+      coating_expires_at: coatingActive() ? new Date(state.coatingExpiresAt).toISOString() : null,
     };
   }
   function queueRemoteSave() {
@@ -426,6 +432,7 @@
       state.hammerOwned = saved.hammer_owned === true;
       state.hammerLevel = state.hammerOwned ? Math.min(HAMMERS.length, Math.max(1, Number(saved.hammer_level) || 1)) : 0;
       state.honeyExpiresAt = saved.honey_expires_at && new Date(saved.honey_expires_at).getTime() > Date.now() ? new Date(saved.honey_expires_at).getTime() : 0;
+      state.coatingExpiresAt = saved.coating_expires_at && new Date(saved.coating_expires_at).getTime() > Date.now() ? new Date(saved.coating_expires_at).getTime() : 0;
       state.remoteReady = true;
       spawnBall(false);
       updateAll();
@@ -551,11 +558,11 @@
   /* ==========================================================================
      3. 클릭 처리
      ========================================================================== */
-  function onHit(clientX, clientY, damage = null, isHammer = state.hammerOwned, authorizedEvent=false) {
+  function onHit(clientX, clientY, damage = null, isHammer = state.hammerOwned, authorizedEvent=false,requiredTotal=null) {
     if (state.busy || window.wakppuServerBlocked) return;
     if(eventSelected&&!authorizedEvent){hitEvent(clientX,clientY);return;}
     if (!testSnapshot) window.dispatchEvent(new Event('wakppu-real-play'));
-    const data = currentBall();
+    const data = requiredTotal?{...currentBall(),clicks:requiredTotal}:currentBall();
     damage = damage ?? (state.hammerOwned ? HAMMERS[state.hammerLevel - 1].cracks : 1);
 
     state.clicks = Math.min(data.clicks, state.clicks + damage);
@@ -588,6 +595,15 @@
   }
 
   function honeyActive() { return state.honeyExpiresAt > Date.now(); }
+  const COATING_COST=5000000n;
+  function coatingActive(){return state.coatingExpiresAt>Date.now();}
+  function coatingMultiplier(){return coatingActive()?3:1;}
+  function buyCoating(){
+    if(testSnapshot||eventRequest||state.busy||window.wakppuServerBlocked||coatingActive()||state.gold<COATING_COST)return;
+    state.gold-=COATING_COST;state.coatingExpiresAt=Date.now()+15*60*1000;
+    updateCracks(state.clicks/currentBall().clicks);updateAll();
+  }
+  function coatingTime(){const seconds=Math.max(0,Math.ceil((state.coatingExpiresAt-Date.now())/1000));return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;}
   function honeyMultiplier() { return honeyActive() ? 2 : 1; }
   function buyHoney() {
     if(eventRequest||(eventSelected&&state.busy)||window.wakppuServerBlocked)return;
@@ -700,7 +716,7 @@
 
   function awardBreakReward(data){
     const center=ballCenter();
-    const reward=BigInt(data.reward)*rebirthMultiplier(state.rebirths)*BigInt(honeyMultiplier())*BigInt(window.WakppuGoldEvent?.multiplier()||1);
+    const reward=BigInt(data.reward)*rebirthMultiplier(state.rebirths)*BigInt(honeyMultiplier())*BigInt(coatingMultiplier())*BigInt(window.WakppuGoldEvent?.multiplier()||1);
     if(!testSnapshot)state.gold+=reward;
     updateAll();
     floatText('+'+fmt(reward)+'G',center.x,center.y-wrap.offsetHeight*.32);
@@ -890,6 +906,7 @@
     state.gold = 0n;
     state.rebirths += 1;
     state.honeyExpiresAt = 0;
+    state.coatingExpiresAt = 0;
     state.unlocked = WAKPPU_BALLS.map((_, i) => i === 0);
     state.selected = 0;
     wrap.classList.remove('broken');
@@ -951,6 +968,10 @@
   }
 
   function renderShop() {
+    const coated=coatingActive();
+    coatingInfo.textContent=coated?`💎 보석 코팅 활성화 · 남은 시간 ${coatingTime()}\n파괴 보상 ×3 · 필요 타격량 +100% (2배)\n환생 시 효과 초기화`:'가격 5M G · 지속시간 15분\n파괴 보상 ×3 · 필요 타격량 +100% (2배)\n환생·꿀·골드 이벤트 배율과 곱연산 · 환생 시 효과 초기화';
+    coatingBtn.textContent=coated?`활성 중 · ${coatingTime()}`:'구매 · 5M G';
+    coatingBtn.disabled=coated||state.gold<COATING_COST||!!testSnapshot||state.busy||eventRequest||!!window.wakppuServerBlocked;
     const active = honeyActive();
     honeyInfo.textContent = active ? `🍯 꿀 활성화 · 남은 시간 ${honeyTime()}\nGold 획득량 ×2` : '가격 30K G\nGold 획득량 ×2 · 지속시간 10분';
     honeyBtn.textContent = active ? `활성 중 · ${honeyTime()}` : '구매 · 30K G';
@@ -1036,6 +1057,7 @@
   unlockBtn.addEventListener('click', () => unlockBall(nextLockedIndex()));
   hammerBtn.addEventListener('click', buyOrUpgradeHammer);
   honeyBtn.addEventListener('click', buyHoney);
+  coatingBtn.addEventListener('click',buyCoating);
   shopBtn.addEventListener('click', openShop);
   collectionBtn.addEventListener('click', openCollection);
   rebirthBtn.addEventListener('click', openRebirth);
@@ -1100,7 +1122,7 @@
       state.gold=mode==='unlock'?10000000000000000n:0n;state.rebirths=0;
       state.unlocked=WAKPPU_BALLS.map((b)=>mode!=='unlock'||b.id!=='whitehole');
       state.discovered=WAKPPU_BALLS.map(b=>b.id);state.selected=WAKPPU_BALLS.findIndex(b=>b.id===(mode==='unlock'?'blackhole':'whitehole'));
-      state.hammerOwned=false;state.hammerLevel=0;state.honeyExpiresAt=0;
+      state.hammerOwned=false;state.hammerLevel=0;state.honeyExpiresAt=0;state.coatingExpiresAt=0;
       wrap.classList.remove('broken');svgEl.classList.remove('instant');spawnBall(false);
       if(mode==='last'){state.clicks=WAKPPU_BALLS[state.selected].clicks-1;updateCracks(state.clicks/WAKPPU_BALLS[state.selected].clicks);}
       updateAll();hintEl.textContent=mode==='last'?'공을 한 번 누르면 화이트홀 파괴 연출이 시작됩니다.':'로컬 화이트홀 테스트';hintEl.classList.remove('gone');
@@ -1110,7 +1132,7 @@
     run(mode, ballId, seconds) {
       if(eventSelected)switchEvent(false);
       clearTimeout(remoteSaveTimer);
-      if (!testSnapshot) testSnapshot = {gold:state.gold,rebirths:state.rebirths,unlocked:[...state.unlocked],discovered:[...state.discovered],selected:state.selected,clicks:state.clicks,hammerOwned:state.hammerOwned,hammerLevel:state.hammerLevel,honeyExpiresAt:state.honeyExpiresAt};
+      if (!testSnapshot) testSnapshot = {gold:state.gold,rebirths:state.rebirths,unlocked:[...state.unlocked],discovered:[...state.discovered],selected:state.selected,clicks:state.clicks,hammerOwned:state.hammerOwned,hammerLevel:state.hammerLevel,honeyExpiresAt:state.honeyExpiresAt,coatingExpiresAt:state.coatingExpiresAt};
       clearTimeout(state.respawnTimer);
       state.selected = Math.max(0, WAKPPU_BALLS.findIndex(b=>b.id===ballId));
       state.unlocked = WAKPPU_BALLS.map(()=>true);
@@ -1129,7 +1151,7 @@
       svgEl.classList.remove('instant');
       spawnBall(false);
       state.clicks = clicks;
-      updateCracks(clicks / WAKPPU_BALLS[state.selected].clicks);
+      updateCracks(clicks / currentBall().clicks);
       updateAll();
       hintEl.textContent = '왁뿌볼을 눌러 깨보세요';
       hintEl.classList.toggle('gone', clicks > 0);
@@ -1145,5 +1167,6 @@
     }else restoreAccount();
   });
   restoreAccount();
-  setInterval(() => { if (honeyActive() || !shopModal.hidden) updateAll(); }, 1000);
+  let coatingWasActive=coatingActive();
+  setInterval(() => {const coated=coatingActive(),expired=!coated&&state.coatingExpiresAt!==0;if(coated!==coatingWasActive){coatingWasActive=coated;if(!state.busy)updateCracks(state.clicks/currentBall().clicks);}if(expired)state.coatingExpiresAt=0;if(coated||expired||honeyActive()||!shopModal.hidden)updateAll();}, 1000);
 })();

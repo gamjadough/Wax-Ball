@@ -15,7 +15,7 @@ export function guestLifecycleInfo(player,now=Date.now()) {
   return {id:player.id,nickname:player.nickname,created_at,first_play_at,eligible:!exemption,exemption,hide_at,delete_at,ranking_excluded:!exemption&&Date.parse(hide_at)<=now,delete_due:!exemption&&Date.parse(delete_at)<=now};
 }
 export function createStore() {
-  const progress = () => ({gold:10000, rebirths:0, unlocked_ball_ids:['yellow'], discovered_ball_ids:['yellow'], selected_ball_id:'yellow', current_ball_id:'yellow', current_clicks:0, hammer_owned:false, hammer_level:0, honey_expires_at:null, progress_imported_at:'local'});
+  const progress = () => ({gold:10000, rebirths:0, unlocked_ball_ids:['yellow'], discovered_ball_ids:['yellow'], selected_ball_id:'yellow', current_ball_id:'yellow', current_clicks:0, hammer_owned:false, hammer_level:0, honey_expires_at:null, coating_expires_at:null, progress_imported_at:'local'});
   return { maintenance:false, message:'현재 게임이 업데이트 중입니다.', announcement:null, logs:[], players:[
     {id:'local-admin', nickname:'감자떡 (로컬 테스트)', role:'admin', email:'dodoonglee@gmail.com', state:progress(), moderation:{status:'active'}},
     {id:'local-player', nickname:'테스트플레이어', role:'player', state:progress(), moderation:{status:'active'}},
@@ -36,15 +36,16 @@ export function execute(store, actor, body) {
     store.event_progress||=new Map();const key=actor.id+':'+e.id,p=store.event_progress.get(key)||{clicks:0};
     if(p.request_id===body.request_id)return p.result;
     const damage=hammerDamage(actor.state.hammer_owned,actor.state.hammer_level);
-    const clicks=Math.min(600,p.clicks+damage);let reward=0n;
-    if(clicks===600){
+    const coated=Date.parse(actor.state.coating_expires_at)>now,total=coated?1200:600;
+    const clicks=Math.min(total,p.clicks+damage);let reward=0n;
+    if(clicks===total){
       const best=catalog.reduce((n,b)=>actor.state.unlocked_ball_ids.includes(b.id)&&BigInt(b.reward)>n?BigInt(b.reward):n,1n),g=store.gold_event;
-      reward=best*10n*(1n<<BigInt(actor.state.rebirths))*(Date.parse(actor.state.honey_expires_at)>now?2n:1n)*BigInt(g&&now>=Date.parse(g.starts_at)&&now<Date.parse(g.ends_at)?g.multiplier:1);
+      reward=best*10n*(1n<<BigInt(actor.state.rebirths))*(Date.parse(actor.state.honey_expires_at)>now?2n:1n)*BigInt(coated?3:1)*BigInt(g&&now>=Date.parse(g.starts_at)&&now<Date.parse(g.ends_at)?g.multiplier:1);
       actor.state.gold=(BigInt(actor.state.gold)+reward).toString();
     }
     if(actor.lifecycle)actor.lifecycle.first_play_at||=new Date().toISOString();
-    const result={clicks,reward:reward.toString(),gold:String(actor.state.gold)};
-    store.event_progress.set(key,{clicks:clicks===600?0:clicks,request_id:body.request_id,result});return result;
+    const result={clicks,required_clicks:total,reward:reward.toString(),gold:String(actor.state.gold)};
+    store.event_progress.set(key,{clicks:clicks===total?0:clicks,request_id:body.request_id,result});return result;
   }
   if(action==='mark_first_play'){if(actor.lifecycle)actor.lifecycle.first_play_at||=new Date().toISOString();return {ok:true};}
   if(action==='admin_guest_accounts'){
