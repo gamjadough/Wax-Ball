@@ -10,6 +10,7 @@
 
   /* ---------- 연출 시간 (밀리초) ---------- */
   const RESPAWN_DELAY_MS = 1000;   // 깨진 뒤 새 왁뿌볼이 나오기까지 걸리는 시간
+  const HONEY_COST = 30000n;
 
   /* ---------- 화면 요소 ---------- */
   const $ = (id) => document.getElementById(id);
@@ -590,8 +591,8 @@
   function honeyMultiplier() { return honeyActive() ? 2 : 1; }
   function buyHoney() {
     if(eventRequest||(eventSelected&&state.busy)||window.wakppuServerBlocked)return;
-    if (state.gold < 30) return;
-    state.gold -= 30n;
+    if (state.gold < HONEY_COST) return;
+    state.gold -= HONEY_COST;
     state.honeyExpiresAt = Date.now() + 10 * 60 * 1000;
     updateAll();
   }
@@ -951,9 +952,9 @@
 
   function renderShop() {
     const active = honeyActive();
-    honeyInfo.textContent = active ? `🍯 꿀 활성화 · 남은 시간 ${honeyTime()}\nGold 획득량 ×2` : '가격 30G\nGold 획득량 ×2 · 지속시간 10분';
-    honeyBtn.textContent = active ? `활성 중 · ${honeyTime()}` : '구매 · 30G';
-    honeyBtn.disabled = active || state.gold < 30;
+    honeyInfo.textContent = active ? `🍯 꿀 활성화 · 남은 시간 ${honeyTime()}\nGold 획득량 ×2` : '가격 30K G\nGold 획득량 ×2 · 지속시간 10분';
+    honeyBtn.textContent = active ? `활성 중 · ${honeyTime()}` : '구매 · 30K G';
+    honeyBtn.disabled = active || state.gold < HONEY_COST;
     if (!state.hammerOwned) {
       hammerInfo.textContent = '🪵 나무 망치\n균열 증가 +3';
       hammerBtn.textContent = '구매 · 100G';

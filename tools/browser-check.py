@@ -102,7 +102,7 @@ def main():
             def shop_unlock(page):
                 page.locator('#unlockBtn').click()
                 expect(page.locator('#ballName')).to_have_text('초록색 왁뿌볼')
-                assert saved(page)['gold']=='1990'
+                assert saved(page)['gold']=='31960'
                 page.locator('#shopBtn').click()
                 page.locator('#honeyBtn').click()
                 expect(page.locator('#honeyBtn')).to_be_disabled()
@@ -305,7 +305,7 @@ def main():
                 assert after==original_state, {'before':original_state,'after':after}
 
             check('mobile-core', core, mobile=True)
-            check('shop-unlock-save', shop_unlock, fixture(gold='2000'))
+            check('shop-unlock-save', shop_unlock, fixture(gold='31970'))
             check('rebirth', rebirth, fixture(gold='2000000', unlocked=[True,True]+[False]*11, selected=1))
             check('switch-during-break', switching, fixture(gold='10', unlocked=[True,True]+[False]*11))
             check('invalid-rebirth-save', invalid_rebirth, fixture(rebirths=1024))
