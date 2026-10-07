@@ -1,0 +1,29 @@
+.transcendent-fx{position:absolute;pointer-events:none;will-change:transform,opacity;border-radius:50%;box-shadow:0 0 12px currentColor}
+.transcendent-fx.cloud{border-radius:50% 55% 40% 45%;filter:blur(3px);box-shadow:none}
+.transcendent-fx.crystal{border-radius:0;clip-path:polygon(50% 0,100% 40%,65% 100%,25% 85%,0 35%)}
+.transcendent-fx.ray{width:3px!important;border-radius:3px}
+.transcendent-fx.ember{border-radius:60% 10% 60% 40%}
+.transcendent-fx.flame{border-radius:0;clip-path:polygon(50% 0,65% 35%,85% 20%,100% 75%,55% 100%,15% 90%,0 50%,35% 65%);box-shadow:none}
+.transcendent-fx.wisp{background:radial-gradient(ellipse at 30% 30%,currentColor,transparent 70%);border-radius:50% 50% 20% 70%;box-shadow:none}
+.transcendent-fx.wax-half{background:radial-gradient(circle at 35% 30%,#ffffff88,currentColor 65%);box-shadow:inset -10px -12px 24px #0008}
+.transcendent-fx.ring{border:2px solid currentColor;box-shadow:none}
+.transcendent-idle{transform-origin:100px 100px}
+.transcendent-idle.glow{animation:transcendent-glow 4s ease-in-out infinite}
+.transcendent-idle.fire{animation:transcendent-flame 1.8s ease-in-out infinite}
+.transcendent-idle.cloud{animation:transcendent-cloud 7s ease-in-out infinite}
+.transcendent-idle.ember{animation:transcendent-heart 2.8s ease-in-out infinite}
+.transcendent-idle.gem{animation:transcendent-gem 5s ease-in-out infinite}
+.transcendent-idle.core{animation:transcendent-heart 1.5s ease-in-out infinite}
+.transcendent-idle.split{animation:transcendent-balance 6s ease-in-out infinite}
+.transcendent-idle.orbit{animation:transcendent-orbit 18s linear infinite}
+.transcendent-idle.soul{animation:transcendent-soul 6s ease-in-out infinite}
+.transcendent-idle.eternity{animation:transcendent-orbit 30s linear infinite,transcendent-glow 6s ease-in-out infinite}
+@keyframes transcendent-glow{50%{opacity:.55;transform:scale(.94)}}
+@keyframes transcendent-flame{50%{transform:translateY(-5px) skewX(4deg) scaleY(1.08)}}
+@keyframes transcendent-cloud{50%{transform:translate(9px,-4px)}}
+@keyframes transcendent-heart{50%{transform:scale(1.12);opacity:.72}}
+@keyframes transcendent-gem{50%{transform:rotate(7deg) translateY(-4px);opacity:.6}}
+@keyframes transcendent-balance{50%{transform:rotate(-8deg)}}
+@keyframes transcendent-orbit{to{transform:rotate(360deg)}}
+@keyframes transcendent-soul{50%{transform:translateY(-10px) rotate(7deg);opacity:.35}}
+@media(prefers-reduced-motion:reduce){.transcendent-idle{animation:none!important}}
