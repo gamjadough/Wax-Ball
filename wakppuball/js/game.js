@@ -385,6 +385,7 @@
       ], { duration: 380, easing: 'ease-out' });
     }
     state.busy = false;
+    if (animate) saveProgress();
     setTimeout(syncBallEvent,0);
     if (!modal.hidden) renderCollection();
   }
@@ -1288,7 +1289,8 @@
   window.WakppuItemGame={
     read:()=>({gold:String(state.gold),revision:itemRevision,ready:state.remoteReady,account:state.account?.id,test:!!testSnapshot,busy:state.busy||eventRequest,blocked:!!window.wakppuServerBlocked,honey:state.honeyExpiresAt,coating:state.coatingExpiresAt}),
     flush:async()=>{clearTimeout(remoteSaveTimer);await remoteInFlight.catch(()=>{});if(state.remoteReady)await WakppuAuth.invoke('save_progress',remotePayload());},
-    accept:data=>{state.gold=BigInt(data.gold);itemRevision=data.revision;updateAll();if(!state.busy)updateCracks(state.clicks/currentBall().clicks);},
+    // Inventory reads can lag behind unsaved ball rewards. Only transactions replace Gold.
+    accept:(data,syncGold=true)=>{if(syncGold)state.gold=BigInt(data.gold);itemRevision=data.revision;updateAll();if(!state.busy)updateCracks(state.clicks/currentBall().clicks);},
     restore:restoreAccount
   };
   restoreAccount();
