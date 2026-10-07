@@ -45,6 +45,12 @@ try:
         expiry=item()['effects']['hero_golden_honey']['expires_at']
         page.locator('[data-use="hero_golden_honey"]').click();page.wait_for_function('!WakppuItems.busy')
         assert item()['effects']['hero_golden_honey']['expires_at']==expiry+900000
+        # Consume the last copy: hide its inventory card but retain the active effect.
+        while item()['inventory']['hero_golden_honey']>0:
+            page.locator('[data-use="hero_golden_honey"]').click();page.wait_for_function('!WakppuItems.busy')
+        expect(page.locator('[data-use="hero_golden_honey"]')).to_have_count(0)
+        expect(page.locator('#itemEffects')).to_contain_text('황금')
+        assert item()['effects']['hero_golden_honey']['expires_at']>expiry+900000
         page.locator('[data-use="common_honey_small"]').click()
         expect(page.locator('#itemsStatus')).to_contain_text('강한 효과')
         assert 'common_honey_small' not in item()['effects']
@@ -79,6 +85,17 @@ try:
         page.locator('#inventoryBtn').click();page.set_viewport_size({'width':1200,'height':800})
         page.screenshot(path=str(out/'items-inventory-desktop.png'))
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+        # Render sparse and empty snapshots to verify owned-only rank filters and empty messages.
+        page.evaluate("WakppuItems.accept({...WakppuItems.data,inventory:{common_mini_hammer:1,hero_golden_honey:0}})")
+        expect(page.locator('.item-card')).to_have_count(1)
+        expect(page.locator('[data-use="hero_golden_honey"]')).to_have_count(0)
+        page.locator('[data-filter="legendary"]').click()
+        expect(page.locator('.item-card')).to_have_count(0)
+        expect(page.locator('#inventoryList')).to_contain_text('이 등급에 보유한 아이템이 없습니다.')
+        page.locator('[data-filter="all"]').click()
+        page.evaluate("WakppuItems.accept({...WakppuItems.data,inventory:{common_mini_hammer:0}})")
+        expect(page.locator('.item-card')).to_have_count(0)
+        expect(page.locator('#inventoryList')).to_contain_text('보유한 아이템이 없습니다.')
         assert not errors,errors
         browser.close();print('PASS mobile draws 1/3/5, repeated click, filter, effects, one-time reward, reload and desktop layout')
 finally:

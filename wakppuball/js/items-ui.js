@@ -15,8 +15,9 @@
   document.querySelector('#itemsPity').textContent='초월 천장: '+(data?.pity||0)+' / 100 · 다음 확정까지 '+(100-(data?.pity||0))+'회';
   document.querySelectorAll('[data-pulls]').forEach(b=>b.disabled=busy||!ready()||BigInt(game?.gold||0)<BigInt(WakppuItemData.prices[b.dataset.pulls]));
   document.querySelector('#itemsLogin').hidden=!!game?.ready;
-  const entries=defs.filter(d=>filter==='all'||d.rank===filter);
-  const markup=entries.map(d=>'<article class="item-card" style="--item-color:'+rank(d.rank).color+'"><div class="item-heading"><span>'+d.icon+'</span><h3>'+d.name+'</h3><span>×'+(data?.inventory[d.id]||0)+'</span></div><span class="item-rank">'+rank(d.rank).name+'</span><p>'+WakppuItemData.description(d)+'</p><button class="btn small" data-use="'+d.id+'" '+(busy||!ready()||!(data?.inventory[d.id]>0)?'disabled':'')+'>사용</button></article>').join('');
+  const owned=defs.filter(d=>data?.inventory[d.id]>0);
+  const entries=owned.filter(d=>filter==='all'||d.rank===filter);
+  const markup=entries.map(d=>'<article class="item-card" style="--item-color:'+rank(d.rank).color+'"><div class="item-heading"><span>'+d.icon+'</span><h3>'+d.name+'</h3><span>×'+data.inventory[d.id]+'</span></div><span class="item-rank">'+rank(d.rank).name+'</span><p>'+WakppuItemData.description(d)+'</p><button class="btn small" data-use="'+d.id+'" '+(busy||!ready()?'disabled':'')+'>사용</button></article>').join('')||'<p role="status">'+(owned.length?'이 등급에 보유한 아이템이 없습니다.':'보유한 아이템이 없습니다.')+'</p>';
   if(markup!==inventoryMarkup){document.querySelector('#inventoryList').innerHTML=markup;inventoryMarkup=markup;}
   const effective=WakppuItemData.effective(data?.effects||{},game?.honey,game?.coating);
   const winners=new Set(Object.values(effective).map(e=>e.id));
