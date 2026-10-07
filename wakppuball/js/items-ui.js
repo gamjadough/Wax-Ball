@@ -5,8 +5,8 @@
  const rank=id=>ranks.find(r=>r.id===id);
  const ready=()=>{const g=window.WakppuItemGame?.read();return g?.ready&&!g.test&&!g.busy&&!g.blocked;};
  function active(){return !!data&&defs.some(d=>{const e=data.effects[d.id];return e&&(d.seconds?e.expires_at>Date.now():e.remaining>0);});}
- function accept(next){data=next;render();window.WakppuItemGame?.accept(next);}
- async function refresh(){const seq=++sequence,account=window.WakppuItemGame?.read().account;if(!account){data=null;render();return;}try{const next=await WakppuAuth.invoke('items');if(seq===sequence&&account===window.WakppuItemGame?.read().account)accept(next);}catch(e){document.querySelector('#itemsStatus').textContent=e.message;}}
+ function accept(next,syncGold=true){if(syncGold)++sequence;data=next;window.WakppuItemGame?.accept(next,syncGold);render();}
+ async function refresh(){const seq=++sequence,account=window.WakppuItemGame?.read().account;if(!account){data=null;render();return;}try{const next=await WakppuAuth.invoke('items');if(seq===sequence&&account===window.WakppuItemGame?.read().account)accept(next,false);}catch(e){document.querySelector('#itemsStatus').textContent=e.message;}}
  function effectText(d,e){if(d.seconds){const left=Math.max(0,Math.ceil((e.expires_at-Date.now())/1000));return Math.floor(left/60)+':'+String(left%60).padStart(2,'0');}return e.remaining+(d.unit==='hit'?'타격':'회 파괴');}
  function render(){
   if(!document.querySelector('#itemsGold'))return;
@@ -27,7 +27,7 @@
   document.querySelector('#activeItemsBadge').textContent='활성 아이템 '+effects.length+'개';
  }
  async function transact(action,payload){
-  if(busy||!ready())return;busy=true;render();const account=window.WakppuItemGame.read().account;
+  if(busy||!ready())return;busy=true;++sequence;render();const account=window.WakppuItemGame.read().account;
   const status=document.querySelector('#itemsStatus');status.textContent='처리 중…';
   try{
    await window.WakppuItemGame.flush();
