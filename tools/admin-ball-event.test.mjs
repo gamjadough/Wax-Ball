@@ -17,7 +17,7 @@ test('event responses are applied immediately and older in-flight status cannot 
  assert.equal(context.WakppuAdminBallEvent.current().phase,'idle');
 });
 test('catalog matches the real migration and excludes the event ball',async()=>{
- const sql=await readFile(new URL('../supabase/migrations/20261007_admin_ball_event.sql',import.meta.url),'utf8');
+ const sql=(await readFile(new URL('../supabase/migrations/20261007_admin_ball_event.sql',import.meta.url),'utf8'))+(await readFile(new URL('../supabase/migrations/20261009_transcendent_balls.sql',import.meta.url),'utf8'));
  for(const b of await ballCatalog())assert.ok(sql.includes(`('${b.id}',${b.reward})`));
  assert.equal(ballIds.includes('admin-event'),false);
 });
@@ -28,11 +28,11 @@ test('local event: roles, 600 hits, max hammer five hits, repeated rewards, expi
  const hit=()=>({action:'event_ball_hit',event_id:s.admin_ball_event.id,request_id:crypto.randomUUID()});
  p.state.gold='0';p.state.unlocked_ball_ids=ballIds;
  for(let i=1;i<600;i++){const r=call(hit());assert.equal(r.clicks,i);assert.equal(r.reward,'0');}
- assert.equal(call(hit()).reward,'150000000');
+ assert.equal(call(hit()).reward,'10000000000');
  p.state.hammer_owned=true;p.state.hammer_level=10;p.state.rebirths=2;p.state.honey_expires_at=new Date(Date.now()+60000).toISOString();
  s.gold_event={multiplier:10,starts_at:new Date(Date.now()-1000).toISOString(),ends_at:new Date(Date.now()+60000).toISOString()};
  for(let i=1;i<=4;i++)assert.equal(call(hit()).reward,'0');
- const final=hit(),r=call(final);assert.equal(r.reward,'12000000000');assert.deepEqual(call(final),r);
+ const final=hit(),r=call(final);assert.equal(r.reward,'800000000000');assert.deepEqual(call(final),r);
  assert.equal(call(hit()).clicks,135);
  p.state.hammer_level=30;
  assert.equal(call(hit()).clicks,600);
