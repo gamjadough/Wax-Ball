@@ -236,7 +236,30 @@ body {
 .card .meta { margin: 0; font-size: 0.8rem; color: var(--muted); }
 .card-body { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 
-@media (min-width: 560px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+/* 도감은 화면 크기에 관계없이 한 페이지에 3 × 3칸을 유지합니다. */
+#collectionGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(120px, 1fr));
+  min-height: clamp(380px, 55svh, 510px);
+}
+#collectionGrid[hidden], .collection-pager[hidden], .collection-detail[hidden] { display: none; }
+#collectionGrid .collection-card {
+  font: inherit; color: var(--text); cursor: pointer; min-width: 0;
+  justify-content: center; gap: 6px; padding: 10px 5px;
+}
+#collectionGrid .collection-card:hover { border-color: var(--gold); }
+#collectionGrid .collection-card:focus-visible { outline: 3px solid #9cc8ff; outline-offset: -3px; }
+#collectionGrid .thumb { width: clamp(48px, 15vw, 80px); height: clamp(48px, 15vw, 80px); flex-shrink: 0; }
+.collection-name { font-size: clamp(.72rem, 2.8vw, .95rem); font-weight: 700; line-height: 1.3; min-height: 2.6em; display: grid; align-items: center; overflow-wrap: anywhere; }
+.collection-state { font-size: clamp(.65rem, 2.4vw, .8rem); color: var(--muted); }
+.collection-card.current .collection-state { color: var(--gold); }
+.collection-pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 12px; position: sticky; bottom: -1px; background: var(--panel); }
+.collection-pager .btn { min-height: 44px; }
+#collectionPage { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.collection-detail > .card { margin-top: 12px; padding: 22px 12px; }
+.collection-detail .thumb { width: 140px; height: 140px; }
+.collection-detail .card-body { gap: 12px; }
+.collection-detail .btn { min-height: 44px; }
 @media (max-height: 560px) { .name { font-size: 1.3rem; } .bottom { gap: 8px; padding-bottom: 12px; } }
 @media (max-width: 520px) {
   #game { padding-left: 12px; padding-right: 12px; }
