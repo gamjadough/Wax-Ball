@@ -1,0 +1,31 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import {createStore,execute} from './admin-service.mjs';
+const context={};vm.createContext(context);
+vm.runInContext(readFileSync(new URL('../wakppuball/js/balls-data.js',import.meta.url),'utf8')+';globalThis.costs=REBIRTH_COSTS;globalThis.mult=rebirthMultiplier;',context);
+test('500 rebirths preserve legacy costs and match ×1024 cost/reward growth',()=>{
+ const {costs,mult}=context;
+ assert.equal(costs.length,500);assert.equal(costs[99],3541774862152233910272000000000000000n);
+ for(let i=100;i<500;i++)assert.equal(costs[i],costs[i-1]*2n);
+ for(let i=109;i<500;i+=10)assert.equal(costs[i]/costs[i-10],1024n);
+ assert.equal(mult(500),2n**500n);
+ assert.equal(costs[499].toString().length,157);
+});
+test('local admin edits, saved huge Gold and exact ranking order',()=>{
+ const s=createStore(),admin=s.players[0],player=s.players[1],gold=context.costs[499].toString();
+ execute(s,admin,{action:'admin_gold',user_id:player.id,mode:'set',value:gold});
+ execute(s,admin,{action:'admin_rebirths',user_id:player.id,mode:'set',value:499});
+ execute(s,admin,{action:'admin_rebirths',user_id:player.id,mode:'add',value:1});
+ assert.equal(player.state.rebirths,500);
+ assert.throws(()=>execute(s,admin,{action:'admin_rebirths',user_id:player.id,mode:'add',value:1}));
+ execute(s,admin,{action:'admin_rebirths',user_id:player.id,mode:'subtract',value:1});
+ assert.equal(player.state.rebirths,499);assert.equal(BigInt(player.state.gold).toString(),gold);
+ const revision=player.state.admin_revision;
+ assert.throws(()=>execute(s,player,{action:'save_progress',gold:'0',rebirths:0,admin_revision:revision-1}),{status:409});
+ execute(s,player,{action:'save_progress',gold,rebirths:500,admin_revision:revision});
+ assert.equal(execute(s,player,{action:'bootstrap'}).state.gold,gold);
+ admin.state.rebirths=500;admin.state.gold=(BigInt(gold)+1n).toString();
+ assert.equal(execute(s,admin,{action:'rankings'})[0].nickname,admin.nickname);
+});

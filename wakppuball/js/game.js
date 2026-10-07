@@ -920,7 +920,7 @@
   function openRebirth() {
     const cost = nextRebirthCost();
     rebirthText.textContent = cost === null
-      ? '최대 환생 달성! 100회 이후 환생은 아직 지원하지 않습니다.'
+      ? '최대 환생 달성! 500회 이후 환생은 아직 지원하지 않습니다.'
       : `${fmt(cost)}G를 모으면 환생할 수 있습니다. 환생하면 Gold와 해금한 왁뿌볼이 초기화되고, 보상 배율은 ×${fmt(rebirthMultiplier(state.rebirths + 1))}이 됩니다.`;
     rebirthConfirm.hidden = cost === null;
     rebirthConfirm.disabled = cost === null || state.gold < cost;
