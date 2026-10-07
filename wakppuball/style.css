@@ -266,7 +266,14 @@ body {
   .top { justify-content: flex-start; flex-wrap: wrap; gap: 6px; padding-top: max(12px, env(safe-area-inset-top)); }
   .gold { padding: 7px 12px; gap: 7px; }.coin { width: 19px; height: 19px; }.gold-value { font-size: 1.35rem; }.gold-unit { font-size: .9rem; }
   .top-btn { padding: 8px 10px; font-size: .78rem; }.ball-wrap { width: min(82vw, 48vh, 360px); }
-  .bottom { gap: 10px; padding-bottom: max(14px, env(safe-area-inset-bottom)); }.name { font-size: 1.35rem; }.actions { width:100%; gap:7px; }.actions .btn { flex: 1 1 auto; padding: 10px 9px; font-size: .84rem; }
+  .bottom { gap: 10px; padding-bottom: max(14px, env(safe-area-inset-bottom)); }.name { font-size: 1.35rem; }
+  /* Keep navigation in a fixed row regardless of unlock label length/visibility. */
+  .actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); width:100%; gap:7px; }
+  .actions .btn { min-width:0; padding:10px 9px; font-size:.84rem; }
+  #unlockBtn { grid-column:1 / -1; grid-row:1; }
+  #inventoryBtn { grid-column:1; grid-row:2; }
+  #collectionBtn { grid-column:2; grid-row:2; }
+  #rankingBtn { grid-column:3; grid-row:2; }
   .sheet { padding: 14px; border-radius: 18px; }.grid { gap: 8px; }.card { padding: 10px 6px; }.thumb { width: 72px; height:72px; }
 }
 @media (min-width: 900px) and (min-height: 650px) {
