@@ -4,6 +4,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
 import {createStore,execute} from './admin-service.mjs';
+import {itemData,itemState,snapshot} from './items-service.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../wakppuball');
 const store=createStore(),sessions=new Map();
 const password=randomBytes(9).toString('base64url');
@@ -26,6 +27,12 @@ const server=http.createServer(async(req,res)=>{
         const token=randomBytes(24).toString('hex');sessions.set(token,actor);return send(200,{token,user:localUser(actor)});
       }
       const actor=sessions.get(req.headers.authorization?.replace(/^Bearer /,''));
+      if(req.url==='/local/items-demo'){
+        if(!actor)return send(401,{error:'로컬 로그인 필요'});
+        actor.state.gold='100000000000000000000';const inv=itemState(actor);
+        inv.inventory=Object.fromEntries(itemData.list.map(d=>[d.id,3]));inv.effects={};inv.pity=98;inv.total=98;inv.revision++;actor.state.item_revision=inv.revision;
+        return send(200,snapshot(actor));
+      }
       if(req.url==='/local/email-link'||req.url==='/local/verify-email'||req.url==='/local/complete-email-link'){
         if(!actor)return send(401,{error:'로그인이 필요합니다.'});
         if(req.url==='/local/email-link'){
@@ -52,6 +59,7 @@ const server=http.createServer(async(req,res)=>{
     if(name==='/index.html') data=Buffer.from(data.toString().replace(/<script src="js\/account.js[^\"]*"><\/script>/,'<script src="js/local-account.js"></script>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='whitehole')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-whitehole-preview.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='transcendent')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-transcendent-preview.js"></script></body>'));
+    if(name==='/index.html'&&url.searchParams.get('preview')==='items')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-items-preview.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='adminball')data=Buffer.from(data.toString().replace('</body>',`<script src="js/local-admin-ball-preview.js"></script><script>WakppuLocalAdminBallPreview(${JSON.stringify(password)});</script></body>`));
     if(name==='/index.html'&&url.searchParams.get('preview')==='rebirth500')data=Buffer.from(data.toString().replace('</body>',`<script src="js/local-rebirth-preview.js"></script><script>WakppuLocalRebirthPreview(${JSON.stringify(password)});</script></body>`));
     res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(data);
