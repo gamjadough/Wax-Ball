@@ -1,5 +1,6 @@
 import {hammerDamage} from './hammer-catalog.mjs';
 import {ballCatalog} from './event-ball-catalog.mjs';
+import {itemAction,itemState,snapshot,itemData,consumeEffects} from './items-service.mjs';
 const catalog=await ballCatalog();
 export const ballIds = catalog.map(b=>b.id);
 export function isBanned(player, now=Date.now()) {
@@ -29,6 +30,28 @@ export function execute(store, actor, body) {
   if (action==='status') return {admin_ball_always:actor.role==='admin'&&!actor.is_anonymous,admin_ball_event:store.maintenance?null:store.admin_ball_event||null,gold_event:store.gold_event||null,server_time:new Date().toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
   if (store.maintenance && actor.role!=='admin' && !action.startsWith('admin_')) error('점검 중입니다.',503);
   if (isBanned(actor)) error('이 계정은 이용이 제한되었습니다.',403);
+  if(['items','item_draw','item_use'].includes(action))return itemAction(actor,body);
+  if(action==='item_hit'){
+    const inv=itemState(actor),cached=inv.requests.get(body.request_id);if(cached){if(cached.action!==action)error('요청 ID 충돌');return structuredClone(cached.result);}
+    if(!/^[a-f0-9-]{36}$/.test(body.request_id||''))error('잘못된 요청입니다.');
+    if(body.item_revision!==inv.revision)error('아이템 상태를 다시 불러옵니다.',409);
+    const now=Date.now(),event=body.event_id;
+    let ball=catalog.find(b=>b.id===actor.state.selected_ball_id),progress;
+    if(event){
+      const e=store.admin_ball_event,always=event==='admin-always'&&actor.role==='admin'&&!actor.is_anonymous;
+      if(!always&&(!e||e.id!==event||now<Date.parse(e.starts_at)||now>=Date.parse(e.ends_at)))error('이벤트가 종료되었습니다.',409);
+      store.event_progress||=new Map();const key=actor.id+':'+event;progress=store.event_progress.get(key)||{clicks:0};store.event_progress.set(key,progress);
+      ball={clicks:600,reward:catalog.reduce((best,b)=>actor.state.unlocked_ball_ids.includes(b.id)?Math.max(best,b.reward):best,1)*10};
+    }
+    if(!ball)error('왁뿌볼을 확인해주세요.');
+    const coated=Date.parse(actor.state.coating_expires_at)>now,e=itemData.effective(inv.effects,Date.parse(actor.state.honey_expires_at),Date.parse(actor.state.coating_expires_at),now);
+    const total=itemData.required(ball.clicks,e,coated),clicks=Math.min(total,(progress?progress.clicks:(actor.state.current_clicks||0))+itemData.damage(hammerDamage(actor.state.hammer_owned,actor.state.hammer_level),e));
+    consumeEffects(actor,'hit',now);let reward=0n;
+    if(clicks===total){const g=store.gold_event;reward=itemData.reward(ball.reward,actor.state.rebirths,g&&now>=Date.parse(g.starts_at)&&now<Date.parse(g.ends_at)?g.multiplier:1,e);actor.state.gold=(BigInt(actor.state.gold)+reward).toString();consumeEffects(actor,'break',now);}
+    if(progress)progress.clicks=clicks===total?0:clicks;else actor.state.current_clicks=clicks===total?0:clicks;
+    inv.revision++;actor.state.item_revision=inv.revision;
+    const result={...snapshot(actor),clicks,required_clicks:total,reward:String(reward)};inv.requests.set(body.request_id,{action,result:structuredClone(result)});return result;
+  }
   if(action==='event_ball_hit'){
     const now=Date.now(),always=body.event_id==='admin-always'&&actor.role==='admin'&&!actor.is_anonymous;
     const e=always?{id:'admin-always',starts_at:new Date(now-1000).toISOString(),ends_at:new Date(now+1000).toISOString()}:store.admin_ball_event;
@@ -59,7 +82,7 @@ export function execute(store, actor, body) {
   if (action==='rankings') return store.players.filter(p=>!p.ranking_hidden&&!isBanned(p)&&!guestLifecycleInfo(p)?.ranking_excluded).map(p=>({nickname:p.nickname,gold:p.state.gold,rebirths:p.state.rebirths})).sort((a,b)=>b.rebirths-a.rebirths||(BigInt(a.gold)===BigInt(b.gold)?0:BigInt(a.gold)>BigInt(b.gold)?-1:1));
   if (action==='set_nickname') {if(!/^[가-힣a-zA-Z0-9_]{2,16}$/.test(body.nickname)) error('닉네임 형식 오류'); actor.nickname=body.nickname;return {nickname:actor.nickname};}
   // 로컬 샘플 진행도에만 사용됩니다. 운영 저장 검증은 별도 게임 서버에서 처리해야 합니다.
-  if (action==='save_progress') { if((body.admin_revision||0)!==(actor.state.admin_revision||0)) error('관리자가 변경한 진행도를 다시 불러옵니다.',409);for(const k of Object.keys(actor.state)) if(k in body && k!=='admin_revision') actor.state[k]=body[k];return {state:actor.state}; }
+  if (action==='save_progress') { if((body.item_revision||0)!==itemState(actor).revision)error('아이템 상태를 다시 불러옵니다.',409);if((body.admin_revision||0)!==(actor.state.admin_revision||0)) error('관리자가 변경한 진행도를 다시 불러옵니다.',409);if(Number(body.rebirths)>Number(actor.state.rebirths))itemState(actor).effects={};for(const k of Object.keys(actor.state)) if(k in body && k!=='admin_revision'&&k!=='item_revision') actor.state[k]=body[k];return {state:actor.state}; }
   if (action==='admin_search') {const q=String(body.query||'').toLowerCase();return store.players.filter(p=>[p.id,p.nickname].some(v=>v.toLowerCase().includes(q))).map(p=>({id:p.id,nickname:p.nickname,ranking_hidden:p.ranking_hidden===true,state:p.state,moderation:p.moderation}));}
   if (action==='admin_logs') return store.logs.slice(-100).reverse();
   let before, after;
