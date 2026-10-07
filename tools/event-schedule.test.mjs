@@ -1,0 +1,30 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import {createStore,execute} from './admin-service.mjs';
+const ctx={};vm.createContext(ctx);
+for(const name of ['event-schedule','gold-event'])vm.runInContext(readFileSync(new URL('../wakppuball/js/'+name+'.js',import.meta.url),'utf8'),ctx);
+test('KST conversion independent of browser timezone; calendar validation',()=>{
+ assert.equal(ctx.WakppuEventSchedule.koreaInstant('2026-10-08T20:00'),'2026-10-08T11:00:00.000Z');
+ assert.equal(ctx.WakppuEventSchedule.koreaInstant('2026-10-08T00:00:01'),'2026-10-07T15:00:01.000Z');
+ for(const value of ['','2026-02-30T20:00','2026-13-01T20:00','2026-10-08T24:00','2026-10-08T20:00Z'])assert.throws(()=>ctx.WakppuEventSchedule.koreaInstant(value));
+});
+test('schedule, shared visibility, duplicate conflict, stale cancel and permissions',()=>{
+ const s=createStore(),admin=s.players[0],player=s.players[1];
+ const starts_at=new Date(Date.now()+7*86400000).toISOString();
+ const payload={action:'admin_event_schedule',event_type:'gold',starts_at,multiplier:7,duration_seconds:600};
+ assert.throws(()=>execute(s,player,payload),{status:403});
+ const result=execute(s,admin,payload),event=result.gold_event;
+ assert.equal(event.starts_at,starts_at);assert.equal(Date.parse(event.ends_at)-Date.parse(starts_at),600000);
+ assert.equal(execute(s,player,{action:'status'}).gold_event.id,event.id);
+ assert.throws(()=>execute(s,admin,payload),{status:409});
+ assert.throws(()=>execute(s,admin,{action:'admin_event_schedule_cancel',event_type:'gold',event_id:'stale'}),{status:409});
+ assert.equal(ctx.WakppuGoldEvent.phase(event,Date.parse(starts_at)-1).phase,'scheduled');
+ assert.equal(ctx.WakppuGoldEvent.phase(event,Date.parse(starts_at)).multiplier,7);
+ assert.equal(ctx.WakppuGoldEvent.phase(event,Date.parse(event.ends_at)).multiplier,1);
+ execute(s,admin,{action:'admin_event_schedule_cancel',event_type:'gold',event_id:event.id});assert.equal(s.gold_event,null);
+ for(const change of [{starts_at:'bad'},{starts_at:new Date(Date.now()-1000).toISOString()},{starts_at:new Date(Date.now()+366*86400000).toISOString()},{multiplier:1001},{duration_seconds:0},{event_type:'bad'}])assert.throws(()=>execute(s,admin,{...payload,...change}));
+ const ball=execute(s,admin,{...payload,event_type:'ball'}).admin_ball_event;assert.equal(ball.starts_at,starts_at);
+ execute(s,admin,{action:'admin_event_schedule_cancel',event_type:'ball',event_id:ball.id});assert.equal(s.admin_ball_event,null);
+});

@@ -99,6 +99,7 @@
       const result=await window.WakppuAuth.invoke('status');
       window.WakppuGoldEvent.update(result);
       window.WakppuAdminBallEvent.update(result);
+      window.WakppuEventSchedule?.update(result);
       $('adminBtn').hidden=result.role!=='admin';
       if($('adminBtn').hidden){$('admin').hidden=true;clearSelection();}
       const wasBlocked=window.wakppuServerBlocked;

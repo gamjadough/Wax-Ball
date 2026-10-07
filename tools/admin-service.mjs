@@ -30,6 +30,23 @@ export function execute(store, actor, body) {
   if (action==='status') return {admin_ball_always:actor.role==='admin'&&!actor.is_anonymous,admin_ball_event:store.maintenance?null:store.admin_ball_event||null,gold_event:store.gold_event||null,server_time:new Date().toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
   if (store.maintenance && actor.role!=='admin' && !action.startsWith('admin_')) error('점검 중입니다.',503);
   if (isBanned(actor)) error('이 계정은 이용이 제한되었습니다.',403);
+  if(['admin_event_schedule','admin_event_schedule_cancel'].includes(action)){
+    const kind=body.event_type,key=kind==='gold'?'gold_event':'admin_ball_event';
+    if(!['gold','ball'].includes(kind))error('이벤트 종류를 선택하세요.');
+    if(action==='admin_event_schedule_cancel'){
+      if(!store[key]||store[key].id!==body.event_id)error('이벤트가 변경되었습니다. 다시 확인해주세요.',409);
+      const result=execute(store,actor,{action:kind==='gold'?'admin_gold_event':'admin_ball_event',mode:'stop'});
+      return {...result,[key]:null,server_time:new Date().toISOString()};
+    }
+    const start=Date.parse(body.starts_at),now=Date.now();
+    if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?Z$/.test(body.starts_at||'')||!Number.isFinite(start)||start<=now||start>now+365*86400000)error('서버 현재 시각 이후부터 365일 이내로 예약하세요.');
+    if(new Date(start).toISOString().slice(0,19)!==body.starts_at.slice(0,19))error('올바른 날짜와 시각을 입력하세요.');
+    execute(store,actor,{...body,action:kind==='gold'?'admin_gold_event':'admin_ball_event',mode:'start',delay_seconds:0});
+    const event=store[key],duration=Date.parse(event.ends_at)-Date.parse(event.starts_at);
+    event.starts_at=new Date(start).toISOString();event.ends_at=new Date(start+duration).toISOString();
+    store.logs.push({admin:actor.id,action:'ADMIN_EVENT_SCHEDULE',event_type:kind,after:structuredClone(event),time:new Date().toISOString()});
+    return {ok:true,[key]:event,server_time:new Date().toISOString()};
+  }
   if(['items','item_draw','item_use'].includes(action))return itemAction(actor,body);
   if(action==='item_hit'){
     const inv=itemState(actor),cached=inv.requests.get(body.request_id);if(cached){if(cached.action!==action)error('요청 ID 충돌');return structuredClone(cached.result);}
