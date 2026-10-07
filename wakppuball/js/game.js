@@ -409,9 +409,10 @@
     };
   }
   function queueRemoteSave() {
-    if (!state.remoteReady || !window.WakppuAuth || state.busy || window.WakppuItems?.busy) return;
+    if (!state.remoteReady || !window.WakppuAuth || state.busy || window.WakppuItems?.busy || window.wakppuServerBlocked) return;
     clearTimeout(remoteSaveTimer);
     remoteSaveTimer = setTimeout(() => {
+      if(window.wakppuServerBlocked)return;
       const payload=remotePayload();remoteInFlight=remoteInFlight.catch(()=>{}).then(()=>window.WakppuAuth.invoke('save_progress',payload));remoteInFlight.catch((error) => {
         if(error.status===409) restoreAccount();
         else if(error.status===503||error.status===403) {state.remoteReady=false;window.dispatchEvent(new Event('wakppu-account-restored'));}

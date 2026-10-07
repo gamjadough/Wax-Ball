@@ -91,28 +91,34 @@
   }
   let pending=false;
   async function call(action,payload={}){if(pending)return null;const version=selectionVersion;pending=true;syncSelection();try{const result=await window.WakppuAuth.invoke(action,payload);if(result.target&&version===selectionVersion&&result.target.id===target)info(result.target);status('완료했습니다.');return result;}catch(e){status(e.message);return null;}finally{pending=false;syncSelection();}}
-  let refreshing=false;
+  let refreshing=false,lastServerStatus=null,serverInstant=0,serverAnchor=0;
+  function currentSleep(){return lastServerStatus?.sleep_hours?WakppuSleepHours.at(serverInstant+Math.max(0,performance.now()-serverAnchor)):null;}
+  function renderAccess(result){
+    const banned=result.moderation?.blocked===true,sleep=currentSleep();
+    const sleeping=sleep?.active&&result.role!=='admin';
+    window.wakppuServerBlocked=banned||sleeping||(result.maintenance&&result.role!=='admin');
+    $('game').hidden=!!window.wakppuServerBlocked;
+    $('maintenance').hidden=!$('game').hidden;
+    $('maintenanceTitle').textContent=banned?'계정 이용 제한':sleeping?'수면 시간':'왁뿌볼 패치 중';
+    $('maintenanceDescription').textContent=banned?'이 계정은 현재 플레이와 저장이 제한되어 있습니다.':sleeping?'수면 시간입니다. 오전 6시부터 다시 이용할 수 있습니다.':'현재 게임이 업데이트 중입니다. 잠시 후 다시 접속해주세요.';
+    $('maintenanceLogin').textContent=banned?'계정 관리':'관리자 로그인';
+    const until=result.moderation?.suspended_until;
+    document.querySelector('.maintenance-note').textContent=banned
+      ? `사유: ${result.moderation.last_reason||'관리자 제재'}\n종료: ${until?new Date(until).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})+' (한국 시간)':'영구 밴'}`
+      : sleeping?'매일 23:00~06:00 · 한국 시간 기준 · 시간제 아이템은 계속 만료됩니다.':result.message||'잠시 후 다시 접속해주세요.';
+  }
   async function refresh(){
     if(refreshing||!window.WakppuAuth)return;
     refreshing=true;
     try{
       const result=await window.WakppuAuth.invoke('status');
+      lastServerStatus=result;serverInstant=Date.parse(result.server_time);serverAnchor=performance.now();
       window.WakppuGoldEvent.update(result);
       window.WakppuAdminBallEvent.update(result);
       $('adminBtn').hidden=result.role!=='admin';
       if($('adminBtn').hidden){$('admin').hidden=true;clearSelection();}
       const wasBlocked=window.wakppuServerBlocked;
-      const banned=result.moderation?.blocked===true;
-      window.wakppuServerBlocked=banned||(result.maintenance&&result.role!=='admin');
-      $('game').hidden=window.wakppuServerBlocked;
-      $('maintenance').hidden=!$('game').hidden;
-      $('maintenanceTitle').textContent=banned?'계정 이용 제한':'왁뿌볼 패치 중';
-      $('maintenanceDescription').textContent=banned?'이 계정은 현재 플레이와 저장이 제한되어 있습니다.':'현재 게임이 업데이트 중입니다. 잠시 후 다시 접속해주세요.';
-      $('maintenanceLogin').textContent=banned?'계정 관리':'관리자 로그인';
-      const until=result.moderation?.suspended_until;
-      document.querySelector('.maintenance-note').textContent=banned
-        ? `사유: ${result.moderation.last_reason||'관리자 제재'}\n종료: ${until?new Date(until).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})+' (한국 시간)':'영구 밴'}`
-        : result.message||'잠시 후 다시 접속해주세요.';
+      renderAccess(result);
       renderAnnouncement(result.announcement);
       $('adminClearAnnouncement').disabled=!result.announcement;
       if(!window.wakppuServerBlocked&&(wasBlocked||(result.admin_revision!=null&&result.admin_revision!==WakppuGameTest.revision())))await WakppuGameTest.restoreAccount();
@@ -189,7 +195,14 @@
   $('adminLoadLogs').onclick=async()=>{const logs=await call('admin_logs');if(logs)$('adminLogs').textContent=JSON.stringify(logs,null,2);};
   clearSelection();
   window.addEventListener('wakppu-auth-changed',invalidateSearch);
+  window.addEventListener('wakppu-auth-changed',()=>{lastServerStatus=null;refresh();});
   window.addEventListener('wakppu-account-restored',refresh);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
   window.addEventListener('focus',refresh);setInterval(refresh,3000);refresh();
+  setInterval(()=>{
+    if(!lastServerStatus?.sleep_hours||lastServerStatus.role==='admin')return;
+    const sleeping=currentSleep().active;
+    if(sleeping&&!window.wakppuServerBlocked){renderAccess(lastServerStatus);refresh();}
+    else if(!sleeping&&window.wakppuServerBlocked&&!lastServerStatus.maintenance&&!lastServerStatus.moderation?.blocked)refresh();
+  },250);
 })();

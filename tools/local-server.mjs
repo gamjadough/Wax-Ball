@@ -7,6 +7,8 @@ import {createStore,execute} from './admin-service.mjs';
 import {itemData,itemState,snapshot} from './items-service.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../wakppuball');
 const store=createStore(),sessions=new Map();
+// Test clock belongs only to this isolated local server; never exposed by production APIs.
+if(process.env.WAKPPU_LOCAL_SLEEP_TIME){const time=Date.parse(process.env.WAKPPU_LOCAL_SLEEP_TIME);if(!Number.isFinite(time))throw new Error('Invalid local sleep test time');store.sleep_now_ms=time;}
 const password=randomBytes(9).toString('base64url');
 const passwordSalt=randomBytes(16);
 const localUser=actor=>({id:actor.id,email:actor.email||null,is_anonymous:actor.role!=='admin'&&!actor.localAuth?.verified,
@@ -27,6 +29,11 @@ const server=http.createServer(async(req,res)=>{
         const token=randomBytes(24).toString('hex');sessions.set(token,actor);return send(200,{token,user:localUser(actor)});
       }
       const actor=sessions.get(req.headers.authorization?.replace(/^Bearer /,''));
+      if(req.url==='/local/sleep-clock'&&process.env.WAKPPU_LOCAL_SLEEP_TIME){
+        if(actor?.role!=='admin')return send(403,{error:'로컬 관리자 로그인 필요'});
+        const time=Date.parse(body.time);if(!Number.isFinite(time))return send(400,{error:'잘못된 로컬 테스트 시각'});
+        store.sleep_now_ms=time;return send(200,{server_time:new Date(time).toISOString()});
+      }
       if(req.url==='/local/items-demo'){
         if(!actor)return send(401,{error:'로컬 로그인 필요'});
         actor.state.gold='100000000000000000000';const inv=itemState(actor);
