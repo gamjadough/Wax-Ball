@@ -1,5 +1,5 @@
 (() => {
-  let snapshot=null,serverTime=0,received=0,lastPhase='idle',lastId=null;
+  let snapshot=null,serverTime=0,received=0,lastPhase='idle',lastId=null,always=false,lastAlways=false;
   const clock=()=>performance.now();
   function current(){
     const elapsed=clock()-received,now=serverTime+elapsed;
@@ -13,13 +13,14 @@
     if(info)info.textContent=text;
     const start=document.getElementById('adminBallEventStart'),stop=document.getElementById('adminBallEventStop');
     if(start)start.disabled=s.phase!=='idle';if(stop)stop.disabled=s.phase==='idle';
-    if(lastPhase!==s.phase||lastId!==s.event?.id){lastPhase=s.phase;lastId=s.event?.id;window.dispatchEvent(new CustomEvent('wakppu-admin-ball-event',{detail:s}));}
+    if(lastPhase!==s.phase||lastId!==s.event?.id||lastAlways!==always){lastPhase=s.phase;lastId=s.event?.id;lastAlways=always;window.dispatchEvent(new CustomEvent('wakppu-admin-ball-event',{detail:s}));}
   }
-  window.WakppuAdminBallEvent={current,update(data){
+  window.WakppuAdminBallEvent={current,alwaysAvailable:()=>always,update(data){
     const t=Date.parse(data.server_time),e=data.admin_ball_event;
     if(!Number.isFinite(t)||!Object.prototype.hasOwnProperty.call(data,'admin_ball_event'))return;
     // A status request issued before Start/Stop can finish after the mutation response.
     if(Number.isFinite(t)&&t<serverTime)return;
+    if(Object.prototype.hasOwnProperty.call(data,'admin_ball_always'))always=data.admin_ball_always===true;
     snapshot=Number.isFinite(t)&&e?.id&&Number.isFinite(Date.parse(e.starts_at))&&Date.parse(e.ends_at)>Date.parse(e.starts_at)?e:null;
     serverTime=t;received=clock();render();
   }};

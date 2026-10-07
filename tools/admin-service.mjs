@@ -26,12 +26,13 @@ export function execute(store, actor, body) {
   const error = (message, status=400) => { throw Object.assign(new Error(message), {status}); };
   if (!actor) error('로그인이 필요합니다.',401);
   if (action.startsWith('admin_') && actor.role !== 'admin') error('admin only',403);
-  if (action==='status') return {admin_ball_event:store.maintenance?null:store.admin_ball_event||null,gold_event:store.gold_event||null,server_time:new Date().toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
+  if (action==='status') return {admin_ball_always:actor.role==='admin'&&!actor.is_anonymous,admin_ball_event:store.maintenance?null:store.admin_ball_event||null,gold_event:store.gold_event||null,server_time:new Date().toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
   if (store.maintenance && actor.role!=='admin' && !action.startsWith('admin_')) error('점검 중입니다.',503);
   if (isBanned(actor)) error('이 계정은 이용이 제한되었습니다.',403);
   if(action==='event_ball_hit'){
-    const e=store.admin_ball_event,now=Date.now();
-    if(store.maintenance||!e||e.id!==body.event_id||now<Date.parse(e.starts_at)||now>=Date.parse(e.ends_at))error('관리자 볼 이벤트가 종료되었거나 아직 시작되지 않았습니다.',409);
+    const now=Date.now(),always=body.event_id==='admin-always'&&actor.role==='admin'&&!actor.is_anonymous;
+    const e=always?{id:'admin-always',starts_at:new Date(now-1000).toISOString(),ends_at:new Date(now+1000).toISOString()}:store.admin_ball_event;
+    if((store.maintenance&&!always)||!e||e.id!==body.event_id||now<Date.parse(e.starts_at)||now>=Date.parse(e.ends_at))error('관리자 볼 이벤트가 종료되었거나 아직 시작되지 않았습니다.',409);
     if(!/^[a-f0-9-]{36}$/.test(body.request_id||''))error('잘못된 타격 요청입니다.');
     store.event_progress||=new Map();const key=actor.id+':'+e.id,p=store.event_progress.get(key)||{clicks:0};
     if(p.request_id===body.request_id)return p.result;
