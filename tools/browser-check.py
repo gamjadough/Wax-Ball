@@ -131,6 +131,7 @@ def main():
             def switching(page):
                 hit(page)
                 page.locator('#collectionBtn').click()
+                page.locator('[data-detail="1"]').click()
                 button=page.locator('[data-action="select"][data-index="1"]')
                 # Ball switching during the payout delay must not cancel earned Gold.
                 if button.is_enabled(): button.click()

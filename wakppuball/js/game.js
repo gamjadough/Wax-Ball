@@ -28,6 +28,14 @@
   const modal = $('collection');
   const grid = $('collectionGrid');
   const closeBtn = $('collectionClose');
+  const collectionPager = $('collectionPager');
+  const collectionPageLabel = $('collectionPage');
+  const collectionPrev = $('collectionPrev');
+  const collectionNext = $('collectionNext');
+  const collectionDetail = $('collectionDetail');
+  const COLLECTION_PAGE_SIZE = 9;
+  let collectionPage = 0;
+  let collectionDetailIndex = null;
   const rebirthBtn = $('rebirthBtn');
   const rankingBtn = $('rankingBtn');
   const rebirthModal = $('rebirth');
@@ -993,11 +1001,43 @@
 
   /* ---------- 도감 ---------- */
   function renderCollection() {
+    const entries = [...WAKPPU_BALLS, {...ADMIN_EVENT_BALL, reward:eventBaseReward()}];
+    const pageCount = Math.ceil(entries.length / COLLECTION_PAGE_SIZE);
+    collectionPage = Math.max(0, Math.min(collectionPage, pageCount - 1));
+    const start = collectionPage * COLLECTION_PAGE_SIZE;
+    grid.innerHTML = entries.slice(start, start + COLLECTION_PAGE_SIZE).map((b, offset) => {
+      const i = start + offset;
+      const event = i === WAKPPU_BALLS.length;
+      const open = event ? eventActive() : state.unlocked[i];
+      const current = event ? eventSelected : !eventSelected && state.selected === i;
+      const status = current ? '사용 중' : event ? (open ? '이벤트 진행 중' : '이벤트 전용') : open ? '해금 완료' : '잠김';
+      return `<button type="button" class="card collection-card ${open ? '' : 'locked'} ${current ? 'current' : ''}" data-detail="${i}" aria-label="${b.name} · ${status} · 상세 보기">
+        <span class="thumb" aria-hidden="true">${buildBallThumb(b)}</span>
+        <span class="collection-name">${b.name}</span>
+        <span class="collection-state">${status}</span>
+      </button>`;
+    }).join('');
+    for (let slot = entries.slice(start, start + COLLECTION_PAGE_SIZE).length; slot < COLLECTION_PAGE_SIZE; slot += 1) {
+      grid.insertAdjacentHTML('beforeend', '<div class="collection-empty" aria-hidden="true"></div>');
+    }
+    collectionPageLabel.textContent = `${collectionPage + 1} / ${pageCount}`;
+    collectionPrev.disabled = collectionPage === 0;
+    collectionNext.disabled = collectionPage === pageCount - 1;
+    const detailOpen = collectionDetailIndex !== null;
+    grid.hidden = detailOpen;
+    collectionPager.hidden = detailOpen;
+    collectionDetail.hidden = !detailOpen;
+    if (detailOpen) renderCollectionDetail(entries[collectionDetailIndex], collectionDetailIndex);
+  }
+
+  function renderCollectionDetail(b, i) {
     const ni = nextLockedIndex();
-    grid.innerHTML = WAKPPU_BALLS.map((b, i) => {
-      const open = state.unlocked[i];
+      const event = i === WAKPPU_BALLS.length;
+      const open = event ? eventActive() : state.unlocked[i];
       let action;
-      if (open) {
+      if (event) {
+        action = `<button class="btn small" data-action="event" ${!open || eventSelected || state.busy || !state.remoteReady ? 'disabled' : ''}>${eventSelected ? '사용 중' : open ? '이벤트 볼 선택' : '이벤트 종료'}</button>`;
+      } else if (open) {
         action = !eventSelected && state.selected === i
           ? '<button class="btn small" disabled>사용 중</button>'
           : `<button class="btn small primary" data-action="select" data-index="${i}" ${state.busy ? 'disabled' : ''}>선택</button>`;
@@ -1007,22 +1047,21 @@
       } else {
         action = '<button class="btn small" disabled>잠김</button>';
       }
-      return `<article class="card ${open ? '' : 'locked'} ${!eventSelected && state.selected === i ? 'current' : ''}">
+      collectionDetail.innerHTML = `<button type="button" class="btn small" data-collection-back>〈 목록으로</button><article class="card ${open ? '' : 'locked'} ${(event ? eventSelected : !eventSelected && state.selected === i) ? 'current' : ''}">
         <div class="thumb">${buildBallThumb(b)}</div>
         <div class="card-body">
           <span class="grade" style="--grade:${b.gradeColor}">${b.grade}</span>
           <h3>${b.name}</h3>
-          <p class="meta">파괴 보상 +${fmt(b.reward)}G</p>
-          <p class="meta">${state.discovered.includes(b.id)?'발견 완료':'미발견'}</p>
+          <p class="meta">${event ? '기본 ' : ''}파괴 보상 +${fmt(b.reward)}G${event ? ' · 기존 배율 적용' : ''}</p>
+          <p class="meta">${event ? (open ? '이벤트 지급 · 반복 파괴 가능' : '이벤트 전용 · 일반 해금 불가') : state.discovered.includes(b.id) ? '발견 완료' : '미발견'}</p>
           ${action}
         </div>
       </article>`;
-    }).join('');
-    const b={...ADMIN_EVENT_BALL,reward:eventBaseReward()},active=eventActive();
-    grid.insertAdjacentHTML('beforeend',`<article class="card ${active?'':'locked'} ${eventSelected?'current':''}"><div class="thumb">${buildBallThumb(b)}</div><div class="card-body"><span class="grade" style="--grade:${b.gradeColor}">관리자</span><h3>${b.name}</h3><p class="meta">기본 파괴 보상 +${fmt(b.reward)}G · 기존 배율 적용</p><p class="meta">${active?'이벤트 지급 · 반복 파괴 가능':'이벤트 전용 · 일반 해금 불가'}</p><button class="btn small" data-action="event" ${!active||eventSelected||state.busy||!state.remoteReady?'disabled':''}>${eventSelected?'사용 중':active?'이벤트 볼 선택':'이벤트 종료'}</button></div></article>`);
   }
 
   function openCollection() {
+    collectionPage = Math.floor((eventSelected ? WAKPPU_BALLS.length : state.selected) / COLLECTION_PAGE_SIZE);
+    collectionDetailIndex = null;
     renderCollection();
     modal.hidden = false;
     closeBtn.focus();
@@ -1093,9 +1132,32 @@
     accountModal.hidden = true;
   });
 
+  function changeCollectionPage(delta) {
+    collectionPage += delta;
+    renderCollection();
+    (delta > 0 ? collectionNext : collectionPrev).disabled
+      ? grid.querySelector('[data-detail]')?.focus()
+      : (delta > 0 ? collectionNext : collectionPrev).focus();
+  }
+  collectionPrev.addEventListener('click', () => changeCollectionPage(-1));
+  collectionNext.addEventListener('click', () => changeCollectionPage(1));
   grid.addEventListener('click', (e) => {
+    const card = e.target.closest('[data-detail]');
+    if (!card) return;
+    collectionDetailIndex = Number(card.dataset.detail);
+    renderCollection();
+    collectionDetail.querySelector('[data-collection-back]').focus();
+  });
+  collectionDetail.addEventListener('click', (e) => {
+    if (e.target.closest('[data-collection-back]')) {
+      const index = collectionDetailIndex;
+      collectionDetailIndex = null;
+      renderCollection();
+      grid.querySelector(`[data-detail="${index}"]`)?.focus();
+      return;
+    }
     const btn = e.target.closest('button[data-action]');
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
     if(btn.dataset.action==='event'){switchEvent(true);closeCollection();return;}
     const index = Number(btn.dataset.index);
     if (btn.dataset.action === 'select') selectBall(index);
