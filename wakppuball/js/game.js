@@ -110,6 +110,7 @@
   let testSnapshot = null;
   let animationEpoch = 0;
   let whiteholeEffect = null;
+  let transcendentEffect = null;
   let eventSelected=false,eventId=null,eventSeen=null,eventRequest=false,eventAward=null,eventClicks=0;
   let adminFade=null,displayEventReward=0n;
   const ordinaryClicks=new Map();
@@ -358,6 +359,7 @@
   function spawnBall(animate) {
     adminFade?.cancel();adminFade=null;
     whiteholeEffect?.cancel();whiteholeEffect=null;
+    transcendentEffect?.cancel();transcendentEffect=null;
     animationEpoch++;
     clearTimeout(state.respawnTimer);
     const data = currentBall();
@@ -698,6 +700,13 @@
         if(earned!==null){updateAll();const c=ballCenter();floatText('+'+fmt(earned)+'G',c.x,c.y-wrap.offsetHeight*.32);}
         eventClicks=0;spawnBall(true);updateAll();
       },1150);return;
+    }
+    if(data.grade==='초월'){
+      transcendentEffect=WakppuTranscendent.play({ball:data,wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,
+        valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,
+        reward:()=>awardBreakReward(data),
+        respawn:()=>{svgEl.classList.remove('instant');spawnBall(true);if(!testSnapshot)hintEl.textContent='왁뿌볼을 눌러 깨보세요';}
+      });return;
     }
     if(data.id==='whitehole'){
       whiteholeEffect?.cancel();
