@@ -42,6 +42,41 @@
     $('serverAnnouncement').hidden=true;
   };
   function status(message){$('adminStatus').textContent=message;}
+  const eventTimeFields=new Map();
+  function timeSeconds(id){
+    const {input,unit} = eventTimeFields.get(id),raw=input.value.trim();
+    const value=Number(raw)*(unit.value==='minutes'?60:1),seconds=Math.round(value);
+    return raw!==''&&Number.isFinite(value)&&Math.abs(value-seconds)<1e-7&&seconds>=Number(input.dataset.minSeconds)&&seconds<=86400?seconds:null;
+  }
+  function eventTimes(durationId,delayId){
+    const duration_seconds=timeSeconds(durationId),delay_seconds=timeSeconds(delayId);
+    for(const id of [durationId,delayId])if(timeSeconds(id)===null){status('진행 시간은 1초~24시간, 대기는 0초~24시간으로 입력하세요. 분 단위 소수는 초로 환산했을 때 정수여야 합니다.');$(id).focus();return null;}
+    return {duration_seconds,delay_seconds};
+  }
+  for(const [durationId,delayId] of [['adminBallEventDuration','adminBallEventDelay'],['adminEventDuration','adminEventDelay']]){
+    const preview=document.createElement('p');preview.id=durationId+'Preview';preview.setAttribute('role','status');
+    $(delayId).parentElement.after(preview);
+    const updatePreview=()=>{
+      const duration=timeSeconds(durationId),delay=timeSeconds(delayId);
+      if(duration===null||delay===null){preview.textContent='진행 1초~24시간 · 대기 0초~24시간 (0이면 즉시 시작)';return;}
+      const label=id=>{const f=eventTimeFields.get(id);return f.input.value+(f.unit.value==='minutes'?'분':'초')+' = '+timeSeconds(id).toLocaleString('ko-KR')+'초';};
+      const end=new Date(Date.now()+(duration+delay)*1000).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'});
+      preview.textContent='진행 '+label(durationId)+' · 대기 '+label(delayId)+' · 지금 시작 시 예상 종료 '+end+' (한국 시간)';
+    };
+    for(const id of [durationId,delayId]){
+      const input=$(id),label=input.parentElement,isDelay=id===delayId;
+      label.firstChild.textContent=isDelay?'시작 전 대기 시간':'진행 시간';
+      input.dataset.minSeconds=isDelay?'0':'1';input.step='any';input.value=String(Number(input.value)/60);input.min=isDelay?'0':String(1/60);input.max='1440';
+      const unit=document.createElement('select');unit.id=id+'Unit';unit.setAttribute('aria-label',(isDelay?'시작 전 대기':'진행')+' 시간 단위');
+      unit.append(new Option('분','minutes'),new Option('초','seconds'));label.append(unit);
+      eventTimeFields.set(id,{input,unit});let previousUnit='minutes';
+      unit.addEventListener('change',()=>{if(input.value.trim()!==''&&Number.isFinite(Number(input.value)))input.value=String(Number((Number(input.value)*(previousUnit==='minutes'?60:1)/(unit.value==='minutes'?60:1)).toPrecision(15)));previousUnit=unit.value;input.min=isDelay?'0':unit.value==='minutes'?String(1/60):'1';input.max=unit.value==='minutes'?'1440':'86400';input.step=unit.value==='minutes'?'any':'1';updatePreview();});
+      input.addEventListener('input',updatePreview);
+    }
+    updatePreview();
+    $('admin').addEventListener('click',updatePreview);
+    $('adminBtn').addEventListener('click',updatePreview);
+  }
   function info(player){
     if(target!==player.id){selectionVersion++;$('adminModerationReason').value='';}
     target=player.id;
@@ -85,8 +120,8 @@
     finally{refreshing=false;}
   }
   $('adminBallEventStart').onclick=async()=>{
-    const duration_seconds=Number($('adminBallEventDuration').value),delay_seconds=Number($('adminBallEventDelay').value);
-    if(!Number.isInteger(duration_seconds)||duration_seconds<1||duration_seconds>86400||!Number.isInteger(delay_seconds)||delay_seconds<0||delay_seconds>86400)return status('시간을 허용 범위의 정수로 입력하세요.');
+    const times=eventTimes('adminBallEventDuration','adminBallEventDelay');if(!times)return;
+    const {duration_seconds,delay_seconds}=times;
     const result=await call('admin_ball_event',{mode:'start',duration_seconds,delay_seconds});
     if(result){window.WakppuAdminBallEvent.update(result);await refresh();status('관리자 왁뿌볼 이벤트를 설정했습니다.');}
   };
@@ -121,9 +156,10 @@
   };
   bind('adminSetGold','admin_gold',()=>({mode:$('adminChangeMode').value,value:$('adminGold').value.trim()}),'선택한 플레이어의 Gold를 변경하시겠습니까?');
   $('adminGoldEventStart').onclick=async()=>{
-    const fields=[['adminEventMultiplier',1,1000],['adminEventDuration',1,86400],['adminEventDelay',0,86400]];
+    const fields=[['adminEventMultiplier',1,1000]];
     for(const [id,min,max] of fields){const input=$(id),value=Number(input.value);if(input.value.trim()===''||!Number.isInteger(value)||value<min||value>max){status('배율과 시간은 표시된 범위의 정수로 입력하세요.');input.reportValidity();input.focus();return;}}
-    const multiplier=Number($('adminEventMultiplier').value),duration_seconds=Number($('adminEventDuration').value),delay_seconds=Number($('adminEventDelay').value);
+    const times=eventTimes('adminEventDuration','adminEventDelay');if(!times)return;
+    const multiplier=Number($('adminEventMultiplier').value),{duration_seconds,delay_seconds}=times;
     if(!confirm(`모든 플레이어에게 ${delay_seconds}초 대기 후 Gold ×${multiplier} 이벤트를 ${duration_seconds}초간 진행하시겠습니까?`))return;
     const result=await call('admin_gold_event',{mode:'start',multiplier,duration_seconds,delay_seconds});
     if(result){window.WakppuGoldEvent.update(result);await refresh();status(`Gold ×${multiplier} 이벤트를 설정했습니다. 대기 ${delay_seconds}초 · 진행 ${duration_seconds}초`);}
