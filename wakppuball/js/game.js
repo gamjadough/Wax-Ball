@@ -113,7 +113,9 @@
   let eventSelected=false,eventId=null,eventSeen=null,eventRequest=false,eventAward=null,eventClicks=0;
   let adminFade=null,displayEventReward=0n;
   const ordinaryClicks=new Map();
-  function eventActive(){return WakppuAdminBallEvent.current().phase==='active';}
+  let accountRole=null,adminSeenEvent=null;
+  function adminBallAlwaysAvailable(){return accountRole==='admin'&&state.account&&!state.account.is_anonymous&&WakppuAdminBallEvent.alwaysAvailable();}
+  function eventActive(){return !!adminBallAlwaysAvailable()||WakppuAdminBallEvent.current().phase==='active';}
   function eventBaseReward(){return WAKPPU_BALLS.reduce((best,b,i)=>state.unlocked[i]&&BigInt(b.reward)>best?BigInt(b.reward):best,1n)*10n;}
   function currentBall(){const ball=eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:WAKPPU_BALLS[state.selected];return coatingActive()?{...ball,clicks:ball.clicks*2}:ball;}
   function eventPreferenceKey(){return SAVE_KEY+':event-choice:'+state.account?.id;}
@@ -127,7 +129,15 @@
   }
   function syncBallEvent(){
     const s=WakppuAdminBallEvent.current();
-    if(s.phase==='active'&&state.remoteReady&&!testSnapshot){
+    if(adminBallAlwaysAvailable()&&state.remoteReady&&!testSnapshot){
+      if(eventRequest||(state.busy&&!eventSelected))return;
+      const initial=eventId!=='admin-always';eventId='admin-always';
+      if(initial){
+        let choice;try{choice=JSON.parse(localStorage.getItem(eventPreferenceKey()));}catch(_){}
+        if(choice?.id===eventId&&choice.use===true)switchEvent(true);
+      }
+      if(s.phase==='active'&&adminSeenEvent!==s.event.id){adminSeenEvent=s.event.id;switchEvent(true);}
+    }else if(s.phase==='active'&&state.remoteReady&&!testSnapshot){
       if(eventRequest||(state.busy&&!eventSelected))return;
       if(eventSeen!==s.event.id){
         if(eventSelected)switchEvent(false);eventSeen=s.event.id;eventId=s.event.id;eventClicks=0;
@@ -409,7 +419,7 @@
     if (!window.WakppuAuth) return;
     if(eventSelected)switchEvent(false,false);eventSeen=null;eventId=null;ordinaryClicks.clear();
     if(testSnapshot) window.WakppuGameTest.end();
-    state.remoteReady = false;
+    state.remoteReady = false;accountRole=null;adminSeenEvent=null;
     clearTimeout(remoteSaveTimer);
     const { data: { session } } = await window.WakppuAuth.session();
     state.account = session?.user ?? null;
@@ -419,6 +429,7 @@
       const data = await window.WakppuAuth.invoke('bootstrap');
       state.accountNickname = data.player?.nickname || '';
       const saved = data.state;
+      accountRole=data.player?.role||null;
       state.adminRevision = saved.admin_revision || 0;
       // 계정 도입 전의 이 기기 저장 데이터는 첫 로그인 때 한 번만 서버 계정으로 옮깁니다.
       if (!saved.progress_imported_at && !saved.admin_revision) {
@@ -1010,7 +1021,7 @@
       const event = i === WAKPPU_BALLS.length;
       const open = event ? eventActive() : state.unlocked[i];
       const current = event ? eventSelected : !eventSelected && state.selected === i;
-      const status = current ? '사용 중' : event ? (open ? '이벤트 진행 중' : '이벤트 전용') : open ? '해금 완료' : '잠김';
+      const status = current ? '사용 중' : event ? (adminBallAlwaysAvailable() ? '관리자 상시 이용' : open ? '이벤트 진행 중' : '이벤트 전용') : open ? '해금 완료' : '잠김';
       return `<button type="button" class="card collection-card ${open ? '' : 'locked'} ${current ? 'current' : ''}" data-detail="${i}" aria-label="${b.name} · ${status} · 상세 보기">
         <span class="thumb" aria-hidden="true">${buildBallThumb(b)}</span>
         <span class="collection-name">${b.name}</span>
@@ -1036,7 +1047,7 @@
       const open = event ? eventActive() : state.unlocked[i];
       let action;
       if (event) {
-        action = `<button class="btn small" data-action="event" ${!open || eventSelected || state.busy || !state.remoteReady ? 'disabled' : ''}>${eventSelected ? '사용 중' : open ? '이벤트 볼 선택' : '이벤트 종료'}</button>`;
+        action = `<button class="btn small" data-action="event" ${!open || eventSelected || state.busy || !state.remoteReady ? 'disabled' : ''}>${eventSelected ? '사용 중' : adminBallAlwaysAvailable() ? '관리자 볼 선택' : open ? '이벤트 볼 선택' : '이벤트 종료'}</button>`;
       } else if (open) {
         action = !eventSelected && state.selected === i
           ? '<button class="btn small" disabled>사용 중</button>'
@@ -1053,7 +1064,7 @@
           <span class="grade" style="--grade:${b.gradeColor}">${b.grade}</span>
           <h3>${b.name}</h3>
           <p class="meta">${event ? '기본 ' : ''}파괴 보상 +${fmt(b.reward)}G${event ? ' · 기존 배율 적용' : ''}</p>
-          <p class="meta">${event ? (open ? '이벤트 지급 · 반복 파괴 가능' : '이벤트 전용 · 일반 해금 불가') : state.discovered.includes(b.id) ? '발견 완료' : '미발견'}</p>
+          <p class="meta">${event ? (adminBallAlwaysAvailable() ? '관리자 상시 이용 · 반복 파괴 가능' : open ? '이벤트 지급 · 반복 파괴 가능' : '이벤트 전용 · 일반 해금 불가') : state.discovered.includes(b.id) ? '발견 완료' : '미발견'}</p>
           ${action}
         </div>
       </article>`;
