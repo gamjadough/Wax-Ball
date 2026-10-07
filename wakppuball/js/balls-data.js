@@ -12,6 +12,12 @@ const REBIRTH_COSTS = (() => {
     if ((rebirth - 26) % 10 !== 9) cost *= 2n;
     costs.push(cost);
   }
+  // Keep 1~100 unchanged. From 101 onward each step doubles the cost,
+  // matching the unchanged reward growth: every ten rebirths is exactly ×1,024.
+  for (let rebirth = 101; rebirth <= 500; rebirth += 1) {
+    cost *= 2n;
+    costs.push(cost);
+  }
   return costs;
 })();
 const rebirthMultiplier = (count) => 2n ** BigInt(count);

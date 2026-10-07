@@ -23,7 +23,12 @@ test('units beyond Ud and scientific fallback remain exact for BigInt and saved 
   }
   assert.equal(compact(999949n*10n**33n),'999.9Ud');
   assert.equal(compact(999950n*10n**33n),'1Dd');
-  assert.equal(compact(10n**96n),'1e96');
-  assert.equal(compact(10n**100n-1n),'1e100');
-  assert.equal(compact(123n*10n**118n),'1.2e120');
+  assert.equal(compact(10n**96n),'1UTg');
+  assert.equal(compact(10n**100n-1n),'10DTg');
+  assert.equal(compact(123n*10n**118n),'1.2NoTg');
+});
+test('named units through centillion and 1000-digit scientific fallback',()=>{
+ const checkpoints=[[123,'Qag'],[153,'Qig'],[156,'UQig'],[183,'Sxg'],[213,'Spg'],[243,'Ocg'],[273,'Nog'],[300,'NoNog'],[303,'Ce']];
+ for(const [exponent,suffix] of checkpoints){const base=10n**BigInt(exponent);assert.equal(compact(base),`1${suffix}`);assert.equal(compact(base-1n),`1${suffix}`);}
+ assert.equal(compact(10n**306n),'1e306');assert.equal(compact(10n**1000n-1n),'1e1000');
 });

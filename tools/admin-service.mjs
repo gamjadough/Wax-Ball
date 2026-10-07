@@ -56,7 +56,7 @@ export function execute(store, actor, body) {
     return {total:rows.length,page,rows:rows.slice(page*50,(page+1)*50),server_time:new Date().toISOString(),cleanup_enabled:false};
   }
   if (action==='bootstrap') return {player:{id:actor.id,nickname:actor.nickname,role:actor.role},state:actor.state,moderation:actor.moderation};
-  if (action==='rankings') return store.players.filter(p=>!p.ranking_hidden&&!isBanned(p)&&!guestLifecycleInfo(p)?.ranking_excluded).map(p=>({nickname:p.nickname,gold:p.state.gold,rebirths:p.state.rebirths})).sort((a,b)=>b.rebirths-a.rebirths||b.gold-a.gold);
+  if (action==='rankings') return store.players.filter(p=>!p.ranking_hidden&&!isBanned(p)&&!guestLifecycleInfo(p)?.ranking_excluded).map(p=>({nickname:p.nickname,gold:p.state.gold,rebirths:p.state.rebirths})).sort((a,b)=>b.rebirths-a.rebirths||(BigInt(a.gold)===BigInt(b.gold)?0:BigInt(a.gold)>BigInt(b.gold)?-1:1));
   if (action==='set_nickname') {if(!/^[가-힣a-zA-Z0-9_]{2,16}$/.test(body.nickname)) error('닉네임 형식 오류'); actor.nickname=body.nickname;return {nickname:actor.nickname};}
   // 로컬 샘플 진행도에만 사용됩니다. 운영 저장 검증은 별도 게임 서버에서 처리해야 합니다.
   if (action==='save_progress') { if((body.admin_revision||0)!==(actor.state.admin_revision||0)) error('관리자가 변경한 진행도를 다시 불러옵니다.',409);for(const k of Object.keys(actor.state)) if(k in body && k!=='admin_revision') actor.state[k]=body[k];return {state:actor.state}; }
@@ -96,10 +96,12 @@ export function execute(store, actor, body) {
     if(!target) error('대상 계정 없음',404);
     before=structuredClone({state:target.state,moderation:target.moderation,ranking_hidden:target.ranking_hidden===true});
     if(action==='admin_gold'||action==='admin_rebirths') {
-      const key=action==='admin_gold'?'gold':'rebirths';const n=Number(body.value);if(!Number.isSafeInteger(n)||n<0) error('0 이상의 정수를 입력하세요.');
+      const key=action==='admin_gold'?'gold':'rebirths';if(!/^[0-9]{1,1000}$/.test(String(body.value))) error('0 이상의 정수를 입력하세요.');
+      const n=BigInt(body.value);
       if(!['add','subtract','set'].includes(body.mode)) error('변경 방식 오류');
-      const v=body.mode==='set'?n:body.mode==='add'?target.state[key]+n:target.state[key]-n;
-      if(!Number.isSafeInteger(v)||v<0||(key==='rebirths'&&v>100)) error('허용 범위를 벗어났습니다.');target.state[key]=v;
+      const v=body.mode==='set'?n:body.mode==='add'?BigInt(target.state[key])+n:BigInt(target.state[key])>n?BigInt(target.state[key])-n:0n;
+      if(v.toString().length>1000||(key==='rebirths'&&v>500n)) error('허용 범위를 벗어났습니다.');target.state[key]=key==='rebirths'?Number(v):v<=BigInt(Number.MAX_SAFE_INTEGER)?Number(v):v.toString();
+      target.state.admin_revision=(target.state.admin_revision||0)+1;
     } else if(action==='admin_ban') {
       if(target.role==='admin') error('관리자 계정은 밴할 수 없습니다.');
       const reason=String(body.reason||'').trim();

@@ -60,13 +60,14 @@ test('잘못된 제재 요청은 상태와 기록을 변경하지 않음',()=>{
 test('Gold 수정은 다른 진행도 유지, 잘못된 값 거절, 변경 전후 기록',()=>{
   const s=createStore(),a=s.players[0],p=s.players[1];const original=structuredClone(p.state);
   execute(s,a,{action:'admin_gold',user_id:p.id,mode:'add',value:500});assert.equal(p.state.gold,10500);
-  assert.deepEqual({...p.state,gold:original.gold},original);assert.equal(s.logs[0].before.state.gold,10000);assert.equal(s.logs[0].after.state.gold,10500);
+  assert.deepEqual({...p.state,gold:original.gold,admin_revision:0},{...original,admin_revision:0});assert.equal(p.state.admin_revision,1);assert.equal(s.logs[0].before.state.gold,10000);assert.equal(s.logs[0].after.state.gold,10500);
   assert.throws(()=>execute(s,a,{action:'admin_gold',user_id:p.id,mode:'set',value:-1}));assert.equal(p.state.gold,10500);
 });
 test('환생 범위·정지 해제·도감 초기화와 해금 분리',()=>{
   const s=createStore(),a=s.players[0],p=s.players[1];execute(s,a,{action:'admin_rebirths',user_id:p.id,mode:'set',value:5});assert.equal(p.state.rebirths,5);
   execute(s,a,{action:'admin_rebirths',user_id:p.id,mode:'set',value:100});assert.equal(p.state.rebirths,100);
-  assert.throws(()=>execute(s,a,{action:'admin_rebirths',user_id:p.id,mode:'set',value:101}));
+  execute(s,a,{action:'admin_rebirths',user_id:p.id,mode:'set',value:500});assert.equal(p.state.rebirths,500);
+  assert.throws(()=>execute(s,a,{action:'admin_rebirths',user_id:p.id,mode:'set',value:501}));
   execute(s,a,{action:'admin_unlock',user_id:p.id,mode:'all'});assert.deepEqual(p.state.unlocked_ball_ids,ballIds);
   execute(s,a,{action:'admin_discovery',user_id:p.id,mode:'reset_all'});assert.deepEqual(p.state.discovered_ball_ids,[]);assert.deepEqual(p.state.unlocked_ball_ids,ballIds);
   execute(s,a,{action:'admin_unban',user_id:p.id});assert.equal(p.moderation.status,'active');
