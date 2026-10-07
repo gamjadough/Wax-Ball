@@ -1189,6 +1189,20 @@
 
   loadProgress();
   window.WakppuGameTest = {
+    prepareLocalTranscendent(id='starlight',mode='last') {
+      if(!window.WakppuAuth?.local)return;
+      const index=WAKPPU_BALLS.findIndex(b=>b.id===id&&b.grade==='초월');if(index<0)return;
+      if(testSnapshot)this.end();
+      clearTimeout(state.respawnTimer);
+      state.gold=mode==='unlock'?BigInt(WAKPPU_BALLS[index].price):0n;state.rebirths=0;
+      state.unlocked=WAKPPU_BALLS.map((b,i)=>i<index||(mode!=='unlock'&&i===index));
+      state.discovered=WAKPPU_BALLS.filter((b,i)=>state.unlocked[i]).map(b=>b.id);
+      state.selected=mode==='unlock'?index-1:index;
+      state.hammerOwned=false;state.hammerLevel=0;state.honeyExpiresAt=0;state.coatingExpiresAt=0;
+      wrap.classList.remove('broken');svgEl.classList.remove('instant');spawnBall(false);
+      if(mode==='last'){state.clicks=currentBall().clicks-1;updateCracks(state.clicks/currentBall().clicks);}
+      updateAll();hintEl.textContent='초월 로컬 미리보기';hintEl.classList.remove('gone');
+    },
     prepareLocalWhitehole(mode='last') {
       if(!window.WakppuAuth?.local)return;
       if(testSnapshot)this.end();
