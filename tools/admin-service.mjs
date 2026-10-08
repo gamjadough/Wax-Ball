@@ -1,6 +1,7 @@
 import {hammerDamage} from './hammer-catalog.mjs';
 import {ballCatalog} from './event-ball-catalog.mjs';
 import {itemAction,itemState,snapshot,itemData,consumeEffects} from './items-service.mjs';
+import {limitedAction,limitedDrop} from './limited-service.mjs';
 const catalog=await ballCatalog();
 export const ballIds = catalog.map(b=>b.id);
 export function isBanned(player, now=Date.now()) {
@@ -30,6 +31,7 @@ export function execute(store, actor, body) {
   if (action==='status') return {admin_ball_always:actor.role==='admin'&&!actor.is_anonymous,admin_ball_event:store.maintenance?null:store.admin_ball_event||null,gold_event:store.gold_event||null,server_time:new Date().toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
   if (store.maintenance && actor.role!=='admin' && !action.startsWith('admin_')) error('점검 중입니다.',503);
   if (isBanned(actor)) error('이 계정은 이용이 제한되었습니다.',403);
+  if(['limited','limited_buy','limited_select','limited_hit'].includes(action))return limitedAction(store,actor,body,catalog);
   if(['admin_event_schedule','admin_event_schedule_cancel'].includes(action)){
     const kind=body.event_type,key=kind==='gold'?'gold_event':'admin_ball_event';
     if(!['gold','ball'].includes(kind))error('이벤트 종류를 선택하세요.');
@@ -67,7 +69,7 @@ export function execute(store, actor, body) {
     if(clicks===total){const g=store.gold_event;reward=itemData.reward(ball.reward,actor.state.rebirths,g&&now>=Date.parse(g.starts_at)&&now<Date.parse(g.ends_at)?g.multiplier:1,e);actor.state.gold=(BigInt(actor.state.gold)+reward).toString();consumeEffects(actor,'break',now);}
     if(progress)progress.clicks=clicks===total?0:clicks;else actor.state.current_clicks=clicks===total?0:clicks;
     inv.revision++;actor.state.item_revision=inv.revision;
-    const result={...snapshot(actor),clicks,required_clicks:total,reward:String(reward)};inv.requests.set(body.request_id,{action,result:structuredClone(result)});return result;
+    const result=limitedDrop(store,actor,body,{...snapshot(actor),clicks,required_clicks:total,reward:String(reward)});inv.requests.set(body.request_id,{action,result:structuredClone(result)});return result;
   }
   if(action==='event_ball_hit'){
     const now=Date.now(),always=body.event_id==='admin-always'&&actor.role==='admin'&&!actor.is_anonymous;
