@@ -2,7 +2,7 @@
 import sys
 print('Loading Playwright', flush=True)
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent / '.test-deps'))
+sys.path.insert(0, sys.argv[1] if len(sys.argv)>1 else str(Path(__file__).resolve().parent / '.test-deps'))
 from playwright.sync_api import sync_playwright, expect
 
 with sync_playwright() as p:
@@ -21,10 +21,11 @@ with sync_playwright() as p:
         expect(page.locator('#rebirthBtn')).to_contain_text('999회')
         expect(page.locator('#rebirthBtn')).to_be_enabled()
         before = page.evaluate('async()=> (await WakppuAuth.invoke("bootstrap")).state.gold')
-        assert len(str(before)) == 3004
+        assert len(str(before)) == 1657
         print(width, '1000th cost:', page.locator('#goldValue').inner_text())
         page.locator('#rebirthBtn').click()
-        expect(page.locator('#rebirthText')).to_contain_text('2e3003')
+        last_cost_text=page.evaluate('WakppuGold.compact(REBIRTH_COSTS[999])')
+        expect(page.locator('#rebirthText')).to_contain_text(last_cost_text)
         page.locator('#rebirthConfirm').click()
         print('After confirmation:', page.locator('#rebirthBtn').inner_text(), 'errors:', errors, flush=True)
         expect(page.locator('#rebirthBtn')).to_contain_text('1000회')
@@ -54,6 +55,35 @@ with sync_playwright() as p:
         assert not errors, errors
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
         page.screenshot(path=f'tools/test-results/rebirth-500-{width}.png')
+        for count in [499,500,501]:
+            page.evaluate("""async count=>{
+              const user=(await WakppuAuth.session()).data.session.user;
+              await WakppuAuth.invoke('admin_rebirths',{user_id:user.id,mode:'set',value:String(count)});
+              await WakppuAuth.invoke('admin_gold',{user_id:user.id,mode:'set',value:String(REBIRTH_COSTS[count]-1n)});
+              await WakppuGameTest.restoreAccount();
+            }""",count)
+            expect(page.locator('#rebirthBtn')).to_be_disabled()
+            page.evaluate("""async count=>{
+              const user=(await WakppuAuth.session()).data.session.user;
+              await WakppuAuth.invoke('admin_gold',{user_id:user.id,mode:'set',value:String(REBIRTH_COSTS[count])});
+              await WakppuGameTest.restoreAccount();
+            }""",count)
+            expect(page.locator('#rebirthBtn')).to_be_enabled()
+            if count==500:
+                page.screenshot(path=f'tools/test-results/rebirth501-{width}.png')
+            page.locator('#rebirthBtn').click()
+            page.locator('#rebirthConfirm').click()
+            expect(page.locator('#rebirthBtn')).to_contain_text(str(count+1)+'회')
+            expect(page.locator('#goldValue')).to_have_text('0')
+            page.wait_for_timeout(700)
+            assert page.evaluate('async()=> (await WakppuAuth.invoke("bootstrap")).state.rebirths')==count+1
+            page.reload()
+            page.wait_for_load_state('networkidle')
+            page.wait_for_selector('aside[data-ready="true"]')
+            expect(page.locator('#rebirthBtn')).to_contain_text(str(count+1)+'회')
+        assert not errors,errors
+        assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+        print(width,'PASS: cost-1 disabled, exact cost enabled, 499/500/501 transitions and reload')
         print(width, 'PASS: 999→1000, reload, exact 4096-digit Gold, no JS errors/overflow')
         page.close()
     browser.close()

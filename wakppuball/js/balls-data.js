@@ -2,14 +2,21 @@
 const SOUND_SETTINGS = { folder: 'sounds/', extension: '.mp3', poolSize: 4, usePlaceholderSound: true };
 const SOUND_PHASE_LIMITS = { early: 0.35, mid: 0.7 };
 const DEFAULT_SOUNDS = { early:['tap1','tap2','tap3'], mid:['tap3','crack1'], late:['crack1','crack2'], final:['break'], pitch:1, pitchRandom:.06, volume:.9, volumeRandom:.1 };
-// Historical cost table retained for reference; live costs are generated below.
+// Preserve the original 1–500 rebirth economy; ×1,000 starts at rebirth 501.
 const LEGACY_REBIRTH_COSTS = [2000000n,6000000n,16000000n,40000000n,100000000n,240000000n,600000000n,1600000000n,4000000000n,10000000000n,30000000000n,80000000000n,200000000000n,500000000000n,1200000000000n,3000000000000n,8000000000000n,20000000000000n,48000000000000n,120000000000000n,300000000000000n,800000000000000n,2000000000000000n,4800000000000000n,12000000000000000n];
 const REBIRTH_COSTS = (() => {
-  // First rebirth: 2,000,000G. Every subsequent cost is exactly ×1,000.
-  // BigInt preserves all 3,004 digits of the 1,000th cost.
-  const costs = [2000000n];
-  let cost = costs[0];
-  for (let rebirth = 2; rebirth <= 1000; rebirth += 1) {
+  const costs = [...LEGACY_REBIRTH_COSTS];
+  let cost = costs.at(-1);
+  for (let rebirth = 26; rebirth <= 100; rebirth += 1) {
+    if ((rebirth - 26) % 10 !== 9) cost *= 2n;
+    costs.push(cost);
+  }
+  for (let rebirth = 101; rebirth <= 500; rebirth += 1) {
+    cost *= 2n;
+    costs.push(cost);
+  }
+  // 501st cost = 500th cost ×1,000. Each later cost also grows ×1,000.
+  for (let rebirth = 501; rebirth <= 1000; rebirth += 1) {
     cost *= 1000n;
     costs.push(cost);
   }
