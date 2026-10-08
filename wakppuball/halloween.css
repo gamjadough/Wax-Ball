@@ -7,21 +7,32 @@ body.halloween-theme {
 .halloween-scenery { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
 body.halloween-theme #game, body.halloween-theme .maintenance { position: relative; z-index: 1; }
 body.halloween-theme .spot { background: radial-gradient(circle, #bd713530 0%, #a55f1712 35%, transparent 65%); }
-.halloween-moon { position: absolute; top: 9%; right: 8%; width: clamp(75px, 12vw, 172px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 32% 30%, #d8c4a0, #ae9473 66%, #847061); box-shadow: 0 0 65px 20px #c3a06d15, inset -16px -10px 30px #3c244155; opacity: .55; }
+.halloween-moon { position: absolute; top: 9%; right: 8%; width: clamp(75px, 12vw, 172px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 32% 30%, #d8c4a0, #ae9473 66%, #847061); box-shadow: 0 0 65px 20px #c3a06d15, inset -16px -10px 30px #3c244155; opacity: .55; animation: halloween-moon-glow 8s ease-in-out infinite alternate; }
 .halloween-moon::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(circle at 33% 28%, #79615825 0 9%, transparent 10%), radial-gradient(circle at 65% 56%, #79615825 0 16%, transparent 17%), radial-gradient(circle at 28% 70%, #79615820 0 11%, transparent 12%); }
-.halloween-bats { position: absolute; top: 13%; right: 3%; width: clamp(190px, 30vw, 430px); fill: #0b0913; opacity: .8; }
+.halloween-bats { position: absolute; top: 13%; right: 3%; width: clamp(190px, 30vw, 430px); fill: #0b0913; opacity: .8; overflow: visible; animation: halloween-bat-flight 12s ease-in-out infinite; }
+.halloween-bats use { transform-box: fill-box; transform-origin: center; animation: halloween-wingbeat 1.1s ease-in-out infinite alternate; }
+.halloween-bats use:nth-of-type(2) { animation-duration: .9s; animation-delay: -.4s; }
+.halloween-bats use:nth-of-type(3) { animation-duration: 1.3s; animation-delay: -.7s; }
 .halloween-landscape { position: absolute; bottom: 0; width: 100%; height: clamp(130px, 24vh, 290px); }
 .halloween-hills { fill: #0d0a15; }
 .halloween-branches { stroke: #0c0a13; stroke-width: 13px; }
 .halloween-pumpkin { fill: #68311c; stroke: #291725; stroke-width: 2px; }
 .halloween-stem { fill: #393528; }
-.halloween-face { fill: #eba347; stroke: none; filter: drop-shadow(0 0 7px #e17c2780); }
-.halloween-fog { position: absolute; bottom: -35px; left: -15%; width: 130%; height: 23%; opacity: .4; background: radial-gradient(ellipse at 20% 70%, #9777a024, transparent 42%), radial-gradient(ellipse at 78% 85%, #d3936220, transparent 45%); animation: halloween-fog-drift 22s ease-in-out infinite alternate; }
-@keyframes halloween-fog-drift { to { transform: translateX(5%) translateY(-12px); opacity: .65; } }
+.halloween-face { fill: #eba347; stroke: none; filter: drop-shadow(0 0 7px #e17c2780); animation: halloween-lantern-glow 4s ease-in-out infinite alternate; }
+.halloween-pumpkin:nth-of-type(2) .halloween-face { animation-delay: -2s; }
+.halloween-fog { position: absolute; bottom: -35px; left: -15%; width: 130%; height: 23%; opacity: .4; background: radial-gradient(ellipse at 20% 70%, #9777a040, transparent 42%), radial-gradient(ellipse at 78% 85%, #d3936235, transparent 45%); animation: halloween-fog-drift 16s ease-in-out infinite alternate; }
+.halloween-fog::after { content: ''; position: absolute; inset: -20% -10%; background: radial-gradient(ellipse at 65% 80%, #b8a3c030, transparent 45%); animation: halloween-fog-return 21s ease-in-out infinite alternate; }
+@keyframes halloween-moon-glow { to { filter: brightness(1.18); transform: translateY(-6px); } }
+@keyframes halloween-bat-flight { 0%,100% { transform: translate(0,0) rotate(0); } 35% { transform: translate(-30px,12px) rotate(-4deg); } 70% { transform: translate(-12px,-14px) rotate(3deg); } }
+/* Individual scale preserves each SVG use element's original position and size. */
+@keyframes halloween-wingbeat { from { scale: 1 1; } to { scale: 1 .5; } }
+@keyframes halloween-lantern-glow { from { opacity: .65; } to { opacity: 1; } }
+@keyframes halloween-fog-drift { to { transform: translate(8%,-20px); opacity: .65; } }
+@keyframes halloween-fog-return { to { transform: translate(-7%,12px); opacity: .6; } }
 @media (max-width: 520px) {
   .halloween-moon { top: 15%; right: -12px; width: 95px; opacity: .35; }
   .halloween-bats { top: 18%; right: -45px; width: 220px; opacity: .55; }
   .halloween-landscape { width: 180%; left: -40%; height: 155px; }
   .halloween-fog { opacity: .25; height: 16%; }
 }
-@media (prefers-reduced-motion: reduce) { .halloween-fog { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .halloween-scenery *, .halloween-fog::after { animation: none !important; } }
