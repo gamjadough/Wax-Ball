@@ -11,10 +11,10 @@
     soul:{kind:'souls',colors:['#cbd4ea','#f7f4ff'],duration:1850},
     eternity:{kind:'convergence',colors:['#fff1c9','#ea9aa5','#bedfff','#c4aaff'],duration:2100}
   };
-  function play({ball,wrap,svg,effects,center,radius,valid,reward,respawn}){
+  function play({ball,wrap,svg,effects,center,radius,valid,reward,respawn,speed=1}){
     const profile=profiles[ball.design.motif],reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
     const timers=[],nodes=[],animations=[];let stopped=false,paid=false;
-    const duration=reduced?650:profile.duration;
+    const duration=(reduced?650:profile.duration)/speed;
     const phase=name=>{wrap.dataset.transcendentPhase=name;wrap.dispatchEvent(new CustomEvent('transcendent-phase',{detail:{id:ball.id,phase:name,kind:profile.kind}}));};
     function cancel(){if(stopped)return;stopped=true;timers.forEach(clearTimeout);animations.forEach(a=>a.cancel());nodes.forEach(n=>n.remove());delete wrap.dataset.transcendentPhase;svg.style.opacity='';}
     function at(ms,fn){timers.push(setTimeout(()=>{if(stopped)return;if(!valid()){cancel();return;}fn();},ms));}
