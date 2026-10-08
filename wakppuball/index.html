@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>왁뿌볼</title>
   <link rel="stylesheet" href="style.css?v=20261007-ranking-layout1">
+  <link rel="stylesheet" href="halloween.css?v=20261008-halloween1">
   <link rel="stylesheet" href="guest-lifecycle.css?v=20261006-guest1">
   <link rel="stylesheet" href="whitehole.css?v=20261006-whitehole1">
   <link rel="stylesheet" href="items.css?v=20261012-items1">
@@ -13,6 +14,12 @@
   <link rel="stylesheet" href="admin-ball.css?v=20261007-admin-ball1">
 </head>
 <body>
+  <div id="halloweenScenery" class="halloween-scenery" aria-hidden="true" hidden>
+    <div class="halloween-moon"></div>
+    <svg class="halloween-bats" viewBox="0 0 360 200"><defs><path id="halloweenBat" d="M0 12 Q-14 -9 -35 0 L-27 12 L-16 10 L-10 22 L-2 17 L0 24 L2 17 L10 22 L16 10 L27 12 L35 0 Q14 -9 0 12 M-4 12 L-4 4 L0 8 L4 4 L4 12Z"/></defs><use href="#halloweenBat" transform="translate(80 56) rotate(-16)"/><use href="#halloweenBat" transform="translate(214 110) scale(.7) rotate(14)"/><use href="#halloweenBat" transform="translate(310 32) scale(.45) rotate(-8)"/></svg>
+    <svg class="halloween-landscape" viewBox="0 0 1440 260" preserveAspectRatio="xMidYMax slice"><path class="halloween-hills" d="M0 125 Q130 110 250 195 Q450 245 720 239 Q990 245 1190 195 Q1310 110 1440 125 V260 H0Z"/><g class="halloween-branches" fill="none" stroke-linecap="round"><path d="M24 250 L66 95 L54 23 M63 102 L122 54 L130 0 M62 136 L9 77 M1409 250 L1373 120 L1396 43 M1374 125 L1315 69 L1306 13 M1382 174 L1440 107"/></g><g class="halloween-pumpkin" transform="translate(120 172)"><path class="halloween-stem" d="M-5 -35 Q-10 -55 7 -58 L14 -51 Q2 -49 5 -35Z"/><ellipse cx="-20" cy="0" rx="35" ry="40"/><ellipse cx="20" cy="0" rx="35" ry="40"/><ellipse cx="0" cy="0" rx="32" ry="42"/><path class="halloween-face" d="M-34 -8 L-13 -18 L-16 0Z M34 -8 L13 -18 L16 0Z M-27 13 L-16 20 L-9 14 L0 23 L9 14 L16 20 L27 13 L18 31 L-18 31Z"/></g><g class="halloween-pumpkin" transform="translate(1320 188) scale(.8)"><path class="halloween-stem" d="M-5 -35 Q-10 -55 7 -58 L14 -51 Q2 -49 5 -35Z"/><ellipse cx="-20" cy="0" rx="35" ry="40"/><ellipse cx="20" cy="0" rx="35" ry="40"/><ellipse cx="0" cy="0" rx="32" ry="42"/><path class="halloween-face" d="M-34 -8 L-13 -18 L-16 0Z M34 -8 L13 -18 L16 0Z M-27 13 L-16 20 L-9 14 L0 23 L9 14 L16 20 L27 13 L18 31 L-18 31Z"/></g></svg>
+    <div class="halloween-fog"></div>
+  </div>
   <section id="maintenance" class="maintenance" aria-labelledby="maintenanceTitle" hidden>
     <div class="maintenance-card">
       <span class="maintenance-icon" aria-hidden="true">🔧</span>
@@ -196,5 +203,6 @@
   <script src="js/event-schedule.js?v=20261014-schedule1"></script>
   <script src="js/admin-panel.js?v=20261014-schedule1"></script>
   <script src="js/guest-lifecycle.js?v=20261006-guest1"></script>
+  <script src="js/halloween-theme.js?v=20261008-halloween1"></script>
 </body>
 </html>

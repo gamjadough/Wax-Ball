@@ -1,0 +1,27 @@
+/* Decorative scenery stays behind all gameplay and never receives input. */
+body.halloween-theme {
+  --bg-edge: #100d1a;
+  --bg-mid: #30203d;
+  background: radial-gradient(ellipse at 50% 40%, #382341 0%, #21152e 48%, #100d1a 85%);
+}
+.halloween-scenery { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+body.halloween-theme #game, body.halloween-theme .maintenance { position: relative; z-index: 1; }
+body.halloween-theme .spot { background: radial-gradient(circle, #bd713530 0%, #a55f1712 35%, transparent 65%); }
+.halloween-moon { position: absolute; top: 9%; right: 8%; width: clamp(75px, 12vw, 172px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 32% 30%, #d8c4a0, #ae9473 66%, #847061); box-shadow: 0 0 65px 20px #c3a06d15, inset -16px -10px 30px #3c244155; opacity: .55; }
+.halloween-moon::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(circle at 33% 28%, #79615825 0 9%, transparent 10%), radial-gradient(circle at 65% 56%, #79615825 0 16%, transparent 17%), radial-gradient(circle at 28% 70%, #79615820 0 11%, transparent 12%); }
+.halloween-bats { position: absolute; top: 13%; right: 3%; width: clamp(190px, 30vw, 430px); fill: #0b0913; opacity: .8; }
+.halloween-landscape { position: absolute; bottom: 0; width: 100%; height: clamp(130px, 24vh, 290px); }
+.halloween-hills { fill: #0d0a15; }
+.halloween-branches { stroke: #0c0a13; stroke-width: 13px; }
+.halloween-pumpkin { fill: #68311c; stroke: #291725; stroke-width: 2px; }
+.halloween-stem { fill: #393528; }
+.halloween-face { fill: #eba347; stroke: none; filter: drop-shadow(0 0 7px #e17c2780); }
+.halloween-fog { position: absolute; bottom: -35px; left: -15%; width: 130%; height: 23%; opacity: .4; background: radial-gradient(ellipse at 20% 70%, #9777a024, transparent 42%), radial-gradient(ellipse at 78% 85%, #d3936220, transparent 45%); animation: halloween-fog-drift 22s ease-in-out infinite alternate; }
+@keyframes halloween-fog-drift { to { transform: translateX(5%) translateY(-12px); opacity: .65; } }
+@media (max-width: 520px) {
+  .halloween-moon { top: 15%; right: -12px; width: 95px; opacity: .35; }
+  .halloween-bats { top: 18%; right: -45px; width: 220px; opacity: .55; }
+  .halloween-landscape { width: 180%; left: -40%; height: 155px; }
+  .halloween-fog { opacity: .25; height: 16%; }
+}
+@media (prefers-reduced-motion: reduce) { .halloween-fog { animation: none; } }
