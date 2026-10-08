@@ -119,7 +119,8 @@
   function adminBallAlwaysAvailable(){return accountRole==='admin'&&state.account&&!state.account.is_anonymous&&WakppuAdminBallEvent.alwaysAvailable();}
   function eventActive(){return !!adminBallAlwaysAvailable()||WakppuAdminBallEvent.current().phase==='active';}
   function eventBaseReward(){return WAKPPU_BALLS.reduce((best,b,i)=>state.unlocked[i]&&BigInt(b.reward)>best?BigInt(b.reward):best,1n)*10n;}
-  function currentBall(){const ball=eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:WAKPPU_BALLS[state.selected];const e=window.WakppuItemData?.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt);return {...ball,clicks:e?WakppuItemData.required(ball.clicks,e,coatingActive()):ball.clicks*(coatingActive()?2:1)};}
+  function limitedSelected(){return !testSnapshot&&!eventSelected&&!!window.WakppuLimited?.data?.selected;}
+  function currentBall(){const ball=eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:limitedSelected()?{...WakppuLimitedData.ball,reward:BigInt(WakppuLimited.data.owned[WakppuLimitedData.ball.id].reward)}:WAKPPU_BALLS[state.selected];const e=window.WakppuItemData?.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt);return {...ball,clicks:e?WakppuItemData.required(ball.clicks,e,coatingActive()):ball.clicks*(coatingActive()?2:1)};}
   function eventPreferenceKey(){return SAVE_KEY+':event-choice:'+state.account?.id;}
   function switchEvent(use,remember=true){
     if(use&&(!eventActive()||testSnapshot||!state.remoteReady||eventRequest))return;
@@ -130,6 +131,7 @@
     if(remember)try{localStorage.setItem(eventPreferenceKey(),JSON.stringify({id:eventId,use}));}catch(_){}
   }
   function syncBallEvent(){
+    if(limitedSelected())return;
     const s=WakppuAdminBallEvent.current();
     if(adminBallAlwaysAvailable()&&state.remoteReady&&!testSnapshot){
       if(eventRequest||(state.busy&&!eventSelected))return;
@@ -402,7 +404,7 @@
       discovered_ball_ids: state.discovered,
       selected_ball_id: ballIdAt(state.selected),
       current_ball_id: ballIdAt(state.selected),
-      current_clicks: eventSelected?(ordinaryClicks.get(state.selected)||0):state.clicks,
+      current_clicks: eventSelected||limitedSelected()?(ordinaryClicks.get(state.selected)||0):state.clicks,
       hammer_owned: state.hammerOwned,
       hammer_level: state.hammerLevel,
       honey_expires_at: honeyActive() ? new Date(state.honeyExpiresAt).toISOString() : null,
@@ -410,7 +412,7 @@
     };
   }
   function queueRemoteSave() {
-    if (!state.remoteReady || !window.WakppuAuth || state.busy || window.WakppuItems?.busy) return;
+    if (!state.remoteReady || !window.WakppuAuth || state.busy || window.WakppuItems?.busy || window.WakppuLimited?.busy) return;
     clearTimeout(remoteSaveTimer);
     remoteSaveTimer = setTimeout(() => {
       const payload=remotePayload();remoteInFlight=remoteInFlight.catch(()=>{}).then(()=>window.WakppuAuth.invoke('save_progress',payload));remoteInFlight.catch((error) => {
@@ -421,6 +423,7 @@
   }
 
   async function restoreAccount() {
+    window.WakppuLimited?.clear();
     if (!window.WakppuAuth) return;
     if(eventSelected)switchEvent(false,false);eventSeen=null;eventId=null;ordinaryClicks.clear();
     if(testSnapshot) window.WakppuGameTest.end();
@@ -583,15 +586,15 @@
      3. 클릭 처리
      ========================================================================== */
   function onHit(clientX, clientY, damage = null, isHammer = state.hammerOwned, authorizedEvent=false,requiredTotal=null) {
-    if (state.busy || window.wakppuServerBlocked || window.WakppuItems?.busy) return;
-    if(!authorizedEvent&&!testSnapshot&&window.WakppuItems?.active()&&state.remoteReady){hitItem(clientX,clientY);return;}
+    if (state.busy || window.wakppuServerBlocked || window.WakppuItems?.busy || window.WakppuLimited?.busy) return;
+    if(!authorizedEvent&&!testSnapshot&&(window.WakppuItems?.active()||limitedSelected()||window.WakppuLimited?.data?.season.active)&&state.remoteReady){hitItem(clientX,clientY);return;}
     if(eventSelected&&!authorizedEvent){hitEvent(clientX,clientY);return;}
     if (!testSnapshot) window.dispatchEvent(new Event('wakppu-real-play'));
     const data = requiredTotal?{...currentBall(),clicks:requiredTotal}:currentBall();
     damage = damage ?? (state.hammerOwned ? HAMMERS[state.hammerLevel - 1].cracks : 1);
 
     state.clicks = Math.min(data.clicks, state.clicks + damage);
-    if(!eventSelected&&ordinaryClicks.has(state.selected))ordinaryClicks.set(state.selected,state.clicks);
+    if(!eventSelected&&!limitedSelected()&&ordinaryClicks.has(state.selected))ordinaryClicks.set(state.selected,state.clicks);
     const total = data.clicks;
     const isFinal = state.clicks >= total;
     const v = state.clicks / total;      // 진행도 (화면엔 표시 안 함)
@@ -609,7 +612,7 @@
   }
 
   function buyOrUpgradeHammer() {
-    if(eventRequest||state.busy||window.wakppuServerBlocked||window.WakppuItems?.busy)return;
+    if(eventRequest||state.busy||window.wakppuServerBlocked||window.WakppuItems?.busy||window.WakppuLimited?.busy)return;
     const nextLevel = state.hammerOwned ? state.hammerLevel + 1 : 1;
     const next = HAMMERS[nextLevel - 1];
     if (!next || state.gold < next.cost) return;
@@ -620,15 +623,18 @@
   }
 
   async function hitItem(x,y){
-    if(state.busy||window.WakppuItems?.busy)return;
+    if(state.busy||window.WakppuItems?.busy||window.WakppuLimited?.busy)return;
     if(eventRequest){if(pendingItemHits.length<30)pendingItemHits.push([x,y]);return;}
     eventRequest=true;const epoch=animationEpoch;const account=state.account?.id;
     try{
       await window.WakppuItemGame.flush();
       const req={request_id:crypto.randomUUID(),item_revision:itemRevision,...(eventSelected?{event_id:eventId}:{})};let result;
-      try{result=await WakppuAuth.invoke('item_hit',req);}catch(error){if(error.status)throw error;result=await WakppuAuth.invoke('item_hit',req);}
+      const action=limitedSelected()?'limited_hit':'item_hit';
+      try{result=await WakppuAuth.invoke(action,req);}catch(error){if(error.status)throw error;result=await WakppuAuth.invoke(action,req);}
       if(account!==state.account?.id)return;
       WakppuItems.accept(result);state.gold=BigInt(result.gold);itemRevision=result.revision;
+      if(result.limited)WakppuLimited.accept(result.limited);
+      if(result.candy_drop)floatText('🍬 사탕 +1',ballCenter().x,ballCenter().y-70);
       if(epoch!==animationEpoch)return;
       if(!eventSelected&&BigInt(result.reward)>0n)itemAward=BigInt(result.reward);
       if(eventSelected){eventAward=BigInt(result.reward);displayEventReward=eventAward;}
@@ -642,14 +648,14 @@
   function coatingActive(){return state.coatingExpiresAt>Date.now();}
   function coatingMultiplier(){return coatingActive()?3:1;}
   function buyCoating(){
-    if(testSnapshot||eventRequest||state.busy||window.wakppuServerBlocked||window.WakppuItems?.busy||coatingActive()||state.gold<COATING_COST)return;
+    if(testSnapshot||eventRequest||state.busy||window.wakppuServerBlocked||window.WakppuItems?.busy||window.WakppuLimited?.busy||coatingActive()||state.gold<COATING_COST)return;
     state.gold-=COATING_COST;state.coatingExpiresAt=Date.now()+15*60*1000;
     updateCracks(state.clicks/currentBall().clicks);updateAll();
   }
   function coatingTime(){const seconds=Math.max(0,Math.ceil((state.coatingExpiresAt-Date.now())/1000));return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;}
   function honeyMultiplier() { return honeyActive() ? 2 : 1; }
   function buyHoney() {
-    if(eventRequest||state.busy||window.wakppuServerBlocked||window.WakppuItems?.busy)return;
+    if(eventRequest||state.busy||window.wakppuServerBlocked||window.WakppuItems?.busy||window.WakppuLimited?.busy)return;
     if (state.gold < HONEY_COST) return;
     state.gold -= HONEY_COST;
     state.honeyExpiresAt = Date.now() + 10 * 60 * 1000;
@@ -704,12 +710,15 @@
      4. 깨지는 연출
      ========================================================================== */
   function breakBall(data) {
-    if(!eventSelected)ordinaryClicks.delete(state.selected);
+    if(!eventSelected&&!limitedSelected())ordinaryClicks.delete(state.selected);
     const epoch=animationEpoch;
     state.busy = true;
     // WebKit에서 마지막 균열을 한 프레임 이상 그린 뒤에만 SVG를 조각으로 교체합니다.
     svgEl.classList.add('instant');
     updateCracks(1);
+    if(data.id===window.WakppuLimitedData?.ball.id){
+      transcendentEffect=WakppuHalloween.play({wrap,svg:svgEl,effects,center:ballCenter(),valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,reward:()=>awardBreakReward(data),respawn:()=>{svgEl.classList.remove('instant');spawnBall(true);}});return;
+    }
     if(data.id==='admin-event'){
       const earned=eventAward;eventAward=null;wrap.classList.add('admin-ball-breaking');
       const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -915,7 +924,8 @@
     return state.unlocked.indexOf(false);   // 없으면 -1
   }
 
-  function selectBall(index) {
+  async function selectBall(index) {
+    if(window.WakppuLimited?.data?.selected){if(!await WakppuLimited.select(null))return;}
     if(state.busy || eventRequest || window.wakppuServerBlocked)return;
     if (!state.unlocked[index]) return;
     if(eventSelected)switchEvent(false);      // 해금 안 된 볼은 사용할 수 없어요
@@ -928,7 +938,7 @@
   }
 
   function unlockBall(index) {
-    if(state.busy || window.wakppuServerBlocked || window.WakppuItems?.busy)return;
+    if(state.busy || window.wakppuServerBlocked || window.WakppuItems?.busy||window.WakppuLimited?.busy)return;
     if (index !== nextLockedIndex()) return; // 순서대로만 해금 가능
     const b = WAKPPU_BALLS[index];
     if (state.gold < b.price) return;
@@ -950,7 +960,7 @@
     rebirthModal.hidden = false;
   }
   function doRebirth() {
-    if(eventRequest||state.busy||window.wakppuServerBlocked||window.WakppuItems?.busy)return;
+    if(eventRequest||state.busy||window.wakppuServerBlocked||window.WakppuItems?.busy||window.WakppuLimited?.busy)return;
     const cost = nextRebirthCost();
     if (cost === null || state.gold < cost) return;
     if(eventSelected)switchEvent(false);ordinaryClicks.clear();
@@ -1045,6 +1055,7 @@
 
   /* ---------- 도감 ---------- */
   function renderCollection() {
+    if(window.WakppuLimited?.tab==='limited'){WakppuLimited.renderCollection();return;}
     const entries = [...WAKPPU_BALLS, {...ADMIN_EVENT_BALL, reward:eventBaseReward()}];
     const pageCount = Math.ceil(entries.length / COLLECTION_PAGE_SIZE);
     collectionPage = Math.max(0, Math.min(collectionPage, pageCount - 1));
@@ -1053,7 +1064,7 @@
       const i = start + offset;
       const event = i === WAKPPU_BALLS.length;
       const open = event ? eventActive() : state.unlocked[i];
-      const current = event ? eventSelected : !eventSelected && state.selected === i;
+      const current = event ? eventSelected : !eventSelected && !limitedSelected() && state.selected === i;
       const status = current ? '사용 중' : event ? (adminBallAlwaysAvailable() ? '관리자 상시 이용' : open ? '이벤트 진행 중' : '이벤트 전용') : open ? '해금 완료' : '잠김';
       return `<button type="button" class="card collection-card ${open ? '' : 'locked'} ${current ? 'current' : ''}" data-detail="${i}" aria-label="${b.name} · ${status} · 상세 보기">
         <span class="thumb" aria-hidden="true">${buildBallThumb(b)}</span>
@@ -1082,7 +1093,7 @@
       if (event) {
         action = `<button class="btn small" data-action="event" ${!open || eventSelected || state.busy || !state.remoteReady ? 'disabled' : ''}>${eventSelected ? '사용 중' : adminBallAlwaysAvailable() ? '관리자 볼 선택' : open ? '이벤트 볼 선택' : '이벤트 종료'}</button>`;
       } else if (open) {
-        action = !eventSelected && state.selected === i
+        action = !eventSelected && !limitedSelected() && state.selected === i
           ? '<button class="btn small" disabled>사용 중</button>'
           : `<button class="btn small primary" data-action="select" data-index="${i}" ${state.busy ? 'disabled' : ''}>선택</button>`;
       } else if (i === ni) {
@@ -1104,6 +1115,7 @@
   }
 
   function openCollection() {
+    window.WakppuLimited?.showTab(limitedSelected()?'limited':'normal',false);
     collectionPage = Math.floor((eventSelected ? WAKPPU_BALLS.length : state.selected) / COLLECTION_PAGE_SIZE);
     collectionDetailIndex = null;
     renderCollection();
@@ -1202,7 +1214,7 @@
     }
     const btn = e.target.closest('button[data-action]');
     if (!btn || btn.disabled) return;
-    if(btn.dataset.action==='event'){switchEvent(true);closeCollection();return;}
+    if(btn.dataset.action==='event'){if(window.WakppuLimited?.data?.selected){WakppuLimited.select(null).then(ok=>{if(ok){switchEvent(true);closeCollection();}});return;}switchEvent(true);closeCollection();return;}
     const index = Number(btn.dataset.index);
     if (btn.dataset.action === 'select') selectBall(index);
     if (btn.dataset.action === 'unlock') unlockBall(index);
@@ -1293,6 +1305,7 @@
     accept:(data,syncGold=true)=>{if(syncGold)state.gold=BigInt(data.gold);itemRevision=data.revision;updateAll();if(!state.busy)updateCracks(state.clicks/currentBall().clicks);},
     restore:restoreAccount
   };
+  window.WakppuLimitedGame={render:renderCollection,resetCollection:()=>{collectionDetailIndex=null;renderCollection();},sync:(selected,clicks=0)=>{if(eventSelected)switchEvent(false);if(selected)ordinaryClicks.set(state.selected,state.clicks);wrap.classList.remove('broken');spawnBall(true);state.clicks=selected?clicks:(ordinaryClicks.get(state.selected)||0);updateCracks(state.clicks/currentBall().clicks);updateAll();},test:()=>!!testSnapshot};
   restoreAccount();
   let coatingWasActive=coatingActive();
   setInterval(() => {const coated=coatingActive(),expired=!coated&&state.coatingExpiresAt!==0;if(coated!==coatingWasActive){coatingWasActive=coated;if(!state.busy)updateCracks(state.clicks/currentBall().clicks);}if(expired)state.coatingExpiresAt=0;if(coated||expired||honeyActive()||!shopModal.hidden)updateAll();}, 1000);

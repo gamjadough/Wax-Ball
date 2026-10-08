@@ -343,7 +343,7 @@ function buildBallSvgInner(ball, uid) {
     // 직접 만든 이미지를 쓰는 경우
     part = { defs: '', art: `<image href="${ball.image}" x="0" y="0" width="200" height="200" preserveAspectRatio="xMidYMid meet"/>` };
   } else {
-    part = (ART[d.art] || ART.plain)(uid, ball);
+    part = d.art==='pumpkin'?{defs:`<radialGradient id="${uid}-pumpkin"><stop stop-color="#ffc16c"/><stop offset=".7" stop-color="#f47c18"/><stop offset="1" stop-color="#7e260e"/></radialGradient>`,art:`<rect width="200" height="200" fill="#3a173f"/><ellipse cx="100" cy="106" rx="79" ry="73" fill="url(#${uid}-pumpkin)"/><g fill="none" stroke="#973a10" stroke-width="3" opacity=".6"><ellipse cx="100" cy="106" rx="50" ry="73"/><ellipse cx="100" cy="106" rx="25" ry="73"/></g><path d="M87 40Q88 18 110 13L119 28Q100 24 105 42" fill="#539137"/><g class="pumpkin-flame" fill="#ffeaa1" stroke="#592038" stroke-width="5"><path d="M49 94L78 67L84 101Z M116 101L122 67L151 94Z M57 120L77 127L88 117L101 130L113 118L125 129L146 117Q139 156 103 159Q72 154 57 120Z"/></g><g class="pumpkin-ghost" fill="#ede0ff" opacity=".7"><path d="M28 52Q28 36 39 36Q52 36 52 53L49 62L43 56L36 63L29 59Z"/><circle cx="36" cy="48" r="2" fill="#47215a"/><circle cx="44" cy="48" r="2" fill="#47215a"/></g>`}:(ART[d.art] || ART.plain)(uid, ball);
   }
 
   const shade = d.art === 'blackhole' ? 0.65 : (d.art === 'planet' ? 0.5 : (d.art === 'diamond' ? 0.18 : 0.32));
