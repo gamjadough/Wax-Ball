@@ -6,7 +6,9 @@ const sandbox={window:{}};vm.runInNewContext(readFileSync(new URL('../wakppuball
 export const limitedData=sandbox.window.WakppuLimitedData;
 export const limitedState=a=>{const s=a.limited||={tokens:0,owned:{},selected:null,clicks:0,requests:new Map()};if(s.owned[limitedData.ball.id])s.owned[limitedData.ball.id].reward=String(limitedData.ball.reward);return s;};
 export const limitedActive=store=>store.limited_preview==='active'||(!store.limited_preview&&Date.now()>=Date.parse(limitedData.season.starts_at)&&Date.now()<Date.parse(limitedData.season.ends_at));
-export function limitedSnapshot(store,actor){const s=limitedState(actor);return {season:{...limitedData.season,active:limitedActive(store)},tokens:s.tokens,owned:structuredClone(s.owned),selected:s.selected,clicks:s.clicks};}
+export const limitedAdmin=actor=>actor.role==='admin'&&!actor.is_anonymous;
+const usable=(actor,s,id)=>!!s.owned[id]||(limitedAdmin(actor)&&id===limitedData.ball.id);
+export function limitedSnapshot(store,actor){const s=limitedState(actor);return {season:{...limitedData.season,active:limitedActive(store)},tokens:s.tokens,owned:structuredClone(s.owned),admin_access:limitedAdmin(actor),selected:usable(actor,s,s.selected)?s.selected:null,clicks:s.clicks};}
 export function limitedAction(store,actor,b,catalog,rng=()=>crypto.getRandomValues(new Uint32Array(1))[0]/4294967296){
  const s=limitedState(actor),inv=itemState(actor),fail=(message,status=400)=>{throw Object.assign(new Error(message),{status});};
  if(b.action==='limited')return limitedSnapshot(store,actor);
@@ -20,10 +22,10 @@ export function limitedAction(store,actor,b,catalog,rng=()=>crypto.getRandomValu
   if(s.tokens<100)fail('할로윈 사탕이 부족합니다.');
   s.tokens-=100;s.owned[limitedData.ball.id]={reward:String(limitedData.ball.reward)};
  }else if(b.action==='limited_select'){
-  if(b.ball_id!==null&&!s.owned[b.ball_id])fail('보유한 한정 볼이 아닙니다.');
+  if(b.ball_id!==null&&!usable(actor,s,b.ball_id))fail('보유한 한정 볼이 아닙니다.');
   s.selected=b.ball_id;s.clicks=0;
  }else if(b.action==='limited_hit'){
-  if(!s.selected||!s.owned[s.selected])fail('한정 볼을 선택해주세요.');
+  if(!s.selected||!usable(actor,s,s.selected))fail('한정 볼을 선택해주세요.');
   const now=Date.now(),e=itemData.effective(inv.effects,Date.parse(actor.state.honey_expires_at),Date.parse(actor.state.coating_expires_at),now);
   const required=itemData.required(100,e,Date.parse(actor.state.coating_expires_at)>now),clicks=Math.min(required,s.clicks+itemData.damage(hammerDamage(actor.state.hammer_owned,actor.state.hammer_level),e));
   consumeEffects(actor,'hit',now);let reward=0n;

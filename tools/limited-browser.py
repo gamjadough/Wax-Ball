@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright,expect
 with socket.socket() as sock:sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
 server=subprocess.Popen(['node',str(ROOT/'tools/local-server.mjs')],cwd=ROOT,env=dict(os.environ,WAKPPU_LOCAL_PORT=str(port)),stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,encoding='utf-8')
 try:
-    assert server.stdout.readline().startswith('Local preview:');server.stdout.readline();server.stdout.readline()
+    assert server.stdout.readline().startswith('Local preview:');server.stdout.readline();password=server.stdout.readline().strip().split(': ',1)[1]
     base=f'http://127.0.0.1:{port}'
     with sync_playwright() as p:
         browser=p.chromium.launch(channel='msedge',headless=True)
@@ -51,6 +51,25 @@ try:
             page.locator('#collectionBtn').click();page.locator('#limitedCollectionTab').click()
             page.screenshot(path=str(out/('halloween-mobile.png' if mobile else 'halloween-desktop.png')))
             assert not errors,errors;ctx.close()
+        ctx=browser.new_context(viewport={'width':1100,'height':844})
+        ctx.route('**/*',lambda r:r.continue_() if r.request.url.startswith(base) else r.fulfill(status=200,body=''))
+        page=ctx.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+        page.goto(base+'/');page.wait_for_function('!!window.WakppuAuth')
+        assert page.evaluate('(password)=>WakppuAuth.signIn("dodoonglee@gmail.com",password).then(r=>!r.error)',password)
+        page.reload();page.wait_for_function('WakppuLimited.data?.admin_access&&WakppuItemGame.read().ready')
+        assert page.evaluate('WakppuLimited.data.tokens')==0
+        assert page.evaluate('Object.keys(WakppuLimited.data.owned).length')==0
+        assert page.evaluate('WakppuLimited.data.season.active')==False
+        page.locator('#collectionBtn').click();page.locator('#limitedCollectionTab').click();page.locator('[data-limited-detail]').click()
+        expect(page.locator('.limited-detail')).to_contain_text('관리자 상시 이용');expect(page.locator('[data-limited-select]')).to_be_enabled()
+        page.locator('[data-limited-select]').click();expect(page.locator('#ballName')).to_have_text('할로윈 호박 왁뿌볼')
+        with page.expect_response(lambda r:'/local/api' in r.url and r.request.post_data_json.get('action')=='limited_hit') as response:
+            page.locator('#ballSvg').click(position={'x':150,'y':150})
+        assert response.value.ok
+        assert page.evaluate('Object.keys(WakppuLimited.data.owned).length')==0
+        page.reload();page.wait_for_function('WakppuLimited.data?.selected===WakppuLimitedData.ball.id');expect(page.locator('#ballName')).to_have_text('할로윈 호박 왁뿌볼')
+        page.screenshot(path=str(ROOT/'tools/test-results/halloween-admin.png'))
+        assert not errors,errors;ctx.close()
         browser.close();print('PASS desktop/mobile/reduced motion: collection tabs, purchase, exact reward once, custom effects, reload, event end, normal switching and rebirth ownership')
 finally:
     server.terminate();server.wait(timeout=10)

@@ -120,7 +120,7 @@
   function eventActive(){return !!adminBallAlwaysAvailable()||WakppuAdminBallEvent.current().phase==='active';}
   function eventBaseReward(){return WAKPPU_BALLS.reduce((best,b,i)=>state.unlocked[i]&&BigInt(b.reward)>best?BigInt(b.reward):best,1n)*10n;}
   function limitedSelected(){return !testSnapshot&&!eventSelected&&!!window.WakppuLimited?.data?.selected;}
-  function currentBall(){const ball=eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:limitedSelected()?{...WakppuLimitedData.ball,reward:BigInt(WakppuLimited.data.owned[WakppuLimitedData.ball.id].reward)}:WAKPPU_BALLS[state.selected];const e=window.WakppuItemData?.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt);return {...ball,clicks:e?WakppuItemData.required(ball.clicks,e,coatingActive()):ball.clicks*(coatingActive()?2:1)};}
+  function currentBall(){const ball=eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:limitedSelected()?{...WakppuLimitedData.ball,reward:BigInt(WakppuLimitedData.ball.reward)}:WAKPPU_BALLS[state.selected];const e=window.WakppuItemData?.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt);return {...ball,clicks:e?WakppuItemData.required(ball.clicks,e,coatingActive()):ball.clicks*(coatingActive()?2:1)};}
   function eventPreferenceKey(){return SAVE_KEY+':event-choice:'+state.account?.id;}
   function switchEvent(use,remember=true){
     if(use&&(!eventActive()||testSnapshot||!state.remoteReady||eventRequest))return;
