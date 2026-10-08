@@ -6,6 +6,7 @@ import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 test('event responses are applied immediately and older in-flight status cannot undo them',async()=>{
  let clock=0;const context={performance:{now:()=>clock},document:{getElementById:()=>null},setInterval:()=>{},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},dispatchEvent:()=>{}};context.window=context;
+ vm.runInNewContext(await readFile(new URL('../wakppuball/js/event-time.js',import.meta.url),'utf8'),context);
  vm.runInNewContext(await readFile(new URL('../wakppuball/js/admin-ball-event.js',import.meta.url),'utf8'),context);
  const event={id:'event',starts_at:'2026-10-05T00:00:00Z',ends_at:'2026-10-05T00:05:00Z'};
  context.WakppuAdminBallEvent.update({admin_ball_event:event,server_time:'2026-10-05T00:00:01Z'});

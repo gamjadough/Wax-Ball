@@ -12,7 +12,7 @@
     if(!root.document)return;
     const state=current(),banner=document.getElementById('goldEventBanner'),info=document.getElementById('adminGoldEventInfo');
     const duration=Math.round((Date.parse(snapshot?.ends_at)-Date.parse(snapshot?.starts_at))/1000);
-    const text=state.phase==='scheduled'?`🎉 관리자 골드 타임! ${state.seconds}초 후 시작 · Gold ×${snapshot.multiplier}, ${duration}초`:state.phase==='active'?`🎉 관리자 골드 타임! Gold ×${state.multiplier} · 남은 시간 ${String(Math.floor(state.seconds/60)).padStart(2,'0')}:${String(state.seconds%60).padStart(2,'0')}`:'현재 진행 중인 이벤트가 없습니다.';
+    const text=state.phase==='scheduled'?`🎉 관리자 골드 타임! ${root.WakppuEventTime.format(state.seconds)} 후 시작 · Gold ×${snapshot.multiplier}, ${root.WakppuEventTime.format(duration)} 진행`:state.phase==='active'?`🎉 관리자 골드 타임! Gold ×${state.multiplier} · 남은 시간 ${root.WakppuEventTime.format(state.seconds)}`:'현재 진행 중인 이벤트가 없습니다.';
     if(banner){banner.hidden=state.phase==='idle';banner.textContent=text;banner.dataset.phase=state.phase;}
     if(info)info.textContent=text;
     const start=document.getElementById('adminGoldEventStart'),stop=document.getElementById('adminGoldEventStop');
