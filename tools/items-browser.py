@@ -28,10 +28,11 @@ try:
             page.locator('[data-pulls="'+str(n)+'"]').click()
             page.locator('[data-pulls="'+str(n)+'"]').dispatch_event('click')
             page.wait_for_function('!WakppuItems.busy')
+            page.locator('#drawSkipAll').click()
             assert item()['gold']==gold,item()
             assert item()['total']==before+n
             assert page.locator('.draw-result').count()==n
-        assert sum(item()['inventory'].values())==57
+        assert sum(item()['inventory'].values())==99
         out=ROOT/'tools/test-results';out.mkdir(exist_ok=True)
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
         page.screenshot(path=str(out/'items-draw-mobile.png'))
@@ -68,7 +69,7 @@ try:
         page.goto(base);page.wait_for_load_state('domcontentloaded')
         page.wait_for_function('WakppuItemGame.read().ready')
         # No demo reset on ordinary URL. Verify a new draw persists over reload.
-        page.locator('#drawBtn').click();page.locator('[data-pulls="1"]').click();page.wait_for_function('!WakppuItems.busy')
+        page.locator('#drawBtn').click();page.locator('[data-pulls="1"]').click();page.wait_for_function('!WakppuItems.busy');page.locator('#drawSkipAll').click()
         snapshot=item();page.reload();page.wait_for_load_state('domcontentloaded')
         page.wait_for_function('(revision)=>WakppuItems.data?.revision===revision',arg=snapshot['revision'])
         assert item()['inventory']==snapshot['inventory'] and item()['pity']==snapshot['pity']

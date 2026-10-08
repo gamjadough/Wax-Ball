@@ -17,3 +17,17 @@
 @media(prefers-reduced-motion:reduce){.draw-result{animation:none!important}}
 
 body:has(#itemsModal:not([hidden])) .local-items-preview{display:none}
+.draw-reveal{text-align:center;padding:18px 10px;border:1px solid #ffffff20;border-radius:18px;background:#15151e;margin:16px 0}
+.draw-progress{color:#eee}.draw-wax-ball{position:relative;display:block;width:min(240px,100%);margin:0 auto;padding:0;border:0;background:transparent;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.draw-wax-ball.draw-cracked{filter:drop-shadow(0 0 calc(6px + var(--leak)*22px) var(--draw-color))}
+.draw-wax-ball svg{display:block;width:100%;height:auto}.draw-ball-crack{fill:none;stroke:var(--draw-color);stroke-width:3.5;stroke-linejoin:round;filter:drop-shadow(0 0 5px var(--draw-color))}
+.draw-wax-ball:focus-visible{outline:2px solid var(--draw-color);border-radius:50%;outline-offset:2px}.draw-touch-hint{color:#b5b2c6}
+.draw-skip-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px}.draw-skip-actions .btn{white-space:normal;min-height:44px}
+.draw-reveal>.draw-result{max-width:360px;margin:12px auto}.draw-reveal #drawNext{min-height:44px}.draw-breaking .draw-wax-ball svg{animation:draw-shatter var(--reveal-duration) ease-out forwards}
+.draw-wax-fragment{display:none;position:absolute;inset:12%;border-radius:50%;background:radial-gradient(circle at 30% 25%,#fff4cd,#c1a87a 62%,#77684f);clip-path:polygon(0 0,55% 0,50% 55%,0 75%);--fragment-x:-35px;--fragment-y:-15px;--fragment-rotation:-25deg}
+.draw-wax-fragment:nth-of-type(2){clip-path:polygon(55% 0,100% 0,100% 80%,50% 55%);--fragment-x:35px;--fragment-y:-8px;--fragment-rotation:25deg}
+.draw-wax-fragment:nth-of-type(3){clip-path:polygon(0 75%,50% 55%,100% 80%,100% 100%,0 100%);--fragment-x:0px;--fragment-y:40px;--fragment-rotation:12deg}
+.draw-breaking .draw-wax-fragment{display:block;animation:draw-fragment var(--reveal-duration) ease-out forwards}
+@keyframes draw-fragment{from{opacity:.8;transform:none}to{opacity:0;transform:translate(var(--fragment-x),var(--fragment-y)) rotate(var(--fragment-rotation))}}
+@keyframes draw-shatter{to{opacity:0;transform:scale(1.2) rotate(12deg)}}
+@media(prefers-reduced-motion:reduce){.draw-breaking .draw-wax-ball svg,.draw-breaking .draw-wax-fragment{animation:none}}

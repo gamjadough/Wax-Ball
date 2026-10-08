@@ -4,8 +4,9 @@ import {createStore,execute} from './admin-service.mjs';
 import {itemAction,itemState,itemData} from './items-service.mjs';
 test('catalog probability boundaries, prices, multi-pull pity and retry',()=>{
  const s=createStore(),p=s.players[1];p.state.gold='100000000000000000001';
- assert.equal(itemData.ranks.reduce((n,r)=>n+r.weight,0),10000);assert.equal(itemData.list.length,16);
- for(const [roll,rank] of [[0,'common'],[.5999,'common'],[.6,'rare'],[.85,'hero'],[.95,'legendary'],[.995,'transcendent']]){
+ assert.equal(itemData.ranks.reduce((n,r)=>n+r.weight,0),10000);assert.equal(itemData.list.length,30);
+ assert.deepEqual(Array.from(itemData.ranks,r=>itemData.list.filter(d=>d.rank===r.id).length),[10,10,7,2,1]);
+ for(const [roll,rank] of [[0,'common'],[.6999,'common'],[.7,'rare'],[.9199,'rare'],[.92,'hero'],[.9799,'hero'],[.98,'legendary'],[.9989,'legendary'],[.999,'transcendent']]){
   const actor={state:{gold:'5000000000000000000'}};const result=itemAction(actor,{action:'item_draw',count:1,item_revision:0,request_id:crypto.randomUUID()},{rng:()=>roll});
   assert.equal(itemData.list.find(d=>d.id===result.results[0]).rank,rank);
  }
@@ -14,6 +15,17 @@ test('catalog probability boundaries, prices, multi-pull pity and retry',()=>{
  assert.deepEqual(itemAction(p,req),r);assert.equal(itemState(p).total,5);
  assert.throws(()=>execute(s,p,{action:'save_progress',gold:'100000000000000000001',item_revision:0}),/상태/);
  assert.throws(()=>itemAction(p,{action:'item_draw',count:2,item_revision:1,request_id:crypto.randomUUID()}));
+});
+test('new timed/additive and mixed haste channels, expiry and strongest-effect selection',()=>{
+ const now=1000,expiry=600000;
+ const effects={common_candle:{expires_at:expiry},common_wax_thread:{remaining:20},common_wax_feather:{expires_at:expiry},hero_haste_wax:{expires_at:expiry},legendary_destruction_core:{expires_at:expiry},hero_gem_honey:{expires_at:expiry},hero_destruction_crystal:{remaining:10}};
+ const e=itemData.effective(effects,0,0,now);
+ assert.equal(e.add.value,2);assert.equal(e.animation.value,150);assert.equal(e.animation.id,'hero_haste_wax');assert.equal(e.damage.value,300);assert.equal(e.honey.value,250);assert.equal(e.reward.value,300);
+ assert.equal(itemData.damage(1,e),9);assert.equal(itemData.reward(100,0,1,e),750n);
+ assert.equal(itemData.effective(effects,0,0,expiry).animation.value,100);
+ assert.equal(itemData.channels(itemData.list.find(d=>d.id==='hero_haste_wax')).length,2);
+ const store=createStore(),p=store.players[1],inv=itemState(p);
+ for(const d of itemData.list){inv.inventory[d.id]=1;const r=itemAction(p,{action:'item_use',item_id:d.id,item_revision:inv.revision,request_id:crypto.randomUUID()},{now});assert.equal(r.inventory[d.id],0);assert.equal(d.seconds?r.effects[d.id].expires_at:r.effects[d.id].remaining,d.seconds?now+d.seconds*1000:d.count);}
 });
 test('strongest channels, rational rounding and counted item/event consumption',()=>{
  const s=createStore(),p=s.players[1],inv=itemState(p),now=Date.now();

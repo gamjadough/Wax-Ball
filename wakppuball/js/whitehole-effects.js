@@ -1,12 +1,12 @@
 (() => {
   const timing=Object.freeze({charge:120,shatter:400,energy:480,complete:1320,reward:1380,respawn:1700});
-  function play({wrap,svg,effects,center,radius,valid,shatter,reward,respawn}){
+  function play({wrap,svg,effects,center,radius,valid,shatter,reward,respawn,speed=1}){
     const timers=[],nodes=[],animations=[];let cancelled=false;
     const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
     function phase(name){wrap.dataset.whiteholePhase=name;wrap.dispatchEvent(new CustomEvent('whitehole-phase',{detail:name}));}
-    function animate(el,frames,duration){const animation=el.animate(frames,{duration,easing:'ease-out',fill:'forwards'});animations.push(animation);}
+    function animate(el,frames,duration){const animation=el.animate(frames,{duration:duration/speed,easing:'ease-out',fill:'forwards'});animations.push(animation);}
     function element(className){const el=document.createElement('div');el.className=className;el.setAttribute('aria-hidden','true');el.style.left=center.x+'px';el.style.top=center.y+'px';effects.append(el);nodes.push(el);return el;}
-    function at(time,run){timers.push(setTimeout(()=>{if(cancelled)return;if(!valid()){cancel();return;}run();},time));}
+    function at(time,run){timers.push(setTimeout(()=>{if(cancelled)return;if(!valid()){cancel();return;}run();},time/speed));}
     function cancel(){cancelled=true;timers.forEach(clearTimeout);animations.forEach(a=>a.cancel());nodes.forEach(el=>el.remove());wrap.classList.remove('whitehole-charging');svg.style.opacity='';delete wrap.dataset.whiteholePhase;}
     phase('crack');
     at(timing.charge,()=>{

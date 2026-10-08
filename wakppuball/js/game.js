@@ -704,6 +704,7 @@
      4. 깨지는 연출
      ========================================================================== */
   function breakBall(data) {
+    const speed=(window.WakppuItemData?.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt).animation.value||100)/100;
     if(!eventSelected)ordinaryClicks.delete(state.selected);
     const epoch=animationEpoch;
     state.busy = true;
@@ -713,7 +714,7 @@
     if(data.id==='admin-event'){
       const earned=eventAward;eventAward=null;wrap.classList.add('admin-ball-breaking');
       const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const fade=adminFade=svgEl.animate(reduced?[{opacity:1},{opacity:0}]:[{opacity:1,transform:'scale(1)'},{opacity:.4,transform:'scale(.96)',offset:.65},{opacity:0,transform:'scale(.8)'}],{duration:1100,easing:'ease-in',fill:'forwards'});
+      const fade=adminFade=svgEl.animate(reduced?[{opacity:1},{opacity:0}]:[{opacity:1,transform:'scale(1)'},{opacity:.4,transform:'scale(.96)',offset:.65},{opacity:0,transform:'scale(.8)'}],{duration:1100/speed,easing:'ease-in',fill:'forwards'});
       const epoch=animationEpoch;
       state.respawnTimer=setTimeout(()=>{
         fade.cancel();wrap.classList.remove('admin-ball-breaking');
@@ -721,10 +722,10 @@
         displayEventReward=0n;
         if(earned!==null){updateAll();const c=ballCenter();floatText('+'+fmt(earned)+'G',c.x,c.y-wrap.offsetHeight*.32);}
         eventClicks=0;spawnBall(true);updateAll();
-      },1150);return;
+      },1150/speed);return;
     }
     if(data.grade==='초월'){
-      transcendentEffect=WakppuTranscendent.play({ball:data,wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,
+      transcendentEffect=WakppuTranscendent.play({ball:data,wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,
         valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,
         reward:()=>awardBreakReward(data),
         respawn:()=>{svgEl.classList.remove('instant');spawnBall(true);if(!testSnapshot)hintEl.textContent='왁뿌볼을 눌러 깨보세요';}
@@ -732,21 +733,21 @@
     }
     if(data.id==='whitehole'){
       whiteholeEffect?.cancel();
-      whiteholeEffect=WakppuWhitehole.play({wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,
+      whiteholeEffect=WakppuWhitehole.play({wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,
         valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,
-        shatter:()=>{makeShards(SHAPES.circle);wrap.classList.add('broken');},
+        shatter:()=>{makeShards(SHAPES.circle,speed);wrap.classList.add('broken');},
         reward:()=>awardBreakReward(data),
         respawn:()=>{wrap.classList.remove('broken');svgEl.classList.remove('instant');spawnBall(true);if(!testSnapshot)hintEl.textContent='왁뿌볼을 눌러 깨보세요';}
       });
       return;
     }
-    requestAnimationFrame(() => setTimeout(() => {if(epoch===animationEpoch)finishBreak(data);}, 110));
+    requestAnimationFrame(() => setTimeout(() => {if(epoch===animationEpoch)finishBreak(data,speed);}, 110/speed));
   }
 
-  function finishBreak(data) {
+  function finishBreak(data,speed=1) {
     const epoch=animationEpoch;
     const shape = SHAPES[data.design.shape] || SHAPES.circle;
-    makeShards(shape);
+    makeShards(shape,speed);
     wrap.classList.add('broken');
     const center = ballCenter();
     flash(data);
@@ -755,13 +756,13 @@
     setTimeout(() => {
       if(epoch!==animationEpoch || window.wakppuServerBlocked)return;
       awardBreakReward(data);
-    }, 260);
+    }, 260/speed);
     clearTimeout(state.respawnTimer);
     state.respawnTimer = setTimeout(() => {
       wrap.classList.remove('broken');
       svgEl.classList.remove('instant');
       spawnBall(true);
-    }, Math.max(RESPAWN_DELAY_MS, 1050));
+    }, Math.max(RESPAWN_DELAY_MS, 1050)/speed);
   }
 
   function awardBreakReward(data){
@@ -774,7 +775,7 @@
   }
 
   /* 왁뿌볼을 조각으로 쪼개서 날리기 */
-  function makeShards(shape) {
+  function makeShards(shape,speed=1) {
     const uid = state.uid;
     const defs = svgEl.querySelector('#' + uid + '-defs');
     const inner = svgEl.querySelector('#' + uid + '-inner');
@@ -839,7 +840,7 @@
         { transform: 'translate(0px,0px) rotate(0deg)', opacity: 1, easing: 'cubic-bezier(.15,.7,.3,1)' },
         { transform: `translate(${tx}px,${ty}px) rotate(${rot * 0.6}deg)`, opacity: 1, offset: 0.45, easing: 'ease-in' },
         { transform: `translate(${tx * 1.2}px,${ty + fall}px) rotate(${rot}deg)`, opacity: 0 },
-      ], { duration: rand(650, 900), fill: 'forwards' });
+      ], { duration: rand(650, 900)/speed, fill: 'forwards' });
     });
   }
 
