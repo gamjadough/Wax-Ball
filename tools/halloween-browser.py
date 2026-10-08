@@ -12,7 +12,7 @@ with sync_playwright() as p:
         page=browser.new_page(viewport={'width':width,'height':844})
         page.route('**/*',lambda r:r.continue_() if r.request.url.startswith(base) else r.fulfill(status=200,body=''))
         errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
-        page.goto(base+'/?preview=halloween');page.wait_for_load_state('networkidle')
+        page.goto(base+'/?theme=halloween');page.wait_for_load_state('networkidle')
         expect(page.locator('body')).to_have_class('halloween-theme')
         assert page.locator('#halloweenScenery').get_attribute('aria-hidden')=='true'
         assert page.evaluate("getComputedStyle(document.querySelector('#halloweenScenery')).pointerEvents==='none'")
@@ -32,12 +32,21 @@ with sync_playwright() as p:
             assert page.locator(selector).first.evaluate("e=>getComputedStyle(e).animationName==='none'"),selector
         assert page.evaluate("getComputedStyle(document.querySelector('.halloween-fog'),'::after').animationName==='none'")
         # An ordinary local URL follows the same dates as production.
+        clock_time=['2026-10-23T23:59:45+09:00']
+        def clock_status(route):
+            if route.request.post_data_json.get('action')=='status':
+                route.fulfill(json={'maintenance':False,'background_mode':'auto','server_time':clock_time[0],'role':'player','moderation':{'blocked':False}})
+            else:route.continue_()
+        page.route(base+'/local/api',clock_status)
         page.clock.install(time=__import__('datetime').datetime.fromisoformat('2026-10-23T23:59:45+09:00'))
         page.goto(base);page.wait_for_load_state('networkidle')
         assert not page.evaluate("document.body.classList.contains('halloween-theme')")
+        clock_time[0]='2026-10-24T00:00:15+09:00'
         page.clock.fast_forward(30000)
         assert page.evaluate("document.body.classList.contains('halloween-theme')")
         page.clock.set_system_time(__import__('datetime').datetime.fromisoformat('2026-11-14T23:59:45+09:00'))
+        page.evaluate("WakppuHalloween.accept({background_mode:'auto',server_time:'2026-11-14T23:59:45+09:00'})")
+        clock_time[0]='2026-11-15T00:00:15+09:00'
         page.clock.fast_forward(30000)
         assert not page.evaluate("document.body.classList.contains('halloween-theme')")
         expect(page.locator('#halloweenScenery')).to_be_hidden()

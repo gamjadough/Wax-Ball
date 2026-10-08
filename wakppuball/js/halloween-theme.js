@@ -6,13 +6,21 @@
     return day >= 1024 && day <= 1114;
   }
   const local = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
-  const preview = local && new URLSearchParams(location.search).get('preview') === 'halloween';
+  const params=new URLSearchParams(location.search);
+  const preview = local && (params.get('preview')==='halloween' || params.get('theme')==='halloween');
+  let mode='auto',serverOffset=0;
   function update() {
-    const active = preview || activeAt(Date.now());
+    const active = preview || mode==='halloween' || (mode==='auto' && activeAt(Date.now()+serverOffset));
     document.body.classList.toggle('halloween-theme', active);
     document.getElementById('halloweenScenery').hidden = !active;
   }
-  window.WakppuHalloween = { activeAt, update };
+  function accept(status) {
+    if(['auto','default','halloween'].includes(status.background_mode))mode=status.background_mode;
+    const time=Date.parse(status.server_time);
+    if(Number.isFinite(time))serverOffset=time-Date.now();
+    update();
+  }
+  window.WakppuHalloween = { activeAt, update, accept, get mode(){return mode;} };
   update();
   // Also switch automatically if the player leaves the game open across midnight.
   setInterval(update, 30000);

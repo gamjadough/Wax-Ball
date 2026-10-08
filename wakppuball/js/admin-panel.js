@@ -6,6 +6,7 @@
   selectionStatus.id='adminSelectionStatus';selectionStatus.className='admin-selection-status';selectionStatus.setAttribute('role','status');
   $('admin').querySelector('.sheet-head').after(selectionStatus);
   function syncSelection(){
+    $('adminBackgroundApply').disabled=pending;
     const m=selectedPlayer?.moderation||{};
     const banned=m.status==='banned'||(m.status==='suspended'&&(!m.suspended_until||new Date(m.suspended_until).getTime()>Date.now()));
     selectionStatus.textContent=selectedPlayer?`선택 대상: ${selectedPlayer.nickname}`:'선택 대상 없음 · 목록에서 플레이어를 선택하세요.';
@@ -42,6 +43,19 @@
     $('serverAnnouncement').hidden=true;
   };
   function status(message){$('adminStatus').textContent=message;}
+  let backgroundDirty=false;
+  const backgroundNames={auto:'자동 · 할로윈 기간 적용',default:'기본 배경',halloween:'할로윈 배경'};
+  $('adminBackgroundMode').onchange=()=>{backgroundDirty=true;};
+  function backgroundStatus(result){
+    window.WakppuHalloween?.accept(result);
+    if(!backgroundNames[result.background_mode])return;
+    if(!backgroundDirty)$('adminBackgroundMode').value=result.background_mode;
+    $('adminBackgroundStatus').textContent='현재 전체 설정: '+backgroundNames[result.background_mode];
+  }
+  $('adminBackgroundApply').onclick=async()=>{
+    const result=await call('admin_background',{mode:$('adminBackgroundMode').value});
+    if(result){backgroundDirty=false;backgroundStatus(result);status('전체 배경을 적용했습니다.');}
+  };
   const eventTimeFields=new Map();
   function timeSeconds(id){
     const {input,unit} = eventTimeFields.get(id),raw=input.value.trim();
@@ -97,6 +111,7 @@
     refreshing=true;
     try{
       const result=await window.WakppuAuth.invoke('status');
+      backgroundStatus(result);
       window.WakppuGoldEvent.update(result);
       window.WakppuAdminBallEvent.update(result);
       window.WakppuEventSchedule?.update(result);

@@ -155,6 +155,7 @@
     <div class="sheet admin-sheet" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
       <div class="sheet-head"><h2 id="adminTitle">관리자 패널</h2><button data-close="admin" class="btn small">닫기</button></div>
       <p id="adminStatus" role="status"></p>
+      <section><h3>전체 배경</h3><label>배경 설정<select id="adminBackgroundMode"><option value="auto">자동 · 할로윈 기간 적용</option><option value="default">기본 배경</option><option value="halloween">할로윈 배경</option></select></label><p>모든 사용자에게 적용됩니다. 자동 모드는 한국 시간 10월 24일~11월 14일에 할로윈 배경을 표시합니다.</p><p id="adminBackgroundStatus" role="status"></p><button id="adminBackgroundApply" class="btn">배경 적용</button></section>
       <section><h3>👑 관리자 왁뿌볼 이벤트</h3><p>모든 플레이어에게 자동 등장합니다. 600회 · 반복 파괴 가능 · 최고 해금 볼 보상 ×10에 기존 배율 적용. 도감에서 자유롭게 변경할 수 있습니다.</p><label>진행 시간 (1~86,400초)<input id="adminBallEventDuration" type="number" min="1" max="86400" value="300"></label><label>시작 전 대기 시간 (0~86,400초)<input id="adminBallEventDelay" type="number" min="0" max="86400" value="0"></label><p id="adminBallEventInfo" role="status"></p><div class="admin-controls"><button id="adminBallEventStart" class="btn">관리자 볼 이벤트 시작</button><button id="adminBallEventStop" class="btn" disabled>관리자 볼 이벤트 종료</button></div></section>
       <section><h3>🎉 전체 골드 타임</h3><p>설정한 시간 동안 모든 플레이어의 Gold 획득 배율을 높입니다. 환생·꿀 배율과 곱해지며, 진행 시간 종료 시 자동으로 해제됩니다.</p><label>Gold 배율 (1~1,000배)<input id="adminEventMultiplier" type="number" min="1" max="1000" step="1" value="10"></label><label>진행 시간 (1~86,400초)<input id="adminEventDuration" type="number" min="1" max="86400" step="1" value="60"></label><label>시작 전 대기 시간 (0~86,400초 · 0이면 즉시 시작)<input id="adminEventDelay" type="number" min="0" max="86400" step="1" value="30"></label><p id="adminGoldEventInfo" role="status">이벤트 상태 확인 중…</p><div class="admin-controls"><button id="adminGoldEventStart" class="btn">설정한 이벤트 시작</button><button id="adminGoldEventStop" class="btn" disabled>이벤트 즉시 종료</button></div></section>
       <section><h3>점검·공지</h3><label>점검 안내<input id="adminMaintenanceMessage" value="현재 게임이 업데이트 중입니다."></label><div class="account-actions"><button id="adminMaintenanceOn" class="btn">점검 ON</button><button id="adminMaintenanceOff" class="btn">점검 OFF</button></div><label>전체 공지<input id="adminAnnouncement" maxlength="500"></label><div class="account-actions"><button id="adminAnnounce" class="btn">공지 보내기</button><button id="adminClearAnnouncement" class="btn" disabled>공지 내리기</button></div></section>
@@ -208,8 +209,8 @@
   <script src="js/game.js?v=20261017-admin1"></script>
   <script src="js/event-schedule.js?v=20261014-schedule1"></script>
   <script src="js/presence.js?v=20261016-ranking-presence"></script>
-  <script src="js/admin-panel.js?v=20261016-rebirth1000"></script>
+  <script src="js/admin-panel.js?v=20261017-background1"></script>
   <script src="js/guest-lifecycle.js?v=20261006-guest1"></script>
-  <script src="js/halloween-theme.js?v=20261008-halloween1"></script>
+  <script src="js/halloween-theme.js?v=20261017-background1"></script>
 </body>
 </html>

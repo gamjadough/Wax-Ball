@@ -17,5 +17,14 @@ test('annual Korean-time season boundaries independent of host timezone',()=>{
 test('preview only forces scenery on loopback hosts; production follows schedule',()=>{
   assert.equal(setup('127.0.0.1','?preview=halloween').state.active,true);
   assert.equal(setup('gamjadough.github.io','?preview=halloween').state.active,false);
+  assert.equal(setup('127.0.0.1','?theme=halloween').state.active,true);
+  assert.equal(setup('gamjadough.github.io','?theme=halloween').state.active,false);
   assert.equal(setup('gamjadough.github.io','',Date.parse('2026-10-24T00:00:00+09:00')).state.hidden,false);
+});
+test('server override takes priority and auto restores Korean schedule using server time',()=>{
+  const {state,api}=setup('example.com');
+  api.accept({background_mode:'halloween'});assert.equal(state.active,true);
+  api.accept({background_mode:'default',server_time:'2026-10-31T12:00:00+09:00'});assert.equal(state.active,false);
+  api.accept({background_mode:'auto'});assert.equal(state.active,true);
+  api.accept({background_mode:'auto',server_time:'2026-11-15T00:00:00+09:00'});assert.equal(state.active,false);
 });

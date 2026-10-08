@@ -30,7 +30,7 @@ export function execute(store, actor, body) {
     if(actor && isBanned(actor))error('이 계정은 이용이 제한되었습니다.',403);
     return store.players.filter(p=>!p.ranking_hidden&&!isBanned(p)&&!guestLifecycleInfo(p)?.ranking_excluded).map(p=>({nickname:p.nickname,gold:p.state.gold,rebirths:p.state.rebirths,online:Number.isFinite(p.lastSeen)&&p.lastSeen>Date.now()-90000})).sort((a,b)=>b.rebirths-a.rebirths||(BigInt(a.gold)===BigInt(b.gold)?0:BigInt(a.gold)>BigInt(b.gold)?-1:1)).slice(0,100);
   }
-  if(action==='status'&&!actor)return {maintenance:store.maintenance,message:store.message,announcement:store.announcement,role:'player',moderation:{blocked:false}};
+  if(action==='status'&&!actor)return {background_mode:store.background_mode||'auto',server_time:new Date().toISOString(),maintenance:store.maintenance,message:store.message,announcement:store.announcement,role:'player',moderation:{blocked:false}};
   if (!actor) error('로그인이 필요합니다.',401);
   if(action==='presence_ping'){
     if(isBanned(actor))error('이 계정은 이용이 제한되었습니다.',403);
@@ -38,9 +38,16 @@ export function execute(store, actor, body) {
     return {ok:true};
   }
   if (action.startsWith('admin_') && actor.role !== 'admin') error('admin only',403);
-  if (action==='status') return {admin_ball_always:actor.role==='admin'&&!actor.is_anonymous,admin_ball_event:store.maintenance?null:store.admin_ball_event||null,gold_event:store.gold_event||null,server_time:new Date().toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
+  if (action==='status') return {background_mode:store.background_mode||'auto',admin_ball_always:actor.role==='admin'&&!actor.is_anonymous,admin_ball_event:store.maintenance?null:store.admin_ball_event||null,gold_event:store.gold_event||null,server_time:new Date().toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
   if (store.maintenance && actor.role!=='admin' && !action.startsWith('admin_')) error('점검 중입니다.',503);
   if (isBanned(actor)) error('이 계정은 이용이 제한되었습니다.',403);
+  if(action==='admin_background'){
+    if(actor.is_anonymous)error('관리자 권한이 필요합니다.',403);
+    if(!['auto','default','halloween'].includes(body.mode))error('배경 설정을 선택하세요.');
+    const before=store.background_mode||'auto';store.background_mode=body.mode;
+    store.logs.push({admin:actor.id,action:'ADMIN_BACKGROUND',target:null,before,after:body.mode,time:new Date().toISOString()});
+    return {ok:true,background_mode:body.mode,server_time:new Date().toISOString()};
+  }
   if(['limited','limited_buy','limited_select','limited_hit'].includes(action))return limitedAction(store,actor,body,catalog);
   if(['admin_event_schedule','admin_event_schedule_cancel'].includes(action)){
     const kind=body.event_type,key=kind==='gold'?'gold_event':'admin_ball_event';
