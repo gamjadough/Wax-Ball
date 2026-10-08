@@ -12,12 +12,12 @@
   $('collectionGrid').hidden=true;$('collectionDetail').hidden=true;$('collectionPager').hidden=true;
   const owned=data?.owned[config.ball.id],selected=data?.selected===config.ball.id,active=!!data?.season.active;
   const state=selected?'사용 중':owned?'보유 중':active?'획득 가능':Date.now()<Date.parse(config.season.starts_at)?'시작 전':'기간 종료';
-  const base=owned?.reward||'획득 시 최고 해금 볼 기준';
+  const base=WakppuGold.compact(config.ball.reward);
   $('limitedSeason').textContent=config.season.name+' · 수집 '+(owned?1:0)+' / 1';
   $('limitedBalance').textContent='🍬 할로윈 사탕 '+(data?.tokens||0)+'개 · 일반 볼 파괴 시 10% 확률로 1개';
   $('limitedPeriod').textContent='한국 시간 2026.10.24 00:00 ~ 11.14 23:59 · '+(active?'진행 중':state==='시작 전'?'시작 전':'기간 종료');
   const card='<span class="thumb">'+buildBallThumb(config.ball)+'</span><span class="collection-name">'+config.ball.name+'</span><span class="collection-state">'+state+'</span>';
-  $('limitedCards').innerHTML=detail?'<button class="btn small" data-limited-back>〈 목록으로</button><article class="card limited-detail">'+card+'<p>기본 필요 타격량 100회 · 기존 아이템·환생 배율 적용</p><p>기본 파괴 보상 '+base+(owned?' G':'')+'</p><p>기간 종료·환생 후에도 보유하고 선택할 수 있습니다.</p>'+(owned?'<button class="btn" data-limited-select '+(!ready()||selected?'disabled':'')+'>'+(selected?'사용 중':'선택')+'</button>':'<button class="btn" data-limited-buy '+(!active||!ready()||(data?.tokens||0)<100?'disabled':'')+'>🍬 사탕 100개로 구매</button>')+'</article>':'<button class="card collection-card" data-limited-detail aria-label="'+config.ball.name+' · '+state+' · 상세 보기">'+card+'</button>';
+  $('limitedCards').innerHTML=detail?'<button class="btn small" data-limited-back>〈 목록으로</button><article class="card limited-detail">'+card+'<p>기본 필요 타격량 100회 · 기존 아이템·환생 배율 적용</p><p>기본 파괴 보상 '+base+' G · 영겁의 왁스볼 ×1.5'+'</p><p>기간 종료·환생 후에도 보유하고 선택할 수 있습니다.</p>'+(owned?'<button class="btn" data-limited-select '+(!ready()||selected?'disabled':'')+'>'+(selected?'사용 중':'선택')+'</button>':'<button class="btn" data-limited-buy '+(!active||!ready()||(data?.tokens||0)<100?'disabled':'')+'>🍬 사탕 100개로 구매</button>')+'</article>':'<button class="card collection-card" data-limited-detail aria-label="'+config.ball.name+' · '+state+' · 상세 보기">'+card+'</button>';
  }
  document.addEventListener('DOMContentLoaded',()=>{
   const tabs=document.createElement('div');tabs.className='collection-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','도감 분류');tabs.innerHTML='<button id="normalCollectionTab" class="btn small" role="tab" aria-selected="true" aria-controls="collectionGrid" data-collection-tab="normal">일반 도감</button><button id="limitedCollectionTab" class="btn small" role="tab" aria-selected="false" aria-controls="limitedCollection" tabindex="-1" data-collection-tab="limited">한정 도감</button>';

@@ -24,16 +24,16 @@ try:
             page.locator('[data-limited-detail]').click();expect(page.locator('[data-limited-buy]')).to_be_enabled()
             page.locator('[data-limited-buy]').click();page.wait_for_function('!WakppuLimited.busy')
             assert page.evaluate('WakppuLimited.data.tokens')==0
-            assert page.evaluate('WakppuLimited.data.owned[WakppuLimitedData.ball.id].reward')=='10'
+            assert page.evaluate('WakppuLimited.data.owned[WakppuLimitedData.ball.id].reward')=='1500000000'
             expect(page.locator('[data-limited-select]')).to_be_enabled();page.locator('[data-limited-select]').click()
             expect(page.locator('#collection')).to_be_hidden();expect(page.locator('#ballName')).to_have_text('할로윈 호박 왁뿌볼')
             expect(page.locator('#ballSvg .pumpkin-flame')).to_have_count(1)
             gold=int(page.evaluate('WakppuItemGame.read().gold'))
             page.locator('#ballSvg').click(position={'x':150,'y':150})
             expect(page.locator('#ballWrap')).to_have_attribute('data-halloween-phase','shatter')
-            page.wait_for_function('(gold)=>BigInt(WakppuItemGame.read().gold)===BigInt(gold)+10n',arg=str(gold))
+            page.wait_for_function('(gold)=>BigInt(WakppuItemGame.read().gold)===BigInt(gold)+1500000000n',arg=str(gold))
             page.wait_for_timeout(1500)
-            assert int(page.evaluate('WakppuItemGame.read().gold'))==gold+10
+            assert int(page.evaluate('WakppuItemGame.read().gold'))==gold+1500000000
             expect(page.locator('#ballName')).to_have_text('할로윈 호박 왁뿌볼')
             page.reload();page.wait_for_function('WakppuLimited.data?.selected===WakppuLimitedData.ball.id')
             expect(page.locator('#ballName')).to_have_text('할로윈 호박 왁뿌볼')
