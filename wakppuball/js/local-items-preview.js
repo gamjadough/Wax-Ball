@@ -1,7 +1,7 @@
 // Injected by the local server only. Never contacts production.
 document.addEventListener('DOMContentLoaded',()=>{
   const panel=document.createElement('div');panel.className='local-items-preview';
-  panel.style.cssText='position:fixed;right:8px;top:110px;z-index:100;padding:8px;background:#171923;border:1px solid #aa88ff;border-radius:10px;display:grid;gap:6px;max-width:calc(100vw - 16px);box-sizing:border-box';
+  panel.style.cssText='position:fixed;right:8px;top:110px;z-index:100;padding:8px;background:#171923;border:1px solid #aa88ff;border-radius:10px;gap:6px;max-width:calc(100vw - 16px);box-sizing:border-box';
   const button=document.createElement('button');button.className='btn small';button.textContent='샘플 초기화 · 100Qi / 아이템 각 3개 / 천장 98';
   async function reset(){
     button.disabled=true;

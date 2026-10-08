@@ -28,6 +28,7 @@ try:
             reset()
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
             page.locator('#drawBtn').tap();expect(page.locator('#drawPanel')).to_contain_text('0.1%')
+            expect(page.locator('.local-items-preview')).to_be_hidden()
             page.locator('[data-pulls="5"]').tap();page.locator('[data-pulls="5"]').dispatch_event('click')
             page.wait_for_function('!WakppuItems.busy&&WakppuDrawReveal.pending')
             prior=page.evaluate('WakppuItems.data');assert prior['gold']=='78000000000000000000' and prior['total']==103

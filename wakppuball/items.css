@@ -16,6 +16,7 @@
 @media(max-width:420px){#inventoryList{grid-template-columns:1fr}.top-btn{padding:8px 10px;font-size:13px}.items-sheet{max-height:85dvh}}
 @media(prefers-reduced-motion:reduce){.draw-result{animation:none!important}}
 
+.local-items-preview{display:grid}
 body:has(#itemsModal:not([hidden])) .local-items-preview{display:none}
 .draw-reveal{text-align:center;padding:18px 10px;border:1px solid #ffffff20;border-radius:18px;background:#15151e;margin:16px 0}
 .draw-progress{color:#eee}.draw-wax-ball{position:relative;display:block;width:min(240px,100%);margin:0 auto;padding:0;border:0;background:transparent;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
