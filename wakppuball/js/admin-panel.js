@@ -109,6 +109,7 @@
       $('maintenance').hidden=!$('game').hidden;
       $('maintenanceTitle').textContent=banned?'계정 이용 제한':'왁뿌볼 패치 중';
       $('maintenanceDescription').textContent=banned?'이 계정은 현재 플레이와 저장이 제한되어 있습니다.':'현재 게임이 업데이트 중입니다. 잠시 후 다시 접속해주세요.';
+      $('maintenanceRanking').hidden=banned;
       $('maintenanceLogin').textContent=banned?'계정 관리':'관리자 로그인';
       const until=result.moderation?.suspended_until;
       document.querySelector('.maintenance-note').textContent=banned

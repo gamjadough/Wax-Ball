@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>왁뿌볼</title>
-  <link rel="stylesheet" href="style.css?v=20261007-ranking-layout1">
+  <link rel="stylesheet" href="style.css?v=20261016-ranking-presence">
   <link rel="stylesheet" href="halloween.css?v=20261008-motion1">
   <link rel="stylesheet" href="guest-lifecycle.css?v=20261006-guest1">
   <link rel="stylesheet" href="whitehole.css?v=20261006-whitehole1">
@@ -27,6 +27,7 @@
       <h1 id="maintenanceTitle">왁뿌볼 패치 중</h1>
       <p id="maintenanceDescription">현재 게임이 업데이트 중입니다.<br>잠시 후 다시 접속해주세요.</p>
       <p class="maintenance-note">새로운 상점과 모바일 파괴 안정화 기능을 적용하고 있습니다.</p>
+      <button id="maintenanceRanking" class="btn" type="button">랭킹 보기</button>
       <button id="maintenanceLogin" class="btn" type="button">관리자 로그인</button>
     </div>
   </section>
@@ -188,7 +189,7 @@
   <!-- 스크립트 순서가 중요해요: 데이터 → 사운드 → 그림 → 게임 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/server-config.js?v=20261004-account1"></script>
-  <script src="js/account.js?v=20261005-email-link1"></script>
+  <script src="js/account.js?v=20261016-ranking-presence"></script>
   <script src="js/gold-format.js?v=20261011-rebirth500"></script>
   <script src="js/balls-data.js?v=20261011-rebirth500"></script>
   <script src="js/sound.js?v=20261002-progression1"></script>
@@ -203,9 +204,10 @@
   <script src="js/transcendent-effects.js?v=20261009-effects1"></script>
   <script src="js/admin-ball-event.js?v=20261010-admin-always1"></script>
   <script src="js/hammers-data.js?v=20261007-hammer30"></script>
-  <script src="js/game.js?v=20261015-halloween1"></script>
+  <script src="js/game.js?v=20261016-ranking-presence"></script>
   <script src="js/event-schedule.js?v=20261014-schedule1"></script>
-  <script src="js/admin-panel.js?v=20261014-schedule1"></script>
+  <script src="js/presence.js?v=20261016-ranking-presence"></script>
+  <script src="js/admin-panel.js?v=20261016-ranking-presence"></script>
   <script src="js/guest-lifecycle.js?v=20261006-guest1"></script>
   <script src="js/halloween-theme.js?v=20261008-halloween1"></script>
 </body>

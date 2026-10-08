@@ -53,7 +53,7 @@
 
   async function invoke(action, payload = {}) {
     const { data: { session } } = await client.auth.getSession();
-    if (!session && action !== 'status') throw new Error('로그인이 필요합니다.');
+    if (!session && !['status','rankings'].includes(action)) throw new Error('로그인이 필요합니다.');
     const response = await fetch(`${config.url}/rest/v1/rpc/wakppu_api`, {
       method: 'POST',
       headers: {

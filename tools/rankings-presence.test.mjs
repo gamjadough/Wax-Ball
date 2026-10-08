@@ -1,0 +1,74 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createRequire} from 'node:module';
+import {createStore,execute} from './admin-service.mjs';
+const require=createRequire(process.env.WAKPPU_TEST_DEPS || new URL('./test-results/sql-check/package.json',import.meta.url));
+const {PGlite}=require('@electric-sql/pglite');
+const a='00000000-0000-0000-0000-000000000001',p='00000000-0000-0000-0000-000000000002',g='00000000-0000-0000-0000-000000000003';
+test('local: maintenance rankings, anonymous reads, presence throttle and ban filtering',()=>{
+ const s=createStore(),admin=s.players[0],player=s.players[1];s.maintenance=true;
+ assert.equal(execute(s,null,{action:'rankings'}).find(r=>r.nickname===player.nickname).online,false);
+ assert.throws(()=>execute(s,null,{action:'presence_ping'}),{status:401});
+ execute(s,player,{action:'presence_ping',user_id:admin.id,last_seen_at:'2100-01-01'});
+ assert.equal(admin.lastSeen,undefined);
+ assert.equal(execute(s,null,{action:'rankings'}).find(r=>r.nickname===player.nickname).online,true);
+ const before=player.lastSeen;execute(s,player,{action:'presence_ping'});assert.equal(before,player.lastSeen);
+ player.lastSeen=Date.now()-91000;
+ assert.equal(execute(s,null,{action:'rankings'}).find(r=>r.nickname===player.nickname).online,false);
+ assert.throws(()=>execute(s,player,{action:'save_progress'}),{status:503});
+ player.moderation={status:'banned'};
+ assert.throws(()=>execute(s,player,{action:'presence_ping'}),{status:403});
+ assert.ok(!execute(s,null,{action:'rankings'}).some(r=>r.nickname===player.nickname));
+});
+test('SQL: public maintenance reads, secure 90s presence, filters, numeric order and wrapper preservation',async()=>{
+ const db=new PGlite();
+ try{
+  await db.exec(`create role anon;create role authenticated;create schema auth;
+   create table auth.users(id uuid primary key,is_anonymous boolean default false,email text,raw_user_meta_data jsonb default '{}',created_at timestamptz default now());
+   create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb$$;
+   create function auth.uid() returns uuid language sql stable as $$select (auth.jwt()->>'sub')::uuid$$;
+   create table players(user_id uuid primary key references auth.users on delete cascade,nickname text unique,role text,updated_at timestamptz default now());
+   create table game_states(user_id uuid primary key references players on delete cascade,gold bigint default 10000,rebirths smallint default 0,unlocked_ball_ids jsonb default '["yellow"]',discovered_ball_ids jsonb default '["yellow"]',selected_ball_id text default 'yellow',honey_expires_at timestamptz,updated_at timestamptz default now());
+   create table moderation_cases(user_id uuid primary key references players,status text default 'active',suspicion_score integer default 0,strikes integer default 0,suspended_until timestamptz,last_reason text,updated_at timestamptz default now());
+   create table admin_audit_logs(id bigint generated always as identity primary key,admin_user_id uuid references players,target_user_id uuid references players,action text,reason text,details jsonb,created_at timestamptz default now());
+   insert into auth.users(id) values('${a}'),('${p}');
+   insert into players values('${a}','관리자','admin',now()),('${p}','플레이어','player',now());
+   insert into game_states(user_id) values('${a}'),('${p}');`);
+  for(const name of ['20261004_accounts_and_rankings.sql','20261004_admin_exact_gold.sql','20261005_ranking_visibility_bans.sql','20261005_z_gold_event.sql','20261006_guest_lifecycle.sql','20261006_rebirth_100_big_gold.sql','20261006_rebirth_constraint_100.sql','20261006_zz_custom_gold_event.sql','20261014_event_schedule.sql'])
+   await db.exec(await readFile(new URL('../supabase/migrations/'+name,import.meta.url),'utf8'));
+  const before=(await db.query("select pg_get_functiondef('public.wakppu_api(jsonb)'::regprocedure) as s")).rows[0].s;
+  const migration=await readFile(new URL('../supabase/migrations/20261016_rankings_presence.sql',import.meta.url),'utf8');
+  await db.exec(migration);await db.exec(migration);
+  const preserved=(await db.query("select pg_get_functiondef('public.wakppu_api_before_presence(jsonb)'::regprocedure) as s")).rows[0].s;
+  assert.equal(preserved.replaceAll('wakppu_api_before_presence','wakppu_api'),before);
+  async function rpc(user,body){await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify(user?{sub:user}:{})]);return (await db.query('select public.wakppu_api($1::jsonb) as data',[JSON.stringify(body)])).rows[0].data;}
+  await rpc(a,{action:'admin_maintenance',enabled:true});
+  assert.equal((await rpc(null,{action:'rankings'})).length,2);
+  await assert.rejects(rpc(null,{action:'presence_ping'}),{code:'PT401'});
+  await assert.rejects(rpc(p,{action:'save_progress'}),{code:'PT503'});
+  await rpc(p,{action:'presence_ping',user_id:a,last_seen_at:'2100-01-01'});
+  const first=(await db.query('select last_seen_at from player_presence where user_id=$1',[p])).rows[0].last_seen_at;
+  await rpc(p,{action:'presence_ping'});
+  assert.deepEqual((await db.query('select last_seen_at from player_presence where user_id=$1',[p])).rows[0].last_seen_at,first);
+  assert.equal((await db.query('select count(*)::integer as n from player_presence where user_id=$1',[a])).rows[0].n,0);
+  let rows=await rpc(null,{action:'rankings'});
+  assert.equal(rows.find(r=>r.nickname==='플레이어').online,true);
+  assert.deepEqual(Object.keys(rows[0]).sort(),['gold','nickname','online','rebirths']);
+  await db.exec("update player_presence set last_seen_at=clock_timestamp()-interval '91 seconds' where user_id is not null");
+  assert.equal((await rpc(null,{action:'rankings'})).find(r=>r.nickname==='플레이어').online,false);
+  await db.exec("update game_states set gold=99999999999999999999999999999999999999 where user_id='"+p+"'");
+  assert.equal((await rpc(null,{action:'rankings'}))[0].nickname,'플레이어');
+  await db.exec("update players set ranking_hidden=true where user_id='"+p+"'");
+  assert.equal((await rpc(null,{action:'rankings'})).length,1);
+  await db.exec("update players set ranking_hidden=false where user_id='"+p+"';insert into moderation_cases(user_id,status) values('"+p+"','banned')");
+  await assert.rejects(rpc(p,{action:'presence_ping'}),{code:'PT403'});
+  assert.equal((await rpc(null,{action:'rankings'})).length,1);
+  await db.exec(`insert into auth.users(id,is_anonymous,created_at) values('${g}',true,now()-interval '40 minutes');insert into players values('${g}','미플레이게스트','player',now());insert into game_states(user_id) values('${g}');`);
+  assert.equal((await rpc(null,{action:'rankings'})).length,1);
+  await db.exec('set role anon');
+  await assert.rejects(db.exec('select * from public.player_presence'),{code:'42501'});
+  await assert.rejects(db.exec("select public.wakppu_api_before_presence('{\"action\":\"rankings\"}')"),{code:'42501'});
+  assert.equal((await db.query("select public.wakppu_api('{\"action\":\"rankings\"}') as data")).rows[0].data.length,1);
+ }finally{await db.close();}
+});

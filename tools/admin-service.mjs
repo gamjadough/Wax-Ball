@@ -26,7 +26,17 @@ export function createStore() {
 export function execute(store, actor, body) {
   const action = body.action;
   const error = (message, status=400) => { throw Object.assign(new Error(message), {status}); };
+  if (action==='rankings') {
+    if(actor && isBanned(actor))error('이 계정은 이용이 제한되었습니다.',403);
+    return store.players.filter(p=>!p.ranking_hidden&&!isBanned(p)&&!guestLifecycleInfo(p)?.ranking_excluded).map(p=>({nickname:p.nickname,gold:p.state.gold,rebirths:p.state.rebirths,online:Number.isFinite(p.lastSeen)&&p.lastSeen>Date.now()-90000})).sort((a,b)=>b.rebirths-a.rebirths||(BigInt(a.gold)===BigInt(b.gold)?0:BigInt(a.gold)>BigInt(b.gold)?-1:1)).slice(0,100);
+  }
+  if(action==='status'&&!actor)return {maintenance:store.maintenance,message:store.message,announcement:store.announcement,role:'player',moderation:{blocked:false}};
   if (!actor) error('로그인이 필요합니다.',401);
+  if(action==='presence_ping'){
+    if(isBanned(actor))error('이 계정은 이용이 제한되었습니다.',403);
+    if(!Number.isFinite(actor.lastSeen)||Date.now()-actor.lastSeen>=25000)actor.lastSeen=Date.now();
+    return {ok:true};
+  }
   if (action.startsWith('admin_') && actor.role !== 'admin') error('admin only',403);
   if (action==='status') return {admin_ball_always:actor.role==='admin'&&!actor.is_anonymous,admin_ball_event:store.maintenance?null:store.admin_ball_event||null,gold_event:store.gold_event||null,server_time:new Date().toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
   if (store.maintenance && actor.role!=='admin' && !action.startsWith('admin_')) error('점검 중입니다.',503);
@@ -98,7 +108,6 @@ export function execute(store, actor, body) {
     return {total:rows.length,page,rows:rows.slice(page*50,(page+1)*50),server_time:new Date().toISOString(),cleanup_enabled:false};
   }
   if (action==='bootstrap') return {player:{id:actor.id,nickname:actor.nickname,role:actor.role},state:actor.state,moderation:actor.moderation};
-  if (action==='rankings') return store.players.filter(p=>!p.ranking_hidden&&!isBanned(p)&&!guestLifecycleInfo(p)?.ranking_excluded).map(p=>({nickname:p.nickname,gold:p.state.gold,rebirths:p.state.rebirths})).sort((a,b)=>b.rebirths-a.rebirths||(BigInt(a.gold)===BigInt(b.gold)?0:BigInt(a.gold)>BigInt(b.gold)?-1:1));
   if (action==='set_nickname') {if(!/^[가-힣a-zA-Z0-9_]{2,16}$/.test(body.nickname)) error('닉네임 형식 오류'); actor.nickname=body.nickname;return {nickname:actor.nickname};}
   // 로컬 샘플 진행도에만 사용됩니다. 운영 저장 검증은 별도 게임 서버에서 처리해야 합니다.
   if (action==='save_progress') { if((body.item_revision||0)!==itemState(actor).revision)error('아이템 상태를 다시 불러옵니다.',409);if((body.admin_revision||0)!==(actor.state.admin_revision||0)) error('관리자가 변경한 진행도를 다시 불러옵니다.',409);if(Number(body.rebirths)>Number(actor.state.rebirths))itemState(actor).effects={};for(const k of Object.keys(actor.state)) if(k in body && k!=='admin_revision'&&k!=='item_revision') actor.state[k]=body[k];return {state:actor.state}; }

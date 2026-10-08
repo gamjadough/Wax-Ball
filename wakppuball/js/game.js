@@ -977,21 +977,27 @@
     updateAll();
   }
 
-  async function openRanking() {
+  let rankingLoading = false;
+  function openRanking() {
     rankingModal.hidden = false;
     rankingList.innerHTML = '';
     rankingStatus.hidden = false;
-    rankingStatus.textContent = '온라인 랭킹을 불러오는 중…';
+    rankingStatus.textContent = '랭킹을 불러오는 중…';
+    refreshRanking();
+  }
+  async function refreshRanking() {
+    if (rankingLoading) return;
+    rankingLoading = true;
     try {
-      if (!window.WakppuAuth || !state.account) throw new Error('login required');
+      if (!window.WakppuAuth) throw new Error('server unavailable');
       const rows = await window.WakppuAuth.invoke('rankings');
       if (!Array.isArray(rows)) throw new Error('invalid ranking');
       rankingStatus.hidden = true;
-      rankingList.innerHTML = rows.map((row, i) => `<li><b>${i + 1}</b><span>${escapeHtml(row.nickname)}</span><em>${fmt(row.rebirths)}회</em><strong title="${escapeHtml(String(row.gold))}G">${fmt(row.gold)}G</strong></li>`).join('');
+      rankingList.innerHTML = rows.map((row, i) => `<li><b>${i + 1}</b><span class="ranking-nickname">${row.online === true ? '<i class="ranking-online" role="img" aria-label="온라인" title="온라인"></i>' : ''}${escapeHtml(row.nickname)}</span><em>${fmt(row.rebirths)}회</em><strong title="${escapeHtml(String(row.gold))}G">${fmt(row.gold)}G</strong></li>`).join('');
     } catch (_) {
       rankingStatus.hidden = false;
-      rankingStatus.textContent = state.account ? '랭킹을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.' : '계정으로 로그인하면 모든 플레이어의 공용 랭킹을 볼 수 있습니다.';
-    }
+      rankingStatus.textContent = '랭킹을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.';
+    } finally { rankingLoading = false; }
   }
   function escapeHtml(value) { const div = document.createElement('div'); div.textContent = String(value || 'Player'); return div.innerHTML; }
 
@@ -1158,6 +1164,9 @@
   rebirthBtn.addEventListener('click', openRebirth);
   rebirthConfirm.addEventListener('click', doRebirth);
   rankingBtn.addEventListener('click', openRanking);
+  $('maintenanceRanking').addEventListener('click', openRanking);
+  setInterval(() => { if (!rankingModal.hidden && !document.hidden) refreshRanking(); }, 10000);
+  document.addEventListener('visibilitychange', () => { if (!rankingModal.hidden && !document.hidden) refreshRanking(); });
   accountBtn.addEventListener('click', openAccount);
   $('maintenanceLogin').addEventListener('click',openAccount);
   signInBtn.addEventListener('click', signIn);

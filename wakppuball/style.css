@@ -288,3 +288,6 @@ body {
 .maintenance-note { white-space: pre-line; }
 
 .gold-event-banner {flex:1 0 100%;padding:10px 14px;border:1px solid #e7b849;border-radius:12px;background:#352713;color:#ffe598;text-align:center;font-size:clamp(.75rem,2.5vw,.95rem);box-shadow:0 4px 16px #0005;}.gold-event-banner[data-phase="active"] {background:#634413;}
+
+.ranking-online { display:inline-block; width:8px; height:8px; border-radius:50%; background:#45db78; flex-shrink:0; margin-right:6px; vertical-align:middle; }
+.ranking-nickname { line-height:1.4; }
