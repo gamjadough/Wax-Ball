@@ -41,8 +41,10 @@ SQL tests require the existing PGlite test dependency.
 
 ## Deployment order
 
-This local-preview patch is on `codex/items-30-reveal`, not deployed to production.
-When releasing, apply `supabase/migrations/20261015_items_30.sql` before deploying
+The release incorporates the latest Halloween collection/scenery from main.
+Production item counts and weights were verified as 10/10/7/2/1 and
+7000/2200/600/190/10 respectively before the client release.
+When releasing again, apply `supabase/migrations/20261015_items_30.sql` before deploying
 the matching client. It only upserts item definitions and rank weights, preserving
 player inventory, active effects, request history, and existing API/schedule wrappers.
 The SQL file is generated from the same client catalog by `tools/sync-items-data.mjs`.
