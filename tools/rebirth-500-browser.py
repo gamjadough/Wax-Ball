@@ -18,42 +18,42 @@ with sync_playwright() as p:
         page.wait_for_load_state('networkidle')
         page.wait_for_selector('aside[data-ready="true"]')
         page.wait_for_load_state('networkidle')
-        expect(page.locator('#rebirthBtn')).to_contain_text('499회')
+        expect(page.locator('#rebirthBtn')).to_contain_text('999회')
         expect(page.locator('#rebirthBtn')).to_be_enabled()
         before = page.evaluate('async()=> (await WakppuAuth.invoke("bootstrap")).state.gold')
-        assert len(str(before)) == 157
-        print(width, '500th cost:', page.locator('#goldValue').inner_text())
+        assert len(str(before)) == 3004
+        print(width, '1000th cost:', page.locator('#goldValue').inner_text())
         page.locator('#rebirthBtn').click()
-        expect(page.locator('#rebirthText')).to_contain_text('UQig')
+        expect(page.locator('#rebirthText')).to_contain_text('2e3003')
         page.locator('#rebirthConfirm').click()
         print('After confirmation:', page.locator('#rebirthBtn').inner_text(), 'errors:', errors, flush=True)
-        expect(page.locator('#rebirthBtn')).to_contain_text('500회')
+        expect(page.locator('#rebirthBtn')).to_contain_text('1000회')
         expect(page.locator('#goldValue')).to_have_text('0')
         expect(page.locator('#rebirthBtn')).to_be_disabled()
-        with page.expect_response(lambda r: r.url.endswith('/local/api') and r.request.post_data and '"action":"save_progress"' in r.request.post_data and '"rebirths":500' in r.request.post_data):
+        with page.expect_response(lambda r: r.url.endswith('/local/api') and r.request.post_data and '"action":"save_progress"' in r.request.post_data and '"rebirths":1000' in r.request.post_data):
             page.wait_for_timeout(700)
-        assert page.evaluate('async()=> (await WakppuAuth.invoke("bootstrap")).state.rebirths') == 500
+        assert page.evaluate('async()=> (await WakppuAuth.invoke("bootstrap")).state.rebirths') == 1000
         page.reload()
         page.wait_for_load_state('networkidle')
         page.wait_for_selector('aside[data-ready="true"]')
-        expect(page.locator('#rebirthBtn')).to_contain_text('500회')
+        expect(page.locator('#rebirthBtn')).to_contain_text('1000회')
         expect(page.locator('#goldValue')).to_have_text('0')
         result = page.evaluate('''async()=>{
           const user=(await WakppuAuth.session()).data.session.user;
-          const gold='9'.repeat(1000);
+          const gold='9'.repeat(4096);
           await WakppuAuth.invoke('admin_gold',{user_id:user.id,mode:'set',value:gold});
           await WakppuGameTest.restoreAccount();
           return (await WakppuAuth.invoke('bootstrap')).state.gold===gold;
         }''')
         assert result
-        expect(page.locator('#goldValue')).to_have_text('1e1000')
+        expect(page.locator('#goldValue')).to_have_text('1e4096')
         page.reload()
         page.wait_for_load_state('networkidle')
         page.wait_for_selector('aside[data-ready="true"]')
-        expect(page.locator('#goldValue')).to_have_text('1e1000')
+        expect(page.locator('#goldValue')).to_have_text('1e4096')
         assert not errors, errors
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
         page.screenshot(path=f'tools/test-results/rebirth-500-{width}.png')
-        print(width, 'PASS: 499→500, reload, exact 1000-digit Gold, no JS errors/overflow')
+        print(width, 'PASS: 999→1000, reload, exact 4096-digit Gold, no JS errors/overflow')
         page.close()
     browser.close()

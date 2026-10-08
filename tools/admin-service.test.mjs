@@ -67,7 +67,8 @@ test('환생 범위·정지 해제·도감 초기화와 해금 분리',()=>{
   const s=createStore(),a=s.players[0],p=s.players[1];execute(s,a,{action:'admin_rebirths',user_id:p.id,mode:'set',value:5});assert.equal(p.state.rebirths,5);
   execute(s,a,{action:'admin_rebirths',user_id:p.id,mode:'set',value:100});assert.equal(p.state.rebirths,100);
   execute(s,a,{action:'admin_rebirths',user_id:p.id,mode:'set',value:500});assert.equal(p.state.rebirths,500);
-  assert.throws(()=>execute(s,a,{action:'admin_rebirths',user_id:p.id,mode:'set',value:501}));
+  execute(s,a,{action:'admin_rebirths',user_id:p.id,mode:'set',value:1000});assert.equal(p.state.rebirths,1000);
+  assert.throws(()=>execute(s,a,{action:'admin_rebirths',user_id:p.id,mode:'set',value:1001}));
   execute(s,a,{action:'admin_unlock',user_id:p.id,mode:'all'});assert.deepEqual(p.state.unlocked_ball_ids,ballIds);
   execute(s,a,{action:'admin_discovery',user_id:p.id,mode:'reset_all'});assert.deepEqual(p.state.discovered_ball_ids,[]);assert.deepEqual(p.state.unlocked_ball_ids,ballIds);
   execute(s,a,{action:'admin_unban',user_id:p.id});assert.equal(p.moderation.status,'active');

@@ -147,11 +147,11 @@ export function execute(store, actor, body) {
     if(!target) error('대상 계정 없음',404);
     before=structuredClone({state:target.state,moderation:target.moderation,ranking_hidden:target.ranking_hidden===true});
     if(action==='admin_gold'||action==='admin_rebirths') {
-      const key=action==='admin_gold'?'gold':'rebirths';if(!/^[0-9]{1,1000}$/.test(String(body.value))) error('0 이상의 정수를 입력하세요.');
+      const key=action==='admin_gold'?'gold':'rebirths';if(!/^[0-9]{1,4096}$/.test(String(body.value))) error('0 이상의 정수를 입력하세요.');
       const n=BigInt(body.value);
       if(!['add','subtract','set'].includes(body.mode)) error('변경 방식 오류');
       const v=body.mode==='set'?n:body.mode==='add'?BigInt(target.state[key])+n:BigInt(target.state[key])>n?BigInt(target.state[key])-n:0n;
-      if(v.toString().length>1000||(key==='rebirths'&&v>500n)) error('허용 범위를 벗어났습니다.');target.state[key]=key==='rebirths'?Number(v):v<=BigInt(Number.MAX_SAFE_INTEGER)?Number(v):v.toString();
+      if(v.toString().length>4096||(key==='rebirths'&&v>1000n)) error('허용 범위를 벗어났습니다.');target.state[key]=key==='rebirths'?Number(v):v<=BigInt(Number.MAX_SAFE_INTEGER)?Number(v):v.toString();
       target.state.admin_revision=(target.state.admin_revision||0)+1;
     } else if(action==='admin_ban') {
       if(target.role==='admin') error('관리자 계정은 밴할 수 없습니다.');
