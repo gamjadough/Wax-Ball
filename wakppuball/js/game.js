@@ -717,7 +717,7 @@
     svgEl.classList.add('instant');
     updateCracks(1);
     if(data.id===window.WakppuLimitedData?.ball.id){
-      transcendentEffect=WakppuHalloween.play({wrap,svg:svgEl,effects,center:ballCenter(),valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,reward:()=>awardBreakReward(data),respawn:()=>{svgEl.classList.remove('instant');spawnBall(true);}});return;
+      transcendentEffect=WakppuHalloweenEffects.play({wrap,svg:svgEl,effects,center:ballCenter(),valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,reward:()=>awardBreakReward(data),respawn:()=>{svgEl.classList.remove('instant');spawnBall(true);}});return;
     }
     if(data.id==='admin-event'){
       const earned=eventAward;eventAward=null;wrap.classList.add('admin-ball-breaking');
