@@ -1,5 +1,6 @@
 (() => {
- let data=null,busy=false,filter='all',lastResults=[],sequence=0,inventoryMarkup='';
+ let data=null,busy=false,filter='all',order='asc',page=0,selectedId=null,lastResults=[],sequence=0,inventoryMarkup='',detailMarkup='';
+ const pageSize=9;
  const ranks=WakppuItemData.ranks,defs=WakppuItemData.list;
  const format=n=>WakppuGold.compact(n);
  const rank=id=>ranks.find(r=>r.id===id);
@@ -16,9 +17,30 @@
   document.querySelectorAll('[data-pulls]').forEach(b=>b.disabled=busy||!!window.WakppuDrawReveal?.pending||!ready()||BigInt(game?.gold||0)<BigInt(WakppuItemData.prices[b.dataset.pulls]));
   document.querySelector('#itemsLogin').hidden=!!game?.ready;
   const owned=defs.filter(d=>data?.inventory[d.id]>0);
-  const entries=owned.filter(d=>filter==='all'||d.rank===filter);
-  const markup=entries.map(d=>'<article class="item-card" style="--item-color:'+rank(d.rank).color+'"><div class="item-heading"><span>'+d.icon+'</span><h3>'+d.name+'</h3><span>×'+data.inventory[d.id]+'</span></div><span class="item-rank">'+rank(d.rank).name+'</span><p>'+WakppuItemData.description(d)+'</p><button class="btn small" data-use="'+d.id+'" '+(busy||!ready()?'disabled':'')+'>사용</button></article>').join('')||'<p role="status">'+(owned.length?'이 등급에 보유한 아이템이 없습니다.':'보유한 아이템이 없습니다.')+'</p>';
+  const entries=owned.filter(d=>filter==='all'||d.rank===filter).sort((a,b)=>{
+   const difference=ranks.findIndex(r=>r.id===a.rank)-ranks.findIndex(r=>r.id===b.rank);
+   return (order==='asc'?difference:-difference)||defs.indexOf(a)-defs.indexOf(b);
+  });
+  const pages=Math.max(1,Math.ceil(entries.length/pageSize));page=Math.min(page,pages-1);
+  const visible=entries.slice(page*pageSize,(page+1)*pageSize);
+  const markup=entries.length?visible.map(d=>'<button type="button" class="item-card" data-item="'+d.id+'" data-rank="'+d.rank+'" style="--item-color:'+rank(d.rank).color+'" aria-label="'+d.name+' · '+rank(d.rank).name+' · 보유 '+data.inventory[d.id]+'개 · 상세 보기"><span class="item-icon" aria-hidden="true">'+d.icon+'</span><span class="item-name">'+d.name+'</span><span class="item-rank">'+rank(d.rank).name+'</span><span class="item-count">×'+data.inventory[d.id]+'</span></button>').join('')+'<div class="item-empty-slot" aria-hidden="true"></div>'.repeat(pageSize-visible.length):'<p class="item-empty-message" role="status">'+(owned.length?'이 등급에 보유한 아이템이 없습니다.':'보유한 아이템이 없습니다.')+'</p>';
   if(markup!==inventoryMarkup){document.querySelector('#inventoryList').innerHTML=markup;inventoryMarkup=markup;}
+  document.querySelector('#inventoryPageInfo').textContent=(page+1)+' / '+pages+' 페이지 · '+entries.length+'종';
+  document.querySelector('#inventoryPrevious').disabled=page===0;
+  document.querySelector('#inventoryNext').disabled=page===pages-1;
+  document.querySelectorAll('[data-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.filter===filter)));
+  const selected=owned.find(d=>d.id===selectedId);
+  const detailLost=selectedId&&!selected;
+  if(detailLost)selectedId=null;
+  document.querySelector('#inventoryBrowse').hidden=!!selected;
+  document.querySelector('#inventoryDetail').hidden=!selected;
+  const detail=selected?'<div class="item-detail-card" style="--item-color:'+rank(selected.rank).color+'"><span class="item-detail-icon" aria-hidden="true">'+selected.icon+'</span><h3 id="itemDetailName">'+selected.name+'</h3><span class="item-rank">'+rank(selected.rank).name+'</span><p>보유 수량: '+data.inventory[selected.id]+'개</p><p>'+WakppuItemData.description(selected)+'</p><button class="btn" data-use="'+selected.id+'" '+(busy||!ready()?'disabled':'')+'>사용</button></div>':'';
+  if(detail!==detailMarkup){
+   const using=document.activeElement?.matches('[data-use]');
+   document.querySelector('#inventoryDetailContent').innerHTML=detail;detailMarkup=detail;
+   if(using&&selected)(document.querySelector('[data-use]:not(:disabled)')||document.querySelector('#inventoryBack')).focus();
+  }
+  if(detailLost&&!document.querySelector('#itemsModal').hidden)(document.querySelector('[data-item]')||document.querySelector('#inventoryOrder')).focus();
   const effective=WakppuItemData.effective(data?.effects||{},game?.honey,game?.coating);
   const winners=new Set(Object.values(effective).map(e=>e.id));
   const effects=defs.filter(d=>{const e=data?.effects[d.id];return e&&(d.seconds?e.expires_at>Date.now():e.remaining>0);});
@@ -47,17 +69,30 @@
   const modal=document.createElement('div');modal.id='itemsModal';modal.className='modal';modal.hidden=true;
   modal.innerHTML='<div class="sheet items-sheet" role="dialog" aria-modal="true" aria-labelledby="itemsTitle"><div class="sheet-head"><h2 id="itemsTitle">아이템</h2><button id="itemsClose" class="btn small">닫기</button></div><p id="itemsStatus" role="status"></p><p id="itemsLogin">계정에서 빠른 시작 또는 로그인 후 사용할 수 있습니다.</p><section id="drawPanel"><h3>🎰 아이템 뽑기</h3><p id="itemsGold"></p><p id="itemsPity"></p><p>초월 기본 확률 0.1% · 100번째 확정 (천장 별도)</p><div class="draw-actions">'+[1,3,5].map(n=>'<button class="btn" data-pulls="'+n+'">'+n+'회 — '+format(WakppuItemData.prices[n])+' G</button>').join('')+'</div><details><summary>확률 보기</summary><ul>'+ranks.map(r=>'<li>'+r.name+' '+r.weight/100+'% · 각 아이템 '+(r.weight/100/defs.filter(d=>d.rank===r.id).length).toFixed(r.id==='hero'?4:2)+'%</li>').join('')+'</ul><p>같은 등급 안에서는 균등 확률입니다. 천장 확정은 기본 확률과 별도로 적용합니다. 초월은 천장 포함 장기 평균 약 1.05%입니다.</p></details><div id="drawResults" aria-live="polite"></div></section><section id="inventoryPanel"><h3>🎒 인벤토리</h3><p>같은 계열은 최강 효과 적용 · 횟수형은 적용될 때만 차감<br>환생 후 보유 아이템·천장 유지, 활성 효과 초기화</p><div class="item-filters">'+[{id:'all',name:'전체'},...ranks].map(r=>'<button class="btn small" data-filter="'+r.id+'">'+r.name+'</button>').join('')+'</div><div id="inventoryList"></div></section><section><h3>현재 효과</h3><ul id="itemEffects"></ul><p>같은 아이템은 시간·횟수가 누적됩니다. 시간은 접속하지 않아도 흐릅니다. 연장은 최대 7일입니다.</p></section></div>';
   document.body.append(modal);
+  const browse=document.createElement('div');browse.id='inventoryBrowse';
+  browse.append(modal.querySelector('.item-filters'));
+  browse.insertAdjacentHTML('beforeend','<label class="item-sort">등급 정렬<select id="inventoryOrder"><option value="asc">오름차순 · 일반 → 초월</option><option value="desc">내림차순 · 초월 → 일반</option></select></label>');
+  browse.append(modal.querySelector('#inventoryList'));
+  browse.insertAdjacentHTML('beforeend','<nav class="inventory-pagination" aria-label="아이템 페이지"><button id="inventoryPrevious" class="btn small">이전</button><span id="inventoryPageInfo" role="status" aria-live="polite"></span><button id="inventoryNext" class="btn small">다음</button></nav>');
+  modal.querySelector('#inventoryPanel').append(browse);
+  modal.querySelector('#inventoryPanel').insertAdjacentHTML('beforeend','<section id="inventoryDetail" aria-labelledby="itemDetailName" hidden><button id="inventoryBack" class="btn small">← 목록으로</button><div id="inventoryDetailContent"></div></section>');
   const effectsSection=modal.querySelector('#itemEffects').closest('section');modal.querySelector('#inventoryPanel').before(effectsSection);
   const badge=document.createElement('button');badge.id='activeItemsBadge';badge.className='btn small active-items-badge';badge.hidden=true;document.querySelector('.top').append(badge);
   let opener;
-  function open(inventory){opener=inventory?document.querySelector('#inventoryBtn'):document.querySelector('#drawBtn');document.querySelector('#drawPanel').hidden=inventory;document.querySelector('#inventoryPanel').hidden=!inventory;document.querySelector('#itemsTitle').textContent=inventory?'인벤토리':'아이템 뽑기';modal.hidden=false;document.querySelector('#itemsClose').focus();refresh();render();}
+  function open(inventory){selectedId=null;opener=inventory?document.querySelector('#inventoryBtn'):document.querySelector('#drawBtn');document.querySelector('#drawPanel').hidden=inventory;document.querySelector('#inventoryPanel').hidden=!inventory;document.querySelector('#itemsTitle').textContent=inventory?'인벤토리':'아이템 뽑기';modal.hidden=false;document.querySelector('#itemsClose').focus();refresh();render();}
   function close(){modal.hidden=true;opener?.focus();}
+  function back(){const previous=selectedId;selectedId=null;render();modal.querySelector('[data-item="'+previous+'"]')?.focus();}
   document.querySelector('#drawBtn').onclick=()=>open(false);document.querySelector('#inventoryBtn').onclick=()=>open(true);badge.onclick=()=>open(true);
   document.querySelector('#itemsClose').onclick=close;modal.onclick=e=>{if(e.target===modal)close();};
-  modal.addEventListener('keydown',e=>{if(e.key==='Escape')close();if(e.key==='Tab'){const nodes=[...modal.querySelectorAll('button:not(:disabled),summary')].filter(n=>n.getClientRects().length);if(!nodes.length)return;const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
+  document.querySelector('#inventoryBack').onclick=back;
+  document.querySelector('#inventoryOrder').onchange=e=>{order=e.target.value;page=0;render();};
+  document.querySelector('#inventoryPrevious').onclick=()=>{page--;render();};
+  document.querySelector('#inventoryNext').onclick=()=>{page++;render();};
+  modal.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();selectedId?back():close();}if(e.key==='Tab'){const nodes=[...modal.querySelectorAll('button:not(:disabled),select:not(:disabled),summary')].filter(n=>n.getClientRects().length);if(!nodes.length)return;const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
   modal.addEventListener('click',e=>{
    const draw=e.target.closest('[data-pulls]');if(draw)transact('item_draw',{count:Number(draw.dataset.pulls)});
-   const f=e.target.closest('[data-filter]');if(f){filter=f.dataset.filter;render();}
+   const f=e.target.closest('[data-filter]');if(f){filter=f.dataset.filter;page=0;render();}
+   const card=e.target.closest('[data-item]');if(card){selectedId=card.dataset.item;render();document.querySelector('#inventoryBack').focus();}
    const use=e.target.closest('[data-use]');if(use){
     const d=defs.find(d=>d.id===use.dataset.use),game=window.WakppuItemGame.read(),effective=WakppuItemData.effective(data.effects,game.honey,game.coating);
     const channels=WakppuItemData.channels(d);

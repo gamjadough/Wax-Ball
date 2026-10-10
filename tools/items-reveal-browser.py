@@ -62,13 +62,21 @@ try:
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
             # Use all 30 definitions independently, preserving the real UI suppression rule.
             defs=page.evaluate('WakppuItemData.list')
+            def select_item(id):
+                if page.locator('#inventoryDetail').is_visible():page.locator('#inventoryBack').tap()
+                grade=next(d['rank'] for d in defs if d['id']==id)
+                page.locator('[data-filter="'+grade+'"]').tap()
+                while page.locator('[data-item="'+id+'"]').count()==0:page.locator('#inventoryNext').tap()
+                page.locator('[data-item="'+id+'"]').tap()
             for d in defs if width==390 else [d for d in defs if d['id'] in ['common_wax_feather','hero_haste_wax','transcendent_wax_heart']]:
                 reset();page.locator('#inventoryBtn').tap();page.locator('[data-filter="all"]').tap()
+                select_item(d['id'])
                 page.locator('[data-use="'+d['id']+'"]').tap();page.wait_for_function('!WakppuItems.busy')
                 data=page.evaluate('WakppuItems.data');assert data['inventory'][d['id']]==2 and d['id'] in data['effects'],data
             # Strong damage must not suppress the separate haste-animation benefit.
             reset();page.locator('#inventoryBtn').tap()
             for id in ['legendary_destruction_core','hero_haste_wax']:
+                select_item(id)
                 page.locator('[data-use="'+id+'"]').tap();page.wait_for_function('!WakppuItems.busy')
             effective=page.evaluate('WakppuItemData.effective(WakppuItems.data.effects)')
             assert effective['damage']['value']==300 and effective['animation']['value']==150

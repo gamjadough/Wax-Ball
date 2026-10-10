@@ -20,6 +20,12 @@ try:
         page.goto(base+'/?preview=items');page.wait_for_load_state('domcontentloaded')
         page.wait_for_function('WakppuItemGame.read().ready&&WakppuItems.data?.pity===98')
         item=lambda:page.evaluate('WakppuItems.data')
+        def select_item(id):
+            if page.locator('#inventoryDetail').is_visible():page.locator('#inventoryBack').click()
+            grade=page.evaluate('(id)=>WakppuItemData.list.find(d=>d.id===id).rank',id)
+            page.locator('[data-filter="'+grade+'"]').click()
+            while page.locator('[data-item="'+id+'"]').count()==0:page.locator('#inventoryNext').click()
+            page.locator('[data-item="'+id+'"]').click()
         assert page.locator('#shopBtn').bounding_box()['x']<page.locator('#drawBtn').bounding_box()['x']
         assert page.locator('#inventoryBtn').bounding_box()['x']<page.locator('#collectionBtn').bounding_box()['x']
         page.locator('#drawBtn').click();expect(page.locator('#itemsPity')).to_contain_text('98 / 100')
@@ -41,9 +47,11 @@ try:
         assert page.locator('.item-card').count()==2
         page.locator('[data-filter="all"]').click()
         for id in ['hero_golden_honey','legendary_golden_coating','common_mini_hammer','hero_explosion_crystal']:
+            select_item(id)
             page.locator('[data-use="'+id+'"]').click();page.wait_for_function('!WakppuItems.busy')
             assert item()['effects'].get(id),item()
         expiry=item()['effects']['hero_golden_honey']['expires_at']
+        select_item('hero_golden_honey')
         page.locator('[data-use="hero_golden_honey"]').click();page.wait_for_function('!WakppuItems.busy')
         assert item()['effects']['hero_golden_honey']['expires_at']==expiry+900000
         # Consume the last copy: hide its inventory card but retain the active effect.
@@ -52,7 +60,7 @@ try:
         expect(page.locator('[data-use="hero_golden_honey"]')).to_have_count(0)
         expect(page.locator('#itemEffects')).to_contain_text('황금')
         assert item()['effects']['hero_golden_honey']['expires_at']>expiry+900000
-        page.locator('[data-use="common_honey_small"]').click()
+        select_item('common_honey_small');page.locator('[data-use="common_honey_small"]').click()
         expect(page.locator('#itemsStatus')).to_contain_text('강한 효과')
         assert 'common_honey_small' not in item()['effects']
         page.screenshot(path=str(out/'items-inventory-mobile.png'),full_page=True)
@@ -84,6 +92,7 @@ try:
         assert item()['inventory']==snapshot['inventory'] and item()['pity']==snapshot['pity']
         page.locator('#drawBtn').click();expect(page.locator('[data-pulls=\"1\"]')).to_be_disabled();page.locator('#itemsClose').click()
         page.locator('#inventoryBtn').click();page.set_viewport_size({'width':1200,'height':800})
+        page.locator('[data-filter="all"]').click()
         page.screenshot(path=str(out/'items-inventory-desktop.png'))
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
         # Render sparse and empty snapshots to verify owned-only rank filters and empty messages.

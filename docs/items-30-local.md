@@ -13,6 +13,12 @@ demonstrates each reveal without charging Gold or granting extra items.
 
 ## Behavior
 
+- Inventory uses three columns and nine kinds per page, including on mobile.
+  Empty slots keep the final page aligned. Rarity filters and ascending/descending
+  rarity sorting reset to the first page; items within a rarity keep catalog order.
+- Inventory cards show the icon, name, rank and owned count. Selecting a card opens
+  its description and use action; Back or Escape returns to the same page and card.
+  Using the final copy returns to the list and preserves the active effect.
 - Base rank weights: common 7000, rare 2200, hero 600, legendary 190,
   transcendent 10, out of 10000. Within-rank selection is uniform.
 - Existing 1/3/5-pull prices and the 100-pull transcendent pity remain unchanged.
@@ -38,6 +44,10 @@ Run `node --test tools/items.test.mjs tools/items-sql.test.mjs`,
 `python tools/items-reveal-browser.py`. Browser tests use native Python Playwright,
 Edge Chromium, isolated local servers, and desktop/mobile touch emulation.
 SQL tests require the existing PGlite test dependency.
+
+Run `python tools/items-grid-browser.py` for 320px/390px/1200px inventory layout,
+all 30 kinds across four pages, both sort directions, filters, detail use,
+last-copy consumption, empty states, page clamping and keyboard focus.
 
 ## Deployment order
 
