@@ -51,6 +51,11 @@ test('limited SQL: real item wrapper, purchase transaction, separate progress, e
  await assert.rejects(asAdmin('limited_select',{ball_id:'unowned'}));await assert.rejects(asAdmin('limited_buy'));
  await asAdmin('limited_select',{ball_id:id});await db.exec(`update game_states set hammer_owned=true,hammer_level=30 where user_id='${admin}'`);
  const adminHit=await asAdmin('limited_hit');assert.equal(adminHit.reward,'1500000000');assert.equal(adminHit.limited.tokens,0);assert.deepEqual(adminHit.limited.owned,{});
+ const remake=await readFile(new URL('../supabase/migrations/20261019_items_remake.sql',import.meta.url),'utf8');
+ await db.exec(remake);await db.exec(remake);
+ assert.equal((await db.query("select pg_get_functiondef('public.wakppu_api(jsonb)'::regprocedure) as body")).rows[0].body,wrapper);
+ await db.exec(`update game_states set honey_expires_at=now()+interval '1 minute',coating_expires_at=now()+interval '1 minute' where user_id='${admin}';update wakppu_items set effects=jsonb_build_object('transcendent_wax_heart',jsonb_build_object('expires_at',floor(extract(epoch from clock_timestamp())*1000)+60000)) where user_id='${admin}'`);
+ assert.equal((await asAdmin('limited_hit')).reward,'27000000000');
  assert.equal((await rpc({action:'limited'},admin,true)).admin_access,false);
  await assert.rejects(rpc({action:'limited_select',ball_id:id,request_id:crypto.randomUUID(),item_revision:(await rpc({action:'items'},admin)).revision},admin,true));
  await db.exec(`update players set role='player' where user_id='${admin}'`);

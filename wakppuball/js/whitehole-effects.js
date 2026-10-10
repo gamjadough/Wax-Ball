@@ -1,6 +1,6 @@
 (() => {
   const timing=Object.freeze({charge:120,shatter:400,energy:480,complete:1320,reward:1380,respawn:1700});
-  function play({wrap,svg,effects,center,radius,valid,shatter,reward,respawn,speed=1}){
+  function play({wrap,svg,effects,center,radius,valid,shatter,reward,respawn,speed=1,respawnSpeed=1}){
     const timers=[],nodes=[],animations=[];let cancelled=false;
     const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
     function phase(name){wrap.dataset.whiteholePhase=name;wrap.dispatchEvent(new CustomEvent('whitehole-phase',{detail:name}));}
@@ -30,7 +30,7 @@
     });
     at(timing.complete,()=>{phase('complete');svg.style.opacity='0';nodes.forEach(el=>el.remove());});
     at(timing.reward,()=>{phase('reward');reward();});
-    at(timing.respawn,()=>{phase('respawn');respawn();});
+    at(timing.reward+1000*speed/respawnSpeed,()=>{phase('respawn');respawn();});
     return {cancel};
   }
   window.WakppuWhitehole={play,timing};

@@ -18,7 +18,10 @@ try:
         page=context.new_page();errors=[]
         page.on('pageerror',lambda e:errors.append(str(e)))
         page.goto(base+'/?preview=items');page.wait_for_load_state('domcontentloaded')
+        try:page.wait_for_load_state('networkidle',timeout=2000)
+        except Exception:pass # Live status polling continues; explicit readiness below is authoritative.
         page.wait_for_function('WakppuItemGame.read().ready&&WakppuItems.data?.pity===98')
+        page.add_style_tag(content='.local-items-preview{display:none}')
         item=lambda:page.evaluate('WakppuItems.data')
         def select_item(id):
             if page.locator('#inventoryDetail').is_visible():page.locator('#inventoryBack').click()
@@ -46,7 +49,7 @@ try:
         page.locator('[data-filter="legendary"]').click()
         assert page.locator('.item-card').count()==2
         page.locator('[data-filter="all"]').click()
-        for id in ['hero_golden_honey','legendary_golden_coating','common_mini_hammer','hero_explosion_crystal']:
+        for id in ['hero_golden_honey','legendary_golden_coating','common_mini_hammer','hero_explosion_crystal','transcendent_wax_heart']:
             select_item(id)
             page.locator('[data-use="'+id+'"]').click();page.wait_for_function('!WakppuItems.busy')
             assert item()['effects'].get(id),item()
@@ -65,10 +68,15 @@ try:
         assert 'common_honey_small' not in item()['effects']
         page.screenshot(path=str(out/'items-inventory-mobile.png'),full_page=True)
         page.locator('#itemsClose').click()
-        page.locator('#ballSvg').click(position={'x':150,'y':150})
-        page.wait_for_function("WakppuItemGame.read().gold==='59000000000000000008'")
-        page.wait_for_timeout(1000)
-        assert item()['effects']['common_mini_hammer']['remaining']==19
+        page.locator('#shopBtn').click()
+        page.locator('#honeyBtn').click();page.locator('#coatingBtn').click()
+        page.locator('[data-close="shop"]').click()
+        for _ in range(10):
+            page.locator('#ballSvg').click(position={'x':150,'y':150})
+            page.wait_for_timeout(220)
+        page.wait_for_function("WakppuItemGame.read().gold==='58999999999994970024'")
+        page.wait_for_timeout(1500)
+        assert item()['effects']['common_mini_hammer']['remaining']==20
         assert item()['effects']['legendary_golden_coating']['remaining']==19
         prior=item();page.reload();page.wait_for_load_state('domcontentloaded')
         page.wait_for_function('(revision)=>WakppuItems.data?.revision===revision',arg=prior['revision'])

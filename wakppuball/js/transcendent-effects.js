@@ -11,7 +11,7 @@
     soul:{kind:'souls',colors:['#cbd4ea','#f7f4ff'],duration:1850},
     eternity:{kind:'convergence',colors:['#fff1c9','#ea9aa5','#bedfff','#c4aaff'],duration:2100}
   };
-  function play({ball,wrap,svg,effects,center,radius,valid,reward,respawn,speed=1}){
+  function play({ball,wrap,svg,effects,center,radius,valid,reward,respawn,speed=1,respawnSpeed=1}){
     const profile=profiles[ball.design.motif],reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
     const timers=[],nodes=[],animations=[];let stopped=false,paid=false;
     const duration=(reduced?650:profile.duration)/speed;
@@ -61,7 +61,7 @@
       }
     });
     at(duration*.62,()=>{phase('reward');if(!paid){paid=true;reward();}});
-    at(duration,()=>{phase('complete');cancel();respawn();});
+    at(duration+1000/respawnSpeed,()=>{phase('complete');cancel();respawn();});
     return {cancel};
   }
   window.WakppuTranscendent={play,profiles};

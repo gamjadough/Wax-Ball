@@ -622,20 +622,23 @@
     updateAll();
   }
 
+  let itemBreakTiming=null;
   async function hitItem(x,y){
     if(state.busy||window.WakppuItems?.busy||window.WakppuLimited?.busy)return;
     if(eventRequest){if(pendingItemHits.length<30)pendingItemHits.push([x,y]);return;}
     eventRequest=true;const epoch=animationEpoch;const account=state.account?.id;
     try{
       await window.WakppuItemGame.flush();
+      const timing=WakppuItemData.timing(WakppuItemData.effective(WakppuItems.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt));
       const req={request_id:crypto.randomUUID(),item_revision:itemRevision,...(eventSelected?{event_id:eventId}:{})};let result;
       const action=limitedSelected()?'limited_hit':'item_hit';
       try{result=await WakppuAuth.invoke(action,req);}catch(error){if(error.status)throw error;result=await WakppuAuth.invoke(action,req);}
       if(account!==state.account?.id)return;
+      itemBreakTiming=BigInt(result.reward)>0n?timing:null;
       WakppuItems.accept(result);state.gold=BigInt(result.gold);itemRevision=result.revision;
       if(result.limited)WakppuLimited.accept(result.limited);
       if(result.candy_drop)floatText('🍬 사탕 +1',ballCenter().x,ballCenter().y-70);
-      if(epoch!==animationEpoch)return;
+      if(epoch!==animationEpoch){itemBreakTiming=null;return;}
       if(!eventSelected&&BigInt(result.reward)>0n)itemAward=BigInt(result.reward);
       if(eventSelected){eventAward=BigInt(result.reward);displayEventReward=eventAward;}
       onHit(x,y,result.clicks-state.clicks,state.hammerOwned,true,result.required_clicks);
@@ -710,7 +713,9 @@
      4. 깨지는 연출
      ========================================================================== */
   function breakBall(data) {
-    const speed=(window.WakppuItemData?.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt).animation.value||100)/100;
+    const timing=itemBreakTiming||WakppuItemData.timing(WakppuItemData.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt));
+    itemBreakTiming=null;
+    const speed=timing.animation,respawnSpeed=timing.respawn;
     if(!eventSelected&&!limitedSelected())ordinaryClicks.delete(state.selected);
     const epoch=animationEpoch;
     state.busy = true;
@@ -718,7 +723,7 @@
     svgEl.classList.add('instant');
     updateCracks(1);
     if(data.id===window.WakppuLimitedData?.ball.id){
-      transcendentEffect=WakppuHalloweenEffects.play({wrap,svg:svgEl,effects,center:ballCenter(),valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,reward:()=>awardBreakReward(data),respawn:()=>{svgEl.classList.remove('instant');spawnBall(true);}});return;
+      transcendentEffect=WakppuHalloweenEffects.play({wrap,svg:svgEl,effects,center:ballCenter(),speed,respawnSpeed,valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,reward:()=>awardBreakReward(data),respawn:()=>{svgEl.classList.remove('instant');spawnBall(true);}});return;
     }
     if(data.id==='admin-event'){
       const earned=eventAward;eventAward=null;wrap.classList.add('admin-ball-breaking');
@@ -731,10 +736,10 @@
         displayEventReward=0n;
         if(earned!==null){updateAll();const c=ballCenter();floatText('+'+fmt(earned)+'G',c.x,c.y-wrap.offsetHeight*.32);}
         eventClicks=0;spawnBall(true);updateAll();
-      },1150/speed);return;
+      },1100/speed+RESPAWN_DELAY_MS/respawnSpeed);return;
     }
     if(data.grade==='초월'){
-      transcendentEffect=WakppuTranscendent.play({ball:data,wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,
+      transcendentEffect=WakppuTranscendent.play({ball:data,wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,respawnSpeed,
         valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,
         reward:()=>awardBreakReward(data),
         respawn:()=>{svgEl.classList.remove('instant');spawnBall(true);if(!testSnapshot)hintEl.textContent='왁뿌볼을 눌러 깨보세요';}
@@ -742,7 +747,7 @@
     }
     if(data.id==='whitehole'){
       whiteholeEffect?.cancel();
-      whiteholeEffect=WakppuWhitehole.play({wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,
+      whiteholeEffect=WakppuWhitehole.play({wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,respawnSpeed,
         valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,
         shatter:()=>{makeShards(SHAPES.circle,speed);wrap.classList.add('broken');},
         reward:()=>awardBreakReward(data),
@@ -750,10 +755,10 @@
       });
       return;
     }
-    requestAnimationFrame(() => setTimeout(() => {if(epoch===animationEpoch)finishBreak(data,speed);}, 110/speed));
+    requestAnimationFrame(() => setTimeout(() => {if(epoch===animationEpoch)finishBreak(data,speed,respawnSpeed);}, Math.max(55,110/speed)));
   }
 
-  function finishBreak(data,speed=1) {
+  function finishBreak(data,speed=1,respawnSpeed=1) {
     const epoch=animationEpoch;
     const shape = SHAPES[data.design.shape] || SHAPES.circle;
     makeShards(shape,speed);
@@ -771,7 +776,7 @@
       wrap.classList.remove('broken');
       svgEl.classList.remove('instant');
       spawnBall(true);
-    }, Math.max(RESPAWN_DELAY_MS, 1050)/speed);
+    }, 900/speed+RESPAWN_DELAY_MS/respawnSpeed);
   }
 
   function awardBreakReward(data){

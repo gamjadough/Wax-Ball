@@ -54,6 +54,10 @@ test('items SQL: atomic draw, pity, inventory, effects, stale-save rejection and
   const charged=await rpc(player,useRequest);assert.equal(charged.effects.common_crack_piece.remaining,58);assert.deepEqual(await rpc(player,useRequest),charged);
   await rpc(player,{action:'save_progress',item_revision:charged.revision,gold:end.gold,admin_revision:0,rebirths:1,unlocked_ball_ids:['yellow'],selected_ball_id:'yellow'});
   const reborn=await get();assert.deepEqual(reborn.effects,{});assert.equal(reborn.pity,charged.pity);assert.deepEqual(reborn.inventory,charged.inventory);
+  const beforeRemake=await get();
+  const remake=await readFile(new URL('../supabase/migrations/20261019_items_remake.sql',import.meta.url),'utf8');
+  await db.exec(remake);await db.exec(remake);
+  assert.deepEqual(await get(),beforeRemake);
   const defs=(await import('./items-service.mjs')).itemData;
   for(const d of defs.list){const row=(await db.query('select * from wakppu_item_defs where item_id=$1',[d.id])).rows[0];assert.equal(row.value,d.value);assert.equal(row.seconds,d.seconds);assert.equal(row.charges,d.count);}
   await db.exec("update game_states set gold=0 where user_id='"+player+"'");await assert.rejects(send('item_draw',{count:1}));
@@ -63,12 +67,13 @@ test('items SQL: atomic draw, pity, inventory, effects, stale-save rejection and
   const eventHit=await rpc(player,eventRequest);assert.equal(eventHit.reward,'120');assert.deepEqual(await rpc(player,eventRequest),eventHit);
   // New catalog migration must not replace the outer scheduling API wrapper.
   await db.exec("create function public.wakppu_api_before_event_schedule(b jsonb) returns jsonb language sql as $$select wakppu_api(b)$$;");
-  await db.exec(expansion);
+  await db.exec(remake);
   assert.ok((await db.query("select to_regprocedure('public.wakppu_api_before_event_schedule(jsonb)') as wrapper")).rows[0].wrapper);
   await db.exec("update game_states set hammer_owned=false,hammer_level=0,honey_expires_at=null,rebirths=0,coating_expires_at=null,item_current_clicks=0 where user_id='"+player+"';update wakppu_items set effects='{}',inventory=inventory||'{\"common_candle\":1,\"hero_haste_wax\":1,\"hero_gem_honey\":1,\"hero_destruction_crystal\":1,\"common_wax_feather\":1}' where user_id='"+player+"'");
   for(const id of ['common_candle','hero_haste_wax','hero_gem_honey','hero_destruction_crystal','common_wax_feather'])await send('item_use',{item_id:id});
-  let enhanced=await send('item_hit');assert.equal(enhanced.clicks,4);
-  enhanced=await send('item_hit');assert.equal(enhanced.reward,'7');assert.equal(enhanced.effects.hero_destruction_crystal.remaining,9);
+  let enhanced=await send('item_hit');assert.equal(enhanced.clicks,1);
+  for(let i=0;i<4;i++)enhanced=await send('item_hit');
+  assert.equal(enhanced.reward,'3');assert.equal(enhanced.effects.hero_destruction_crystal.remaining,9);
   await assert.rejects(send('item_hit',{event_id:'nonexistent'}));
   await db.exec('set role authenticated');await assert.rejects(db.exec("update wakppu_items set pity=99"));await db.exec('reset role');
  }finally{await db.close();}
