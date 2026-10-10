@@ -21,11 +21,11 @@
     host.querySelector('#drawWaxBall')?.classList.toggle('draw-cracked',state.taps>0);
     WakppuItems.render();
   }
-  function finish(){stop();const results=state.results;state=null;persist();document.querySelector('#drawResults').innerHTML=results.map(card).join('');render();document.querySelector('#itemsStatus').textContent=results.length+'개 아이템을 모두 확인했습니다. 인벤토리에서 사용할 수 있습니다.';}
+  function finish(){stop();const results=state.results;state=null;persist();document.querySelector('#drawResults').innerHTML=results.map(card).join('');render();WakppuItems.status(results.length+'개 아이템을 모두 확인했습니다. 인벤토리에서 사용할 수 있습니다.');}
   function reveal(skip=false){
     if(!state||state.revealed||breaking)return;
     const r=ranks.findIndex(r=>r.id===defs.find(d=>d.id===state.results[state.index]).rank);
-    const done=()=>{breaking=false;if(!state||owner!==account())return;state.revealed=true;persist();render();if(!document.querySelector('#itemsModal').hidden)document.querySelector('#drawNext').focus();};
+    const done=()=>{breaking=false;if(!state||owner!==account())return;state.revealed=true;persist();render();if(!document.querySelector('#shop').hidden&&!document.querySelector('#shopDraw').hidden)document.querySelector('#drawNext').focus();};
     if(skip||matchMedia('(prefers-reduced-motion: reduce)').matches){done();return;}
     breaking=true;host.classList.add('draw-breaking');host.querySelector('#drawWaxBall').disabled=true;
     timer=setTimeout(()=>{host.classList.remove('draw-breaking');done();},200+r*125);

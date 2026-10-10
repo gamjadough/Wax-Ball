@@ -1063,7 +1063,7 @@
     }
   }
 
-  function openShop() { renderShop(); shopModal.hidden = false; }
+  function openShop() { renderShop(); shopModal.hidden = false;window.WakppuItems?.showShop('purchase'); }
 
   /* ---------- 도감 ---------- */
   function renderCollection() {

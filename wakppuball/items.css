@@ -1,4 +1,7 @@
 .top{flex-wrap:wrap}.actions{flex-wrap:wrap}
+.shop-tabs{display:flex;gap:8px;margin:12px 0}.shop-tabs .btn{flex:1}.shop-tabs [aria-selected="true"]{border-color:var(--gold);color:var(--gold)}
+.season-currency{display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid #ffa44366;border-radius:999px;background:#ffa44315;font-size:clamp(.78rem,2.5vw,.95rem);white-space:nowrap}.season-currency[hidden]{display:none}#halloweenCurrencyValue{font-weight:800;font-variant-numeric:tabular-nums}
+body:has(#shop:not([hidden])) .local-items-preview{display:none}
 .items-sheet{max-width:680px;max-height:88dvh;overflow:auto}
 .draw-actions,.item-filters{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
 #inventoryList{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}

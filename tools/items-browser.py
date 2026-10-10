@@ -29,9 +29,11 @@ try:
             page.locator('[data-filter="'+grade+'"]').click()
             while page.locator('[data-item="'+id+'"]').count()==0:page.locator('#inventoryNext').click()
             page.locator('[data-item="'+id+'"]').click()
-        assert page.locator('#shopBtn').bounding_box()['x']<page.locator('#drawBtn').bounding_box()['x']
+        def open_draw():
+            page.locator('#shopBtn').click();page.locator('#shopDrawTab').click()
+        assert page.locator('#drawBtn').count()==0
         assert page.locator('#inventoryBtn').bounding_box()['x']<page.locator('#collectionBtn').bounding_box()['x']
-        page.locator('#drawBtn').click();expect(page.locator('#itemsPity')).to_contain_text('98 / 100')
+        open_draw();expect(page.locator('#itemsPity')).to_contain_text('98 / 100')
         for n,gold in [(1,'95000000000000000000'),(3,'81000000000000000000'),(5,'59000000000000000000')]:
             before=item()['total']
             page.locator('[data-pulls="'+str(n)+'"]').click()
@@ -45,7 +47,7 @@ try:
         out=ROOT/'tools/test-results';out.mkdir(exist_ok=True)
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
         page.screenshot(path=str(out/'items-draw-mobile.png'))
-        page.locator('#itemsClose').click();page.locator('#inventoryBtn').click()
+        page.locator('[data-close="shop"]').click();page.locator('#inventoryBtn').click()
         page.locator('[data-filter="legendary"]').click()
         assert page.locator('.item-card').count()==2
         page.locator('[data-filter="all"]').click()
@@ -85,12 +87,12 @@ try:
         page.goto(base);page.wait_for_load_state('domcontentloaded')
         page.wait_for_function('WakppuItemGame.read().ready')
         # No demo reset on ordinary URL. Verify a new draw persists over reload.
-        page.locator('#drawBtn').click();page.locator('[data-pulls="1"]').click();page.wait_for_function('!WakppuItems.busy');page.locator('#drawSkipAll').click()
+        open_draw();page.locator('[data-pulls="1"]').click();page.wait_for_function('!WakppuItems.busy');page.locator('#drawSkipAll').click()
         snapshot=item();page.reload();page.wait_for_load_state('domcontentloaded')
         page.wait_for_function('(revision)=>WakppuItems.data?.revision===revision',arg=snapshot['revision'])
         assert item()['inventory']==snapshot['inventory'] and item()['pity']==snapshot['pity']
         before_test=item();page.evaluate("WakppuGameTest.run('last','yellow')")
-        page.locator('#drawBtn').click();expect(page.locator('[data-pulls=\"1\"]')).to_be_disabled();page.locator('#itemsClose').click()
+        open_draw();expect(page.locator('[data-pulls=\"1\"]')).to_be_disabled();page.locator('[data-close="shop"]').click()
         page.locator('#ballSvg').click(position={'x':150,'y':150});page.wait_for_timeout(1300)
         assert item()['inventory']==before_test['inventory'] and item()['effects']==before_test['effects']
         page.evaluate('WakppuGameTest.end()')
@@ -98,7 +100,7 @@ try:
         page.wait_for_timeout(900);page.evaluate('WakppuItems.refresh()')
         page.wait_for_function("Object.keys(WakppuItems.data.effects).length===0")
         assert item()['inventory']==snapshot['inventory'] and item()['pity']==snapshot['pity']
-        page.locator('#drawBtn').click();expect(page.locator('[data-pulls=\"1\"]')).to_be_disabled();page.locator('#itemsClose').click()
+        open_draw();expect(page.locator('[data-pulls=\"1\"]')).to_be_disabled();page.locator('[data-close="shop"]').click()
         page.locator('#inventoryBtn').click();page.set_viewport_size({'width':1200,'height':800})
         page.locator('[data-filter="all"]').click()
         page.screenshot(path=str(out/'items-inventory-desktop.png'))

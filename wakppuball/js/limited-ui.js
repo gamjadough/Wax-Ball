@@ -2,11 +2,13 @@
  let data=null,tab='normal',busy=false,account=null,detail=false,sequence=0;
  const $=id=>document.getElementById(id),config=WakppuLimitedData;
  const ready=()=>{const g=WakppuItemGame.read();return g.ready&&!g.busy&&!g.blocked&&!g.test&&!busy;};
+ function renderCurrency(){const badge=$('halloweenCurrency');if(!badge)return;badge.hidden=!data?.season.active||!window.WakppuItemGame?.read().ready;const tokens=String(data?.tokens||0);$('halloweenCurrencyValue').textContent=WakppuGold.compact(tokens);badge.title='할로윈 사탕 '+tokens+'개';badge.setAttribute('aria-label','보유 할로윈 사탕 '+tokens+'개');}
  function accept(next){sequence++;data=next;renderCollection();}
  async function refresh(){const seq=++sequence,user=WakppuItemGame.read().account;if(!user){data=null;renderCollection();return;}try{const next=await WakppuAuth.invoke('limited');if(seq!==sequence||user!==WakppuItemGame.read().account)return;const previous=data?.selected??null;data=next;account=user;if(previous!==next.selected)WakppuLimitedGame.sync(!!next.selected,next.clicks);renderCollection();}catch(e){if($('limitedStatus'))$('limitedStatus').textContent=e.message;}}
  async function transact(action,payload={}){if(!ready())return false;busy=true;renderCollection();const user=WakppuItemGame.read().account;try{await WakppuItemGame.flush();const req={...payload,request_id:crypto.randomUUID(),item_revision:WakppuItemGame.read().revision};let r;try{r=await WakppuAuth.invoke(action,req);}catch(e){if(e.status)throw e;r=await WakppuAuth.invoke(action,req);}if(user!==WakppuItemGame.read().account)return false;const previous=data?.selected??null;WakppuItems.accept(r);data=r.limited;if(previous!==data.selected)WakppuLimitedGame.sync(!!data.selected,data.clicks);$('limitedStatus').textContent=action==='limited_buy'?'호박 왁뿌볼을 구매했습니다.':'볼을 변경했습니다.';return true;}catch(e){$('limitedStatus').textContent=e.message;return false;}finally{busy=false;renderCollection();}}
  function showTab(next,render=true){tab=next;detail=false;if($('limitedCollection'))$('limitedCollection').hidden=tab!=='limited';for(const b of document.querySelectorAll('[data-collection-tab]')){b.setAttribute('aria-selected',String(b.dataset.collectionTab===tab));b.tabIndex=b.dataset.collectionTab===tab?0:-1;}if(render)WakppuLimitedGame.resetCollection();}
  function renderCollection(){
+  renderCurrency();
   if(!$('limitedCollection'))return;
   $('limitedCollection').hidden=tab!=='limited';if(tab!=='limited')return;
   $('collectionGrid').hidden=true;$('collectionDetail').hidden=true;$('collectionPager').hidden=true;
@@ -27,7 +29,7 @@
   panel.onclick=async e=>{if(e.target.closest('[data-limited-detail]')){detail=true;renderCollection();panel.querySelector('[data-limited-back]').focus();}else if(e.target.closest('[data-limited-back]')){detail=false;renderCollection();panel.querySelector('[data-limited-detail]').focus();}else if(e.target.closest('[data-limited-buy]'))await transact('limited_buy');else if(e.target.closest('[data-limited-select]')){if(await transact('limited_select',{ball_id:config.ball.id}))$('collectionClose').click();}};
   $('collectionBtn').addEventListener('click',refresh);
  });
- window.WakppuLimited={get data(){return data;},get tab(){return tab;},get busy(){return busy;},accept,refresh,showTab,renderCollection,select:id=>transact('limited_select',{ball_id:id}),clear:()=>{data=null;account=null;sequence++;}};
+ window.WakppuLimited={get data(){return data;},get tab(){return tab;},get busy(){return busy;},accept,refresh,showTab,renderCollection,select:id=>transact('limited_select',{ball_id:id}),clear:()=>{data=null;account=null;sequence++;renderCurrency();}};
  window.addEventListener('wakppu-account-restored',refresh);
  setInterval(()=>{if(window.WakppuItemGame?.read().ready&&!WakppuItemGame.read().busy&&!busy)refresh();},30000);
 })();

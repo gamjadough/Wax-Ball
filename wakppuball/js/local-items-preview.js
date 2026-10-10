@@ -15,5 +15,5 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
   button.onclick=reset;panel.append(button);document.body.append(panel);if(!sessionStorage.getItem('wakppu-items-preview'))reset();
   const reveal=document.createElement('button');reveal.className='btn small';reveal.textContent='5등급 공개 연출 미리보기 (무료)';
-  reveal.onclick=()=>{const account=WakppuItemGame.read().account;if(!account)return;document.querySelector('#drawBtn').click();WakppuDrawReveal.start(['common_candle','rare_concentrated_honey','hero_haste_wax','legendary_destruction_core','transcendent_wax_heart'],account);document.querySelector('#itemsStatus').textContent='로컬 연출 샘플입니다. Gold 차감·아이템 추가 지급 없음.';};panel.append(reveal);
+  reveal.onclick=()=>{const account=WakppuItemGame.read().account;if(!account)return;WakppuItems.openDraw();WakppuDrawReveal.start(['common_candle','rare_concentrated_honey','hero_haste_wax','legendary_destruction_core','transcendent_wax_heart'],account);WakppuItems.status('로컬 연출 샘플입니다. Gold 차감·아이템 추가 지급 없음.');};panel.append(reveal);
 });

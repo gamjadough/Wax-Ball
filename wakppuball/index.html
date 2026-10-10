@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="halloween.css?v=20261008-motion1">
   <link rel="stylesheet" href="guest-lifecycle.css?v=20261006-guest1">
   <link rel="stylesheet" href="whitehole.css?v=20261006-whitehole1">
-  <link rel="stylesheet" href="items.css?v=20261010-items-grid">
+  <link rel="stylesheet" href="items.css?v=20261010-shop-tabs">
   <link rel="stylesheet" href="limited.css?v=20261016-reward1">
   <link rel="stylesheet" href="transcendent.css?v=20261009-effects1">
   <link rel="stylesheet" href="admin-selection.css?v=20261006-selection1">
@@ -40,8 +40,8 @@
         <span id="goldValue" class="gold-value">0</span>
         <span class="gold-unit">G</span>
       </div>
+      <div id="halloweenCurrency" class="season-currency" hidden aria-label="보유 할로윈 사탕"><span aria-hidden="true">🍬</span><span id="halloweenCurrencyValue">0</span><span>사탕</span></div>
       <button id="shopBtn" class="btn top-btn" type="button">🛒 상점</button>
-      <button id="drawBtn" class="btn top-btn" type="button">🎰 뽑기</button>
       <button id="rebirthBtn" class="btn top-btn" type="button">환생</button>
       <button id="accountBtn" class="btn top-btn" type="button">계정</button>
       <button id="adminBtn" class="btn top-btn" type="button" hidden>관리자 패널</button>
@@ -111,9 +111,13 @@
   <div id="shop" class="modal" hidden>
     <div class="sheet compact" role="dialog" aria-modal="true" aria-labelledby="shopTitle">
       <div class="sheet-head"><h2 id="shopTitle">🛒 상점</h2><button data-close="shop" class="btn small" type="button">닫기</button></div>
+      <div class="shop-tabs" role="tablist" aria-label="상점 메뉴"><button id="shopPurchaseTab" class="btn" role="tab" aria-selected="true" aria-controls="shopPurchase">아이템 구매</button><button id="shopDrawTab" class="btn" role="tab" aria-selected="false" aria-controls="shopDraw" tabindex="-1">뽑기</button></div>
+      <section id="shopPurchase" role="tabpanel" aria-labelledby="shopPurchaseTab">
       <article class="shop-item"><h3>🍯 꿀</h3><p id="honeyInfo" class="dialog-text"></p><button id="honeyBtn" class="btn primary" type="button">구매 · 30K G</button></article>
       <article class="shop-item"><h3>💎 보석 코팅</h3><p id="coatingInfo" class="dialog-text"></p><button id="coatingBtn" class="btn primary" type="button">구매 · 5M G</button></article>
       <article class="shop-item"><h3>🪵 망치</h3><p id="hammerInfo" class="dialog-text"></p><button id="hammerBtn" class="btn primary" type="button"></button></article>
+      </section>
+      <section id="shopDraw" role="tabpanel" aria-labelledby="shopDrawTab" hidden><p id="shopItemsStatus" role="status"></p><p id="shopItemsLogin">계정에서 빠른 시작 또는 로그인 후 사용할 수 있습니다.</p></section>
     </div>
   </div>
 
@@ -196,10 +200,10 @@
   <script src="js/sound.js?v=20261002-progression1"></script>
   <script src="js/limited-data.js?v=20261016-reward1"></script>
   <script src="js/halloween-effects.js?v=20261019-items-remake"></script>
-  <script src="js/limited-ui.js?v=20261017-admin1"></script>
+  <script src="js/limited-ui.js?v=20261010-shop-tabs"></script>
   <script src="js/items-data.js?v=20261019-items-remake"></script>
-  <script src="js/items-ui.js?v=20261010-items-grid"></script>
-  <script src="js/items-reveal.js?v=20261015-items30"></script>
+  <script src="js/items-ui.js?v=20261010-shop-tabs"></script>
+  <script src="js/items-reveal.js?v=20261010-shop-tabs"></script>
   <script src="js/ball-art.js?v=20261016-reward1"></script>
   <script src="js/event-time.js?v=20261018-countdown1"></script>
   <script src="js/gold-event.js?v=20261018-countdown1"></script>
@@ -207,7 +211,7 @@
   <script src="js/transcendent-effects.js?v=20261019-items-remake"></script>
   <script src="js/admin-ball-event.js?v=20261018-countdown1"></script>
   <script src="js/hammers-data.js?v=20261007-hammer30"></script>
-  <script src="js/game.js?v=20261019-items-remake"></script>
+  <script src="js/game.js?v=20261010-shop-tabs"></script>
   <script src="js/event-schedule.js?v=20261014-schedule1"></script>
   <script src="js/presence.js?v=20261016-ranking-presence"></script>
   <script src="js/admin-panel.js?v=20261017-background1"></script>

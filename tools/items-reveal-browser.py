@@ -23,11 +23,14 @@ try:
             page.wait_for_function('WakppuItemGame.read().ready&&WakppuItems.data?.pity===98')
             def reset():
                 if page.locator('#itemsModal').is_visible():page.locator('#itemsClose').tap()
+                if page.locator('#shop').is_visible():page.locator('[data-close="shop"]').tap()
                 page.locator('.local-items-preview button').first.tap()
                 page.wait_for_function('!document.querySelector(".local-items-preview button").disabled&&Object.keys(WakppuItems.data.effects).length===0')
             reset()
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
-            page.locator('#drawBtn').tap();expect(page.locator('#drawPanel')).to_contain_text('0.1%')
+            def open_draw():
+                page.locator('#shopBtn').tap();page.locator('#shopDrawTab').tap()
+            open_draw();expect(page.locator('#drawPanel')).to_contain_text('0.1%')
             expect(page.locator('.local-items-preview')).to_be_hidden()
             page.locator('[data-pulls="5"]').tap();page.locator('[data-pulls="5"]').dispatch_event('click')
             page.wait_for_function('!WakppuItems.busy&&WakppuDrawReveal.pending')
@@ -36,17 +39,17 @@ try:
             assert page.locator('#drawResults .draw-result').count()==0
             expect(page.locator('[data-pulls="1"]')).to_be_disabled()
             page.locator('#drawWaxBall').tap()
-            page.locator('#itemsClose').tap();page.locator('#drawBtn').tap()
+            page.locator('[data-close="shop"]').tap();open_draw()
             expect(page.locator('.draw-progress')).to_contain_text('1 / 5')
             page.reload();page.wait_for_function('WakppuItemGame.read().ready&&WakppuDrawReveal.pending')
-            page.locator('#drawBtn').tap();assert page.locator('.draw-ball-crack').count()>0
+            open_draw();assert page.locator('.draw-ball-crack').count()>0
             assert page.evaluate('WakppuItems.data.inventory')==prior['inventory']
             page.locator('#drawSkipOne').tap();expect(page.locator('#drawNext')).to_be_visible()
             page.locator('#drawNext').tap();expect(page.locator('.draw-progress')).to_contain_text('2 / 5')
             page.locator('#drawSkipAll').tap();expect(page.locator('#drawResults .draw-result')).to_have_count(5)
             assert page.evaluate('WakppuItems.data.gold')==prior['gold'] and page.evaluate('WakppuItems.data.total')==103
             # Deterministic presentation preview exercises every rarity with server-free sample results.
-            page.locator('#itemsClose').tap();page.locator('.local-items-preview button').nth(1).tap()
+            page.locator('[data-close="shop"]').tap();page.locator('.local-items-preview button').nth(1).tap()
             for index,steps in enumerate([2,3,4,5,6]):
                 for hit in range(steps):
                     assert page.locator('#drawWaxBall').is_visible()
@@ -79,9 +82,10 @@ try:
                 select_item(id)
                 page.locator('[data-use="'+id+'"]').tap();page.wait_for_function('!WakppuItems.busy')
             effective=page.evaluate('WakppuItemData.effective(WakppuItems.data.effects)')
-            assert effective['damage']['value']==300 and effective['animation']['value']==150
-            page.locator('#itemsClose').tap();page.locator('#ballSvg').tap(position={'x':150,'y':150})
-            page.wait_for_function('!WakppuItemGame.read().busy')
+            assert effective['respawn']['value']==300 and effective['animation']['value']==150
+            page.locator('#itemsClose').tap()
+            for _ in range(4):
+                page.locator('#ballSvg').tap(position={'x':150,'y':150});page.wait_for_timeout(220)
             page.locator('#ballSvg').tap(position={'x':150,'y':150})
             page.wait_for_function('!!document.querySelector(".shard")')
             duration=page.evaluate('Math.max(...[...document.querySelectorAll(".shard")].flatMap(n=>n.getAnimations().map(a=>a.effect.getTiming().duration)))')
