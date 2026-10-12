@@ -1,8 +1,16 @@
 'use strict';
 (() => {
-  const { Battle, CONFIG, STATES } = window.WaxArena;
+  const { Battle, CONFIG, STATES, AI_DIFFICULTIES } = window.WaxArena;
   const battle = new Battle();
   const $ = id => document.getElementById(id);
+  const difficultySelect = $('ai-difficulty');
+  for (const [value, settings] of Object.entries(AI_DIFFICULTIES)) {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = `${settings.name} · ${(settings.aiHitIntervalMs / 1000).toFixed(2)}초마다 클릭`;
+    difficultySelect.append(option);
+  }
+  difficultySelect.value = CONFIG.defaultDifficulty;
   const balls = { player: $('player-ball'), ai: $('ai-ball') };
   const effects = $('effects');
   const animations = new Set();
@@ -105,6 +113,7 @@
     if (debugLog.length > CONFIG.maxLogEntries) debugLog.length = CONFIG.maxLogEntries;
   }
   function render() {
+    $('ai-difficulty-label').textContent = AI_DIFFICULTIES[battle.difficulty].name;
     for (const side of ['player', 'ai']) {
       const fighter = battle.fighters[side];
       $(`${side}-hp`).replaceChildren(document.createTextNode(fighter.health.toLocaleString() + ' '));
@@ -175,7 +184,7 @@
     lastSecond = -1;
     clearEffects();
     for (const side of ['player', 'ai']) $(`${side}-fill`).style.transition = 'none';
-    battle.reset();
+    battle.reset(true, difficultySelect.value);
     debugLog.length = 0;
     $('elapsed').textContent = '00:00';
     log('전투 시작. 내 왁뿌볼을 클릭하세요!');
@@ -210,7 +219,7 @@
   log('아레나 준비 완료. 전투 시작을 눌러 입장하세요.');
   processEvents();
   // Read-only snapshots help debugging and a future transport adapter.
-  window.WaxArena.getSnapshot = () => ({ status: battle.status, round: battle.round, time: battle.time, player: { ...battle.fighters.player }, ai: { ...battle.fighters.ai }, pendingCount: battle.pending.length });
+  window.WaxArena.getSnapshot = () => ({ status: battle.status, difficulty: battle.difficulty, aiHitIntervalMs: battle.aiHitIntervalMs, round: battle.round, time: battle.time, player: { ...battle.fighters.player }, ai: { ...battle.fighters.ai }, pendingCount: battle.pending.length });
   window.WaxArena.getDebugLog = () => debugLog.map(entry => ({ ...entry }));
   window.WaxArena.getScreen = () => screen;
 })();

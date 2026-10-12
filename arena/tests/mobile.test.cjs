@@ -38,11 +38,15 @@ async function snapshot(page) { return page.evaluate(() => window.WaxArena.getSn
       await page.waitForLoadState('networkidle');
       await noOverflow(page);
       await inViewport(page, '#fight-button', 44);
+      await inViewport(page, '#ai-difficulty', 44);
+      await page.locator('#ai-difficulty').selectOption('advanced');
       for (const menu of await page.locator('[data-unavailable]').all()) {
         await inViewport(page, `[data-unavailable]:nth-child(${await menu.evaluate(el => Array.from(el.parentElement.children).indexOf(el) + 1)})`, 44);
       }
       if (width === 390 || width === 320 || width === 844) await page.screenshot({ path: path.join(artifacts, `phone-lobby-${width}x${height}.png`), fullPage: true });
       await page.locator('#fight-button').tap();
+      assert.equal((await snapshot(page)).difficulty, 'advanced');
+      assert.equal(await page.locator('#ai-difficulty-label').textContent(), '고급');
       await page.clock.install();
       await page.clock.pauseAt(new Date());
       await noOverflow(page);

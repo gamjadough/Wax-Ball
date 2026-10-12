@@ -1,6 +1,6 @@
 'use strict';
 (() => {
-  const { CONFIG, BALL_TYPES } = window.WaxArena;
+  const { CONFIG, BALL_TYPES, AI_DIFFICULTIES } = window.WaxArena;
   const STATES = Object.freeze({ WAITING: 'waiting', RUNNING: 'running', VICTORY: 'victory', DEFEAT: 'defeat' });
   // Pure local simulation. A server adapter can later provide authoritative events
   // to the renderer without mixing DOM effects into the combat rules.
@@ -10,11 +10,14 @@
       this.ballTypes = ballTypes;
       this.reset(false);
     }
-    reset(start = true) {
+    reset(start = true, difficulty = this.difficulty || this.config.defaultDifficulty || CONFIG.defaultDifficulty) {
+      if (!Object.hasOwn(AI_DIFFICULTIES, difficulty)) throw new RangeError('Unknown AI difficulty');
+      this.difficulty = difficulty;
+      this.aiHitIntervalMs = AI_DIFFICULTIES[difficulty].aiHitIntervalMs;
       this.round = (this.round || 0) + 1;
       this.status = start ? STATES.RUNNING : STATES.WAITING;
       this.time = 0;
-      this.nextAiHit = this.config.aiHitIntervalMs;
+      this.nextAiHit = this.aiHitIntervalMs;
       this.sequence = 0;
       this.pending = [];
       this.events = [];
@@ -72,7 +75,7 @@
           this.pending.shift();
           this.completeDestruction(task);
         } else {
-          this.nextAiHit += this.config.aiHitIntervalMs;
+          this.nextAiHit += this.aiHitIntervalMs;
           this.hit('ai');
         }
       }

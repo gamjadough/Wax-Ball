@@ -23,7 +23,7 @@
         <div class="mascot-float"><div class="wax-ball lobby-ball"><span class="ball-shine"></span><span class="mascot-face" aria-hidden="true"><span class="mascot-eyes">눈 눈</span><span class="mascot-mouth">ω</span></span><span class="mascot-band" aria-hidden="true">W</span></div></div>
         <div class="mascot-shadow"></div><span class="mascot-tag">일반 왁뿌볼 · 근거 없는 자신감 MAX</span>
       </div>
-      <div class="lobby-action"><span class="battle-chip">나 vs AI · 5번 때리면 와장창</span><button class="fight-button" id="fight-button">싸우러 가기 ㅋㅋ <span aria-hidden="true">➜</span></button><p>전략은 없다. 일단 눌러.</p></div>
+      <div class="lobby-action"><span class="battle-chip">나 vs AI · 5번 때리면 와장창</span><div class="difficulty-control"><label for="ai-difficulty">AI 난이도</label><select id="ai-difficulty" aria-describedby="difficulty-help"></select></div><span class="difficulty-help" id="difficulty-help">입문 → 초급 → 중급 → 고급 순으로 더 빠르게 클릭!</span><button class="fight-button" id="fight-button">싸우러 가기 ㅋㅋ <span aria-hidden="true">➜</span></button><p>전략은 없다. 일단 눌러.</p></div>
     </section>
     <nav class="lobby-menu" aria-label="로비 메뉴"><button type="button" data-unavailable><span aria-hidden="true">🔨</span>강화<small>더 세지고 싶냐</small></button><button type="button" data-unavailable><span aria-hidden="true">📖</span>도감<small>공도 스펙이 있다</small></button><button type="button" data-unavailable><span aria-hidden="true">🤝</span>친구 대전<small>우정 파괴 예정</small></button></nav>
     <p class="menu-notice" id="menu-notice" role="status" aria-live="polite"></p>
@@ -44,7 +44,7 @@
       <div class="health-row">
         <div class="health-card player-health"><div class="health-heading"><span><i class="team-dot"></i> YOU <small>플레이어</small></span><strong id="player-hp">1,000 <small>/ 1,000</small></strong></div><div class="health-track" role="progressbar" aria-label="내 체력" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="1000" id="player-health"><div id="player-fill"></div></div></div>
         <div class="versus">VS</div>
-        <div class="health-card ai-health"><div class="health-heading"><span><i class="team-dot"></i> CPU <small>AI 상대</small></span><strong id="ai-hp">1,000 <small>/ 1,000</small></strong></div><div class="health-track" role="progressbar" aria-label="상대 체력" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="1000" id="ai-health"><div id="ai-fill"></div></div></div>
+        <div class="health-card ai-health"><div class="health-heading"><span><i class="team-dot"></i> CPU <span class="difficulty-badge" id="ai-difficulty-label">초급</span><small>AI 상대</small></span><strong id="ai-hp">1,000 <small>/ 1,000</small></strong></div><div class="health-track" role="progressbar" aria-label="상대 체력" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="1000" id="ai-health"><div id="ai-fill"></div></div></div>
       </div>
       <div class="arena" id="arena">
         <div class="arena-top"><span><i id="status-dot"></i><span id="battle-status">READY</span></span><span class="arena-time" id="elapsed">00:00</span><span>ARENA 01</span></div>

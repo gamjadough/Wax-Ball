@@ -155,6 +155,36 @@ async function enterBattle(page) {
     assert.equal((await snapshot(page)).status, 'running');
     assert.equal((await snapshot(page)).player.health, 1000);
     pass('result button restarts after defeat');
+    const levels = [['entry', '입문', 1500, 0], ['beginner', '초급', 850, 1], ['intermediate', '중급', 450, 2], ['advanced', '고급', 200, 5]];
+    for (const [difficulty, name, interval, hits] of levels) {
+      await page.locator('#leave-battle-button').click();
+      await page.locator('#ai-difficulty').selectOption(difficulty);
+      const idle = await snapshot(page);
+      await page.clock.runFor(2000);
+      assert.deepEqual(await snapshot(page), idle);
+      await page.locator('#fight-button').click();
+      assert.equal((await snapshot(page)).difficulty, difficulty);
+      assert.equal((await snapshot(page)).aiHitIntervalMs, interval);
+      assert.equal(await page.locator('#ai-difficulty-label').textContent(), name);
+      await page.clock.runFor(1100);
+      assert.equal((await snapshot(page)).ai.hits, hits);
+      await page.locator('#rematch-button').click();
+      assert.equal((await snapshot(page)).difficulty, difficulty);
+      await page.clock.runFor(interval + 50);
+      assert.equal((await snapshot(page)).ai.hits, 1);
+      assert.equal((await snapshot(page)).player.health, 1000);
+      await hitFive(page);
+      await page.locator('#leave-battle-button').click();
+      await page.clock.runFor(2000);
+      assert.equal((await snapshot(page)).pendingCount, 0);
+      assert.equal(await page.locator('#ai-difficulty').inputValue(), difficulty);
+      await page.locator('#fight-button').click();
+      assert.equal((await snapshot(page)).ai.hits, 0);
+    }
+    pass('all four UI difficulties control actual AI speed, rematches and lobby returns');
+    await page.locator('#leave-battle-button').click();
+    await page.locator('#ai-difficulty').selectOption('beginner');
+    await page.locator('#fight-button').click();
     for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 720 }]) {
       await page.setViewportSize(viewport);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
