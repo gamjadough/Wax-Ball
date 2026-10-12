@@ -2,7 +2,7 @@
 const SOUND_SETTINGS = { folder: 'sounds/', extension: '.mp3', poolSize: 4, usePlaceholderSound: true };
 const SOUND_PHASE_LIMITS = { early: 0.35, mid: 0.7 };
 const DEFAULT_SOUNDS = { early:['tap1','tap2','tap3'], mid:['tap3','crack1'], late:['crack1','crack2'], final:['break'], pitch:1, pitchRandom:.06, volume:.9, volumeRandom:.1 };
-// Preserve the original 1–500 rebirth economy; ×1,000 starts at rebirth 501.
+// Preserve the original 1–500 rebirth economy; ×3 starts at rebirth 501.
 const LEGACY_REBIRTH_COSTS = [2000000n,6000000n,16000000n,40000000n,100000000n,240000000n,600000000n,1600000000n,4000000000n,10000000000n,30000000000n,80000000000n,200000000000n,500000000000n,1200000000000n,3000000000000n,8000000000000n,20000000000000n,48000000000000n,120000000000000n,300000000000000n,800000000000000n,2000000000000000n,4800000000000000n,12000000000000000n];
 const REBIRTH_COSTS = (() => {
   const costs = [...LEGACY_REBIRTH_COSTS];
@@ -15,9 +15,9 @@ const REBIRTH_COSTS = (() => {
     cost *= 2n;
     costs.push(cost);
   }
-  // 501st cost = 500th cost ×1,000. Each later cost also grows ×1,000.
+  // 501st cost = 500th cost ×3. Each later cost also grows ×3.
   for (let rebirth = 501; rebirth <= 1000; rebirth += 1) {
-    cost *= 1000n;
+    cost *= 3n;
     costs.push(cost);
   }
   return costs;

@@ -2,7 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createRequire} from 'node:module';
-const require=createRequire(new URL('./test-results/sql-check/package.json',import.meta.url));
+import vm from 'node:vm';
+const require=createRequire(process.env.WAKPPU_TEST_NODE_PACKAGE||new URL('./test-results/sql-check/package.json',import.meta.url));
 const {PGlite}=require('@electric-sql/pglite');
 const admin='00000000-0000-0000-0000-000000000001',player='00000000-0000-0000-0000-000000000002';
 test('PostgreSQL: 1000 rebirths, 4096-digit Gold, exact ranking, validation and wrappers',async()=>{
@@ -29,6 +30,18 @@ test('PostgreSQL: 1000 rebirths, 4096-digit Gold, exact ranking, validation and 
   const save={action:'save_progress',gold,rebirths:1000,admin_revision:0,unlocked_ball_ids:['yellow'],selected_ball_id:'yellow',hammer_level:0};
   await rpc(player,save);
   assert.equal((await rpc(player,{action:'bootstrap'})).state.gold,gold);
+  // New prices remain exact through PostgreSQL saves at the unchanged/changed boundaries and cap.
+  const context={};vm.createContext(context);
+  vm.runInContext(await readFile(new URL('../wakppuball/js/balls-data.js',import.meta.url),'utf8')+';globalThis.costs=REBIRTH_COSTS;',context);
+  for(const count of [499,500,501,999]){
+   const exact=context.costs[count].toString();
+   await rpc(player,{...save,gold:exact,rebirths:count});
+   assert.equal((await rpc(player,{action:'bootstrap'})).state.gold,exact);
+   await rpc(player,{...save,gold:'0',rebirths:count+1});
+   const after=(await rpc(player,{action:'bootstrap'})).state;
+   assert.equal(after.rebirths,count+1);assert.equal(after.gold,'0');
+  }
+  await rpc(player,save);
   await assert.rejects(rpc(player,{...save,rebirths:1001}));
   await assert.rejects(rpc(player,{...save,gold:'1'+'0'.repeat(4096)}));
   await assert.rejects(db.query('update game_states set rebirths=1001 where user_id=$1',[player]),{code:'23514'});
