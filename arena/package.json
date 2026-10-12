@@ -1,0 +1,12 @@
+{
+  "name": "wax-ball-arena",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A dependency-free local AI battle prototype",
+  "scripts": {
+    "start": "node server.cjs",
+    "test": "node tests/battle.test.cjs",
+    "test:browser": "node tests/browser.test.cjs",
+    "test:mobile": "node tests/mobile.test.cjs"
+  }
+}
