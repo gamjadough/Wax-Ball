@@ -1,4 +1,5 @@
 import {hammerDamage} from './hammer-catalog.mjs';
+import {weeklyRows,refreshWeekly,skipWeekly} from './weekly-service.mjs';
 import {ballCatalog} from './event-ball-catalog.mjs';
 import {itemAction,itemState,snapshot,itemData,consumeEffects} from './items-service.mjs';
 import {limitedAction,limitedDrop} from './limited-service.mjs';
@@ -26,6 +27,7 @@ export function createStore() {
 }
 export function execute(store, actor, body) {
   const action = body.action;
+  refreshWeekly(store);
   const error = (message, status=400) => { throw Object.assign(new Error(message), {status}); };
   if (action==='rankings') {
     if(actor && isBanned(actor))error('이 계정은 이용이 제한되었습니다.',403);
@@ -41,10 +43,22 @@ export function execute(store, actor, body) {
   }
   if (action.startsWith('admin_') && actor.role !== 'admin') error('admin only',403);
   const sleepBlocked=hours.active&&(actor.role!=='admin'||actor.is_anonymous);
-  if (action==='status') return {sleep_hours:hours,background_mode:store.background_mode||'auto',admin_ball_always:actor.role==='admin'&&!actor.is_anonymous,admin_ball_event:store.maintenance||sleepBlocked?null:store.admin_ball_event||null,gold_event:sleepBlocked?null:store.gold_event||null,server_time:new Date(instant).toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.is_anonymous?'player':actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
+  if (action==='status') return {...(actor.role==='admin'&&!actor.is_anonymous?{weekly_events:weeklyRows(store)}:{}),sleep_hours:hours,background_mode:store.background_mode||'auto',admin_ball_always:actor.role==='admin'&&!actor.is_anonymous,admin_ball_event:store.maintenance||sleepBlocked?null:store.admin_ball_event||null,gold_event:sleepBlocked?null:store.gold_event||null,server_time:new Date(instant).toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.is_anonymous?'player':actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
   if(isBanned(actor))error('이 계정은 이용이 제한되었습니다.',403);
   if(sleepBlocked)error('수면 시간입니다. 오전 6시부터 다시 이용할 수 있습니다.',503);
   if (store.maintenance && actor.role!=='admin' && !action.startsWith('admin_')) error('점검 중입니다.',503);
+  if(action==='admin_weekly_events'){
+    if(actor.is_anonymous)error('관리자 권한이 필요합니다.',403);
+    if(!['enable','disable','list'].includes(body.mode))error('반복 예약 작업을 선택하세요.');
+    if(body.mode==='enable'&&store.maintenance)error('점검 모드를 해제하세요.',409);
+    const rows=weeklyRows(store);
+    if(body.mode!=='list'){
+      const before=structuredClone(rows);for(const r of rows)r.enabled=body.mode==='enable';
+      if(body.mode==='disable')for(const key of ['gold_event','admin_ball_event'])if(store[key]?.source==='weekly')store[key]=null;
+      store.logs.push({admin:actor.id,action:'ADMIN_WEEKLY_EVENTS_'+body.mode.toUpperCase(),before,time:new Date().toISOString()});
+    }
+    refreshWeekly(store);return {ok:true,weekly_events:structuredClone(rows),gold_event:store.gold_event||null,admin_ball_event:store.admin_ball_event||null,server_time:new Date().toISOString()};
+  }
   if(action==='admin_background'){
     if(actor.is_anonymous)error('관리자 권한이 필요합니다.',403);
     if(!['auto','default','halloween'].includes(body.mode))error('배경 설정을 선택하세요.');
@@ -130,10 +144,10 @@ export function execute(store, actor, body) {
     if(!['start','stop'].includes(body.mode))error('이벤트 작업을 선택하세요.');before=store.admin_ball_event||null;
     if(body.mode==='start'){
       const duration=body.duration_seconds??300,delay=body.delay_seconds??0;
-      if(store.maintenance||before&&Date.parse(before.ends_at)>Date.now())error('점검 또는 기존 이벤트를 종료해주세요.',409);
+      if(store.maintenance||before&&Date.parse(before.ends_at)>Date.now()&&!(before.source==='weekly'&&Date.parse(before.starts_at)>Date.now()))error('점검 또는 기존 이벤트를 종료해주세요.',409);
       if(!Number.isInteger(duration)||duration<1||duration>86400||!Number.isInteger(delay)||delay<0||delay>86400)error('시간 범위가 올바르지 않습니다.');
       const now=Date.now();store.admin_ball_event={id:crypto.randomUUID(),starts_at:new Date(now+delay*1000).toISOString(),ends_at:new Date(now+(delay+duration)*1000).toISOString()};
-    }else store.admin_ball_event=null;
+    }else {skipWeekly(store,'ball');store.admin_ball_event=null;}
     after=store.admin_ball_event;
   }
   else if (action==='admin_gold_event') {
@@ -141,11 +155,11 @@ export function execute(store, actor, body) {
     before=store.gold_event||null;
     if(body.mode==='start'){
       if(store.maintenance)error('점검 모드를 끈 뒤 이벤트를 시작하세요.',409);
-      if(before&&Date.parse(before.ends_at)>Date.now())error('이미 예고/진행 중인 이벤트가 있습니다.',409);
+      if(before&&Date.parse(before.ends_at)>Date.now()&&!(before.source==='weekly'&&Date.parse(before.starts_at)>Date.now()))error('이미 예고/진행 중인 이벤트가 있습니다.',409);
       const multiplier=body.multiplier??10,duration=body.duration_seconds??60,delay=body.delay_seconds??30;
       if(!Number.isInteger(multiplier)||multiplier<1||multiplier>1000||!Number.isInteger(duration)||duration<1||duration>86400||!Number.isInteger(delay)||delay<0||delay>86400)error('배율과 시간은 허용 범위의 정수로 입력하세요.');
       const now=Date.now();store.gold_event={id:crypto.randomUUID(),multiplier,starts_at:new Date(now+delay*1000).toISOString(),ends_at:new Date(now+(delay+duration)*1000).toISOString()};
-    }else store.gold_event=null;
+    }else {skipWeekly(store,'gold');store.gold_event=null;}
     after=store.gold_event;
   }
   else if (action==='admin_maintenance') {before={enabled:store.maintenance,message:store.message};store.maintenance=body.enabled===true;store.message=String(body.message||store.message).slice(0,500);after={enabled:store.maintenance,message:store.message};}

@@ -38,7 +38,7 @@
     $('scheduleCreate').disabled=pending;
   }
   function apply(data){snapshot={...snapshot,...data};root.WakppuGoldEvent.update(snapshot);root.WakppuAdminBallEvent.update(snapshot);render();}
-  root.WakppuEventSchedule.update=data=>{snapshot=data;render();};
+  root.WakppuEventSchedule.update=data=>{snapshot=data;render();root.WakppuWeeklyEvents?.update(data);};
   $('scheduleCreate').onclick=async()=>{
     if(pending)return;
     try{
