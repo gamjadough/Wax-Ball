@@ -1,3 +1,4 @@
+param([string]$SourceRef = 'HEAD')
 $ErrorActionPreference = 'Stop'
 $projectRoot = $PSScriptRoot
 $deploymentRoot = Join-Path $projectRoot '.deployment'
@@ -10,6 +11,8 @@ function Invoke-Git {
 
 Push-Location $projectRoot
 try {
+    $sourceSha = & git rev-parse --verify "$SourceRef^{commit}"
+    if ($LASTEXITCODE -ne 0) { throw 'Could not resolve the deployment source commit.' }
     Invoke-Git -GitArgs @('fetch', 'origin', 'main')
     if (!(Test-Path -LiteralPath $deploymentRoot)) {
         Invoke-Git -GitArgs @('worktree', 'add', '--detach', $deploymentRoot, 'origin/main')
@@ -20,7 +23,7 @@ try {
     }
 
     # Publish only committed files, preserving all existing remote files.
-    $sourceFiles = & git ls-files
+    $sourceFiles = & git ls-tree -r --name-only $sourceSha
     if ($LASTEXITCODE -ne 0) { throw 'Could not list committed source files.' }
     $publishedFiles = & git -C $deploymentRoot ls-files -- arena/
     if ($LASTEXITCODE -ne 0) { throw 'Could not list published arena files.' }
@@ -32,7 +35,7 @@ try {
     }
     $archivePath = Join-Path ([System.IO.Path]::GetTempPath()) ('arena-' + [guid]::NewGuid().ToString() + '.zip')
     try {
-        Invoke-Git -GitArgs @('archive', '--format=zip', '--prefix=arena/', "--output=$archivePath", 'HEAD')
+        Invoke-Git -GitArgs @('archive', '--format=zip', '--prefix=arena/', "--output=$archivePath", $sourceSha)
         Expand-Archive -LiteralPath $archivePath -DestinationPath $deploymentRoot -Force
     } finally {
         if (Test-Path -LiteralPath $archivePath) { Remove-Item -LiteralPath $archivePath }
@@ -40,7 +43,7 @@ try {
     Invoke-Git -GitArgs @('-C', $deploymentRoot, 'add', '--', 'arena')
     & git -C $deploymentRoot diff --cached --quiet
     if ($LASTEXITCODE -eq 1) {
-        $sourceCommit = & git rev-parse --short HEAD
+        $sourceCommit = & git rev-parse --short $sourceSha
         Invoke-Git -GitArgs @('-C', $deploymentRoot, 'commit', '-m', "Deploy Wax Ball Arena ($sourceCommit) to /arena/")
     } elseif ($LASTEXITCODE -ne 0) { throw 'Could not inspect deployment changes.' }
     Invoke-Git -GitArgs @('-C', $deploymentRoot, 'push', 'origin', 'HEAD:main')
