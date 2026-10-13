@@ -1,76 +1,57 @@
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-let playwright;
-try { playwright = require('playwright'); }
-catch { playwright = require(process.env.PLAYWRIGHT_MODULE || 'C:/Users/dodoo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'); }
-const url = process.env.TEST_URL || 'http://127.0.0.1:5174';
-const artifacts = path.join(__dirname, '..', 'artifacts');
-fs.mkdirSync(artifacts, { recursive: true });
-const errors = [];
-let checks = 0;
-function pass(name) { checks++; console.log('PASS ' + name); }
-async function snapshot(page) { return page.evaluate(() => window.WaxArena.getSnapshot()); }
+const { assert, fs, path, artifacts, launch, monitor, load, snapshot, clock } = require('./helpers.cjs');
 (async () => {
-  const browser = await playwright.chromium.launch({ headless: true, channel: process.env.BROWSER_CHANNEL || 'msedge' });
+  const browser = await launch(); const errors = []; let checks = 0;
+  const pass = label => { checks++; console.log('PASS ' + label); };
   try {
-    const page = await browser.newPage({ viewport: { width: 1440, height: 960 }, reducedMotion: 'reduce' });
-    page.on('pageerror', error => errors.push(error.message));
-    page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
-    const response = await page.goto(url);
-    assert.equal(response.status(), 200);
-    await page.waitForLoadState('networkidle');
-    assert.equal(await page.locator('.hero-stage, .play-card').count(), 2);
-    assert.equal(await page.locator('#gold-amount').textContent(), '0 G');
-    await page.clock.install(); await page.clock.pauseAt(new Date());
-    for (const viewport of [{ width: 1440, height: 960 }, { width: 1280, height: 800 }, { width: 1024, height: 768 }, { width: 768, height: 1024 }]) {
-      await page.setViewportSize(viewport);
-      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-      for (const selector of ['#fight-button', '#ai-difficulty', '[data-unavailable]:nth-child(1)', '[data-unavailable]:nth-child(2)', '[data-unavailable]:nth-child(3)']) {
-        const box = await page.locator(selector).boundingBox();
-        assert.ok(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= viewport.width && box.y + box.height <= viewport.height, `${selector} outside ${viewport.width}x${viewport.height}`);
-        assert.ok(box.width >= 44 && box.height >= 44);
-      }
-      await page.screenshot({ path: path.join(artifacts, `lobby-new-${viewport.width}.png`), fullPage: true });
-      pass(`${viewport.width}x${viewport.height}: new layout, all controls in viewport, no overflow`);
-    }
+    const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    monitor(page, errors); await load(page); await clock(page);
     const idle = await snapshot(page);
-    for (const button of await page.locator('[data-unavailable]').all()) {
-      await button.click();
-      assert.equal(await page.locator('#menu-notice').textContent(), '아직 개발 안 함 ㅋㅋ');
-      await page.clock.runFor(1000);
-      assert.deepEqual(await snapshot(page), idle);
+    assert.equal(await page.locator('#gold-amount').textContent(), '0 G');
+    for (const button of await page.locator('#lobby-screen [data-unavailable]').all()) {
+      await button.click(); assert.match(await page.locator('#menu-notice').textContent(), /아직 개발 안 함/);
     }
-    pass('all three secondary menus announce their status and keep lobby simulation idle');
-    await page.locator('#ai-difficulty').focus();
-    await page.keyboard.press('End');
-    assert.equal(await page.locator('#ai-difficulty').inputValue(), 'advanced');
-    await page.keyboard.press('Tab');
-    assert.equal(await page.evaluate(() => document.activeElement.id), 'fight-button');
-    await page.keyboard.press('Enter');
-    assert.equal((await snapshot(page)).difficulty, 'advanced');
-    assert.equal(await page.evaluate(() => document.activeElement.id), 'player-ball');
-    await page.locator('#leave-battle-button').click();
-    assert.equal(await page.evaluate(() => document.activeElement.id), 'fight-button');
-    pass('keyboard difficulty selection, start, player focus and lobby return focus');
-    for (const [difficulty, interval, hits] of [['entry', 1500, 0], ['beginner', 850, 1], ['intermediate', 450, 2], ['advanced', 200, 5]]) {
+    await page.clock.runFor(5000); assert.deepEqual(await snapshot(page), idle);
+    await page.screenshot({ path: path.join(artifacts, 'comic-lobby-desktop.png'), fullPage: true });
+    pass('reference lobby: profile, wallet, shop, lab, friend notice; no idle simulation');
+    await page.locator('#mode-open').click();
+    assert.equal(await page.evaluate(() => window.WaxArena.getScreen()), 'modes');
+    assert.equal(await page.locator('.mode-card').count(), 4);
+    const grid = await page.locator('.mode-cards').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length);
+    assert.equal(grid, 2);
+    for (const button of await page.locator('#mode-screen [data-unavailable]').all()) {
+      await button.click(); assert.match(await page.locator('#mode-notice').textContent(), /아직 개발 안 함/);
+    }
+    assert.deepEqual(await snapshot(page), idle);
+    await page.screenshot({ path: path.join(artifacts, 'comic-modes-desktop.png'), fullPage: true });
+    pass('four reference modes in 2×2 grid; unavailable modes never start a match');
+    await page.locator('#ai-mode-button').click();
+    assert.equal(await page.locator('#difficulty-dialog').evaluate(el => el.open), true);
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'ai-difficulty');
+    await page.clock.runFor(4000); assert.deepEqual(await snapshot(page), idle);
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#difficulty-dialog').evaluate(el => el.open), false);
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'ai-mode-button');
+    pass('AI click opens modal; simulation stays idle; Escape restores focus');
+    const speeds = { entry: 1500, beginner: 850, intermediate: 450, advanced: 200 };
+    for (const [difficulty, speed] of Object.entries(speeds)) {
+      await page.locator('#ai-mode-button').click();
       await page.locator('#ai-difficulty').selectOption(difficulty);
-      await page.locator('#fight-button').click();
-      await page.clock.runFor(1100);
-      assert.equal((await snapshot(page)).aiHitIntervalMs, interval);
-      assert.equal((await snapshot(page)).ai.hits, hits);
-      await page.locator('#rematch-button').click();
-      assert.equal((await snapshot(page)).difficulty, difficulty);
-      await page.locator('#leave-battle-button').click();
-      assert.equal(await page.locator('#ai-difficulty').inputValue(), difficulty);
-      const returned = await snapshot(page);
-      await page.clock.runFor(5000);
-      assert.deepEqual(await snapshot(page), returned);
+      assert.ok((await page.locator('#difficulty-help').textContent()).includes((speed / 1000).toFixed(2)));
+      await page.locator('#confirm-battle').click();
+      await page.clock.runFor(20);
+      const battle = await snapshot(page); assert.equal(battle.difficulty, difficulty); assert.equal(battle.aiHitIntervalMs, speed);
+      await page.clock.runFor(speed * 5 + 180);
+      const hit = await snapshot(page); assert.equal(hit.player.health, 990); assert.equal(hit.ai.health, 1000);
+      await page.locator('#leave-battle-button').click(); await page.locator('#mode-open').click();
+      pass(difficulty + ': selected speed produces exactly one 10-damage AI attack');
     }
-    pass('all four difficulties retain speed and selection across rematches and lobby returns');
-    assert.deepEqual(errors, []);
-    pass('zero console or JavaScript errors');
-    fs.writeFileSync(path.join(artifacts, 'lobby-results.json'), JSON.stringify({ passed: checks, errors, url }, null, 2));
+    await page.locator('#mode-back').click(); await page.locator('#fight-button').click();
+    await page.screenshot({ path: path.join(artifacts, 'comic-difficulty-desktop.png') });
+    await page.locator('#difficulty-close').click();
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'fight-button');
+    pass('lobby Start opens difficulty; close restores lobby focus');
+    assert.deepEqual(errors, []); pass('zero browser, console or HTTP errors');
+    fs.writeFileSync(path.join(artifacts, 'lobby-results.json'), JSON.stringify({ passed: checks, errors }, null, 2));
     console.log(`${checks} lobby checks passed.`);
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

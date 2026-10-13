@@ -20,6 +20,16 @@ try {
     }
 
     # Publish only committed files, preserving all existing remote files.
+    $sourceFiles = & git ls-files
+    if ($LASTEXITCODE -ne 0) { throw 'Could not list committed source files.' }
+    $publishedFiles = & git -C $deploymentRoot ls-files -- arena/
+    if ($LASTEXITCODE -ne 0) { throw 'Could not list published arena files.' }
+    $obsoleteFiles = @($publishedFiles | Where-Object {
+        $_.StartsWith('arena/') -and ($_.Substring(6) -notin $sourceFiles)
+    })
+    if ($obsoleteFiles.Count -gt 0) {
+        Invoke-Git -GitArgs (@('-C', $deploymentRoot, 'rm', '--') + $obsoleteFiles)
+    }
     $archivePath = Join-Path ([System.IO.Path]::GetTempPath()) ('arena-' + [guid]::NewGuid().ToString() + '.zip')
     try {
         Invoke-Git -GitArgs @('archive', '--format=zip', '--prefix=arena/', "--output=$archivePath", 'HEAD')
