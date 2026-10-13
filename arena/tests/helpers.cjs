@@ -25,7 +25,7 @@ async function start(page, difficulty = 'beginner') {
 async function smash(page) { await page.evaluate(() => { for (let i = 0; i < 5; i++) document.getElementById('player-ball').click(); }); }
 async function fits(page, selector, minimum = 0) {
   const box = await page.locator(selector).boundingBox();
-  const size = page.viewportSize();
+  const size = await page.evaluate(() => ({ width: innerWidth, height: Math.min(innerHeight, window.visualViewport?.height || innerHeight) }));
   assert.ok(box && box.x >= -1 && box.y >= -1 && box.x + box.width <= size.width + 1 && box.y + box.height <= size.height + 1, `${selector} outside ${size.width}×${size.height}: ${JSON.stringify(box)}`);
   assert.ok(box.width >= minimum && box.height >= minimum, `${selector} must have a ${minimum}px touch area`);
 }

@@ -8,6 +8,8 @@
     "test": "node tests/battle.test.cjs",
     "test:browser": "node tests/browser.test.cjs",
     "test:mobile": "node tests/mobile.test.cjs",
-    "test:lobby": "node tests/lobby.test.cjs"
+    "test:lobby": "node tests/lobby.test.cjs",
+    "test:progress": "node tests/progress.test.cjs",
+    "test:rewards": "node tests/rewards.test.cjs"
   }
 }

@@ -3,7 +3,7 @@ const { assert, fs, path, artifacts, launch, monitor, load, snapshot, clock, sta
   const browser = await launch(); const errors = []; let checks = 0;
   const pass = label => { checks++; console.log('PASS ' + label); };
   try {
-    for (const [width, height] of [[568,320],[640,360],[667,375],[720,320],[740,360],[844,390],[915,412],[932,430],[1024,768]]) {
+    for (const [width, height] of [[568,240],[667,260],[844,280],[568,320],[640,360],[667,375],[720,320],[740,360],[844,390],[915,412],[932,430],[1024,768]]) {
       const context = await browser.newContext({ viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
       const page = await context.newPage(); monitor(page, errors); await load(page); await clock(page);
       await fits(page, '#fight-button', 44); await fits(page, '#mode-open', 44); await noOverflow(page);
@@ -54,7 +54,31 @@ const { assert, fs, path, artifacts, launch, monitor, load, snapshot, clock, sta
     await page.setViewportSize({ width: 844, height: 320 });
     await fits(page, '#player-ball', 44); await fits(page, '#rematch-button', 44); await noOverflow(page);
     pass('initial portrait blocks gameplay; reduced browser-toolbar height fits');
-    await context.close(); assert.deepEqual(errors, []); pass('zero browser, console or HTTP errors');
+    await context.close();
+    const barsContext = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
+    const bars = await barsContext.newPage(); monitor(bars, errors); await load(bars); await clock(bars);
+    // Reproduce browsers whose layout viewport stays tall while toolbars reduce
+    // only the VisualViewport; also reserve space equivalent to safe-area insets.
+    await bars.evaluate(() => {
+      Object.defineProperty(visualViewport, 'height', { configurable: true, get: () => 240 });
+      visualViewport.dispatchEvent(new Event('resize'));
+    });
+    await bars.addStyleTag({ content: '#game-root{padding:8px 28px 12px}' });
+    await fits(bars, '#fight-button', 44); await fits(bars, '#mode-open', 44);
+    await bars.locator('#mode-open').tap();
+    for (const selector of ['.ai-mode','.friend-mode','.boss-mode','.team-mode']) await fits(bars, selector, 44);
+    await bars.locator('#ai-mode-button').tap();
+    for (const selector of ['#difficulty-dialog','#ai-difficulty','#confirm-battle','#difficulty-close']) await fits(bars, selector, selector === '#difficulty-dialog' ? 0 : 44);
+    await bars.locator('#confirm-battle').tap(); await bars.clock.runFor(20);
+    for (const selector of ['#player-ball','#ai-ball','#player-health','#ai-health','#leave-battle-button','#rematch-button']) await fits(bars, selector, selector.includes('button') || selector === '#player-ball' ? 44 : 0);
+    await bars.evaluate(() => window.scrollTo(0, 1000));
+    assert.equal(await bars.evaluate(() => scrollY), 0);
+    await bars.screenshot({ path: path.join(artifacts, 'mobile-visible-viewport-240.png') });
+    await bars.evaluate(() => { delete visualViewport.height; visualViewport.dispatchEvent(new Event('resize')); });
+    assert.equal(await bars.locator('html').evaluate(el => el.classList.contains('viewport-tight')), false);
+    assert.equal((await snapshot(bars)).status, 'running');
+    pass('240px VisualViewport inside 390px layout, safe areas, toolbar restoration, no page scroll');
+    await barsContext.close(); assert.deepEqual(errors, []); pass('zero browser, console or HTTP errors');
     fs.writeFileSync(path.join(artifacts, 'mobile-results.json'), JSON.stringify({ passed: checks, errors }, null, 2));
     console.log(`${checks} mobile checks passed.`);
   } finally { await browser.close(); }

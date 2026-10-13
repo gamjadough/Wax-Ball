@@ -34,11 +34,12 @@ const { assert, fs, path, artifacts, launch, monitor, load, snapshot, clock, sta
     await page.screenshot({ path: path.join(artifacts, 'comic-victory-desktop.png') });
     pass('full victory: HP, freeze, effects cleanup, result focus trap');
     // Result controls stay visible on the smallest supported phone.
-    await page.setViewportSize({ width: 568, height: 320 });
+    await page.setViewportSize({ width: 568, height: 240 });
+    await page.clock.runFor(20);
     const { fits } = require('./helpers.cjs');
     await fits(page, '#start-button', 44); await fits(page, '#lobby-button', 44);
     await page.screenshot({ path: path.join(artifacts, 'comic-result-mobile.png') });
-    pass('result controls fit 568×320 landscape');
+    pass('result controls fit 568×240 with browser bars');
     await page.setViewportSize({ width: 1440, height: 960 }); await page.locator('#start-button').click(); await page.clock.runFor(20);
     await page.clock.runFor(100300);
     const loss = await snapshot(page); assert.equal(loss.status, 'defeat'); assert.equal(loss.player.health, 0);

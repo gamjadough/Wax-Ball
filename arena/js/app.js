@@ -30,9 +30,21 @@
   const portraitQuery = window.matchMedia('(orientation: portrait) and (max-width: 900px), (orientation: portrait) and (pointer: coarse)');
   let orientationBlocked = portraitQuery.matches;
   let screen = SCREENS.LOBBY;
-  // No economy exists yet: display the actual initial balance without invented rewards.
-  const wallet = { gold: 0 };
-  $('gold-amount').textContent = `${wallet.gold.toLocaleString()} G`;
+  const progress = new window.WaxArena.ProgressStore();
+  let matchId = null;
+  let matchReward = null;
+  function renderProgress() {
+    const saved = progress.getSnapshot();
+    $('gold-amount').textContent = `${saved.gold.toLocaleString()} G`;
+    $('record-summary').textContent = `${saved.wins.toLocaleString()}승 · ${saved.losses.toLocaleString()}패${saved.issue === 'unavailable' ? ' · 저장 불가' : saved.issue === 'corrupt' ? ' · 기록 복구 필요' : ''}`;
+    $('record-summary').title = saved.issue === 'unavailable' ? '저장할 수 없어 현재 화면에서만 유지됩니다.' : saved.issue === 'corrupt' ? '기존 저장 기록을 읽지 못했습니다. 새 대전 결과부터 다시 저장합니다.' : '골드와 전적은 이 브라우저에 저장됩니다.';
+    $('result-reward').hidden = !matchReward;
+    if (matchReward) {
+      $('result-reward').textContent = matchReward.result === STATES.VICTORY ? `승리 보상 +${matchReward.reward} G` : '패배 · 골드 보상 없음';
+      $('result-save-note').textContent = saved.issue === 'unavailable' ? '저장 불가 · 현재 화면에서만 기록이 유지됩니다.' : '골드와 전적을 이 브라우저에 저장했습니다.';
+    }
+  }
+  renderProgress();
   let frame = null;
   let lastFrame = null;
   let lastSecond = -1;
@@ -158,7 +170,7 @@
         const victory = battle.status === STATES.VICTORY;
         $('result-kicker').textContent = waiting ? '세기의 하찮은 대결' : victory ? '상대 공이 먼저 퇴근함' : '공생은 원래 이런 거임';
         $('result-title').textContent = waiting ? '공 준비 중' : victory ? 'VICTORY · 내가 더 둥글다!' : 'DEFEAT · 공생무상…';
-        $('result-description').textContent = waiting ? '5번 두드려서 상대에게 들이받으세요.' : `전투 시간 ${clock(battle.time)} · ${victory ? '이겼다! 근데 이제 뭐함?' : '괜찮아. 어차피 공이었어.'}`;
+        $('result-description').textContent = waiting ? '5번 두드려서 상대에게 들이받으세요.' : `전투 시간 ${clock(battle.time)} · ${victory ? '골드 챙겼다! 다음 공도 들이받자.' : '괜찮아. 어차피 공이었어.'}`;
         $('start-button').firstChild.textContent = waiting ? '전투 시작 ' : '다시 도전 ';
       }
     }
@@ -180,6 +192,11 @@
         damage(event.target, event.damage);
         log(`${event.side === 'player' ? '내' : 'AI'} 왁뿌볼 파괴 → ${event.target === 'ai' ? '상대' : '플레이어'}에게 ${event.damage} 피해`, event.side);
       } else if (event.type === 'ended') {
+        if (matchId) {
+          const reward = progress.recordResult(matchId, event.status, battle.difficulty, battle.time);
+          if (reward) matchReward = reward;
+          renderProgress();
+        }
         stopLoop();
         clearEffects();
         showScreen(SCREENS.RESULT);
@@ -210,6 +227,9 @@
     clearEffects();
     for (const side of ['player', 'ai']) $(`${side}-fill`).style.transition = 'none';
     battle.reset(true, difficultySelect.value);
+    matchId = window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    matchReward = null;
+    renderProgress();
     debugLog.length = 0;
     $('player-speech').textContent = '때려봐. 나 공이야.';
     $('ai-speech').textContent = '나한테 왜 이러는데.';
@@ -251,6 +271,9 @@
     if (!orientationBlocked && !document.hidden && screen === SCREENS.BATTLE && battle.status === STATES.RUNNING) frame = requestAnimationFrame(tick);
   });
   window.addEventListener('pagehide', () => { stopLoop(); clearEffects(); });
+  window.addEventListener('storage', event => {
+    if (event.key === window.WaxArena.PROGRESS_STORAGE_KEY || event.key === null) { progress.refresh(); renderProgress(); }
+  });
   window.addEventListener('pageshow', () => {
     if (frame === null && !orientationBlocked && !document.hidden && screen === SCREENS.BATTLE && battle.status === STATES.RUNNING) frame = requestAnimationFrame(tick);
   });
@@ -272,6 +295,22 @@
     }
   }
   portraitQuery.addEventListener('change', updateOrientation);
+  // Mobile browser bars can reduce the visible viewport without changing the
+  // layout viewport. Size the game to the space the player can actually see.
+  function sizeVisibleViewport() {
+    const viewport = window.visualViewport;
+    const useVisual = viewport && viewport.scale === 1;
+    const height = Math.round(useVisual ? Math.min(innerHeight, viewport.height) : innerHeight);
+    document.documentElement.style.setProperty('--app-height', `${height}px`);
+    document.documentElement.style.setProperty('--viewport-top', `${useVisual ? viewport.offsetTop : 0}px`);
+    const mobile = matchMedia('(pointer: coarse), (max-width: 950px)').matches;
+    document.documentElement.classList.toggle('mobile-layout', mobile);
+    document.documentElement.classList.toggle('viewport-tight', mobile && !portraitQuery.matches && height <= 280);
+  }
+  window.addEventListener('resize', sizeVisibleViewport);
+  window.visualViewport?.addEventListener('resize', sizeVisibleViewport);
+  window.visualViewport?.addEventListener('scroll', sizeVisibleViewport);
+  sizeVisibleViewport();
   // Keep keyboard focus inside the result dialog, including reverse tabbing.
   $('result').addEventListener('keydown', event => {
     if (event.key !== 'Tab') return;
@@ -286,4 +325,5 @@
   window.WaxArena.getSnapshot = () => ({ status: battle.status, difficulty: battle.difficulty, aiHitIntervalMs: battle.aiHitIntervalMs, round: battle.round, time: battle.time, player: { ...battle.fighters.player }, ai: { ...battle.fighters.ai }, pendingCount: battle.pending.length });
   window.WaxArena.getDebugLog = () => debugLog.map(entry => ({ ...entry }));
   window.WaxArena.getScreen = () => screen;
+  window.WaxArena.getProgress = () => progress.getSnapshot();
 })();
