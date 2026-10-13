@@ -7,6 +7,7 @@
     "start": "node server.cjs",
     "test": "node tests/battle.test.cjs",
     "test:browser": "node tests/browser.test.cjs",
-    "test:mobile": "node tests/mobile.test.cjs"
+    "test:mobile": "node tests/mobile.test.cjs",
+    "test:lobby": "node tests/lobby.test.cjs"
   }
 }

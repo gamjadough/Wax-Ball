@@ -7,27 +7,61 @@
   <title>왁뿌볼 아레나 · 일단 들이받아 ㅋㅋ</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='%2351e3cb'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="lobby.css">
   <script defer src="js/config.js"></script>
   <script defer src="js/battle.js"></script>
   <script defer src="js/app.js"></script>
 </head>
 <body data-screen="lobby">
   <main class="lobby" id="lobby-screen" aria-label="왁뿌볼 아레나 로비">
-    <header class="lobby-header"><a class="lobby-brand" href="./">왁뿌볼 아레나<span>쓸데없이 비장한 공들의 전쟁</span></a><div class="gold-wallet"><span aria-hidden="true">🪙</span><div>보유 골드<strong id="gold-amount">0 <small>G</small></strong></div></div></header>
-    <section class="lobby-hero" aria-labelledby="lobby-title">
-      <p class="lobby-sticker">물리 법칙? 그게 뭔데 ㅋㅋ</p>
-      <h1 id="lobby-title">오늘도 <span>공</span>격적으로.</h1>
-      <p class="lobby-subtitle">생긴 건 말랑. 성격은 안 말랑.</p>
-      <div class="mascot-stage" aria-label="둥둥 떠다니는 대표 왁뿌볼">
-        <span class="meme-spark spark-one" aria-hidden="true">✦</span><span class="meme-spark spark-two" aria-hidden="true">✷</span><span class="mascot-note" aria-hidden="true">나 지금 진지함</span>
-        <div class="mascot-float"><div class="wax-ball lobby-ball"><span class="ball-shine"></span><span class="mascot-face" aria-hidden="true"><span class="mascot-eyes">눈 눈</span><span class="mascot-mouth">ω</span></span><span class="mascot-band" aria-hidden="true">W</span></div></div>
-        <div class="mascot-shadow"></div><span class="mascot-tag">일반 왁뿌볼 · 근거 없는 자신감 MAX</span>
-      </div>
-      <div class="lobby-action"><span class="battle-chip">나 vs AI · 5번 때리면 와장창</span><div class="difficulty-control"><label for="ai-difficulty">AI 난이도</label><select id="ai-difficulty" aria-describedby="difficulty-help"></select></div><span class="difficulty-help" id="difficulty-help">입문 → 초급 → 중급 → 고급 순으로 더 빠르게 클릭!</span><button class="fight-button" id="fight-button">싸우러 가기 ㅋㅋ <span aria-hidden="true">➜</span></button><p>전략은 없다. 일단 눌러.</p></div>
-    </section>
-    <nav class="lobby-menu" aria-label="로비 메뉴"><button type="button" data-unavailable><span aria-hidden="true">🔨</span>강화<small>더 세지고 싶냐</small></button><button type="button" data-unavailable><span aria-hidden="true">📖</span>도감<small>공도 스펙이 있다</small></button><button type="button" data-unavailable><span aria-hidden="true">🤝</span>친구 대전<small>우정 파괴 예정</small></button></nav>
-    <p class="menu-notice" id="menu-notice" role="status" aria-live="polite"></p>
-    <footer class="lobby-footer">왁뿌볼 아레나 <span>오늘의 목표: 공생공사 ㅋㅋ</span></footer>
+    <header class="hub-header">
+      <a class="hub-logo" href="./" aria-label="왁뿌볼 아레나 홈"><span class="hub-mark" aria-hidden="true">w.</span><span>왁뿌볼 아레나<small>WAX BALL ARENA</small></span></a>
+      <span class="hub-location">로비 <span aria-hidden="true">/</span> 준비됐나요?</span>
+      <div class="hub-wallet"><span class="coin-icon" aria-hidden="true">G</span><span><small>보유 골드</small><strong id="gold-amount">0 <small>G</small></strong></span></div>
+    </header>
+    <div class="hub-grid">
+      <section class="hero-stage" aria-labelledby="lobby-title">
+        <div class="hero-copy"><span class="hero-kicker"><i aria-hidden="true"></i> SMALL BALL. BIG ENERGY.</span><h1 id="lobby-title">작게 깨고,<br><span>크게 이겨.</span></h1><p>말랑한 얼굴 뒤에 숨겨진 한 방.<br>오늘의 아레나는 네 거야.</p></div>
+        <div class="hero-art" role="img" aria-label="민트색 왁뿌볼과 주황색 상대가 대전을 준비하는 모습">
+          <span class="hero-orbit orbit-back" aria-hidden="true"></span><span class="hero-orbit orbit-front" aria-hidden="true"></span>
+          <span class="hero-spark spark-left" aria-hidden="true">✳</span><span class="hero-spark spark-right" aria-hidden="true">✦</span>
+          <span class="hero-bubble" aria-hidden="true">일단 들이받아!</span>
+          <svg class="hero-ball hero-player" viewBox="0 0 240 240" aria-hidden="true">
+            <defs><radialGradient id="mint-ball" cx=".3" cy=".25" r=".8"><stop stop-color="#caffdd"/><stop offset=".38" stop-color="#6fe5b2"/><stop offset="1" stop-color="#21a379"/></radialGradient></defs>
+            <circle cx="120" cy="122" r="107" fill="#183e32"/><circle cx="117" cy="113" r="105" fill="url(#mint-ball)" stroke="#214c3e" stroke-width="3"/>
+            <ellipse cx="70" cy="52" rx="27" ry="12" fill="#fff" opacity=".55" transform="rotate(-30 70 52)"/>
+            <path d="M68 94 88 88M141 88 161 94" fill="none" stroke="#214c3e" stroke-width="7" stroke-linecap="round"/>
+            <ellipse cx="82" cy="113" rx="7" ry="13" fill="#214c3e"/><ellipse cx="149" cy="113" rx="7" ry="13" fill="#214c3e"/>
+            <ellipse cx="62" cy="137" rx="14" ry="8" fill="#fca790" opacity=".75"/><ellipse cx="168" cy="137" rx="14" ry="8" fill="#fca790" opacity=".75"/>
+            <path d="M100 144Q107 159 116 145Q127 159 134 144" fill="none" stroke="#214c3e" stroke-width="6" stroke-linecap="round"/>
+            <path d="m162 169 8 15 7-10 7 13 6-21" fill="none" stroke="#214c3e" stroke-width="5" stroke-linecap="round" opacity=".35"/>
+          </svg>
+          <svg class="hero-ball hero-rival" viewBox="0 0 160 160" aria-hidden="true">
+            <defs><radialGradient id="peach-ball" cx=".3" cy=".25" r=".8"><stop stop-color="#ffdfae"/><stop offset=".45" stop-color="#ffae82"/><stop offset="1" stop-color="#ed7857"/></radialGradient></defs>
+            <circle cx="82" cy="85" r="68" fill="#743c2d"/><circle cx="78" cy="78" r="68" fill="url(#peach-ball)" stroke="#743c2d" stroke-width="2.5"/>
+            <path d="m44 64 17 4m33 0 17-4" stroke="#743c2d" stroke-width="5" stroke-linecap="round"/><ellipse cx="57" cy="81" rx="5" ry="8" fill="#743c2d"/><ellipse cx="99" cy="81" rx="5" ry="8" fill="#743c2d"/>
+            <path d="M66 105q12-10 24 0" fill="none" stroke="#743c2d" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+          <span class="hero-floor" aria-hidden="true"></span>
+        </div>
+        <div class="hero-bottom"><span><span aria-hidden="true">✦</span> 일반 왁뿌볼</span><span>귀여움은 기본. 승부는 진심.</span></div>
+      </section>
+      <section class="play-card" aria-labelledby="play-title">
+        <div class="play-topline"><span class="mode-pill"><i aria-hidden="true"></i> AI 대전</span><span class="play-index">01 / SOLO</span></div>
+        <h2 id="play-title">한 판, 붙어볼까?</h2><p class="play-description">가볍게 시작해서 뜨겁게 끝내자.<br>난이도를 고르고 아레나에 입장하세요.</p>
+        <div class="match-preview" aria-hidden="true"><span class="match-avatar avatar-you">W<small>YOU</small></span><span class="match-vs">VS</span><span class="match-avatar avatar-cpu">W<small>AI</small></span></div>
+        <div class="selection-field"><label for="ai-difficulty">상대 난이도 <span>YOUR CHALLENGE</span></label><select id="ai-difficulty" aria-describedby="difficulty-help"></select><p id="difficulty-help">입문부터 고급까지, AI의 클릭 속도가 빨라져요.</p></div>
+        <button class="play-button" id="fight-button" type="button">대전 시작 <span aria-hidden="true">↗</span></button>
+        <p class="play-rules"><span>5번 클릭하면 파괴</span><i aria-hidden="true">·</i><span>파괴당 10 피해</span></p>
+      </section>
+    </div>
+    <nav class="hub-menu" aria-label="로비 메뉴">
+      <button type="button" data-unavailable><span class="menu-icon icon-upgrade" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m8 16 8-8M5 19l3-3m4-11 7 7M12 5l3-3 7 7-3 3"/></svg></span><span class="menu-copy">강화<small>더 단단한 한 방</small></span><span class="menu-soon">준비 중</span><span class="menu-arrow" aria-hidden="true">↗</span></button>
+      <button type="button" data-unavailable><span class="menu-icon icon-collection" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v14c-4-1-6 0-9 3-3-3-5-4-9-3Z"/></svg></span><span class="menu-copy">도감<small>어떤 공을 만나볼까?</small></span><span class="menu-soon">준비 중</span><span class="menu-arrow" aria-hidden="true">↗</span></button>
+      <button type="button" data-unavailable><span class="menu-icon icon-friends" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><path d="M2 20v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6m1 3a5 5 0 0 1 5 5v1"/></svg></span><span class="menu-copy">친구 대전<small>친할수록 세게 붙자</small></span><span class="menu-soon">준비 중</span><span class="menu-arrow" aria-hidden="true">↗</span></button>
+    </nav>
+    <p class="hub-notice" id="menu-notice" role="status" aria-live="polite"></p>
+    <footer class="hub-footer"><span>작은 공들의 커다란 승부.</span><span>WAX BALL ARENA <i aria-hidden="true">✳</i> LET'S PLAY</span></footer>
   </main>
   <div id="battle-screen" hidden>
   <main class="shell">
