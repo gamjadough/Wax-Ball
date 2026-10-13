@@ -2,6 +2,7 @@ import {hammerDamage} from './hammer-catalog.mjs';
 import {ballCatalog} from './event-ball-catalog.mjs';
 import {itemAction,itemState,snapshot,itemData,consumeEffects} from './items-service.mjs';
 import {limitedAction,limitedDrop} from './limited-service.mjs';
+import {sleepHours} from './sleep-hours.mjs';
 const catalog=await ballCatalog();
 export const ballIds = catalog.map(b=>b.id);
 export function isBanned(player, now=Date.now()) {
@@ -30,7 +31,8 @@ export function execute(store, actor, body) {
     if(actor && isBanned(actor))error('이 계정은 이용이 제한되었습니다.',403);
     return store.players.filter(p=>!p.ranking_hidden&&!isBanned(p)&&!guestLifecycleInfo(p)?.ranking_excluded).map(p=>({nickname:p.nickname,gold:p.state.gold,rebirths:p.state.rebirths,online:Number.isFinite(p.lastSeen)&&p.lastSeen>Date.now()-90000})).sort((a,b)=>b.rebirths-a.rebirths||(BigInt(a.gold)===BigInt(b.gold)?0:BigInt(a.gold)>BigInt(b.gold)?-1:1)).slice(0,100);
   }
-  if(action==='status'&&!actor)return {background_mode:store.background_mode||'auto',server_time:new Date().toISOString(),maintenance:store.maintenance,message:store.message,announcement:store.announcement,role:'player',moderation:{blocked:false}};
+  const instant=store.sleep_now_ms??Date.now(),hours=sleepHours(instant);
+  if(action==='status'&&!actor)return {sleep_hours:hours,background_mode:store.background_mode||'auto',server_time:new Date(instant).toISOString(),maintenance:store.maintenance,message:store.message,announcement:store.announcement,role:'player',moderation:{blocked:false}};
   if (!actor) error('로그인이 필요합니다.',401);
   if(action==='presence_ping'){
     if(isBanned(actor))error('이 계정은 이용이 제한되었습니다.',403);
@@ -38,9 +40,11 @@ export function execute(store, actor, body) {
     return {ok:true};
   }
   if (action.startsWith('admin_') && actor.role !== 'admin') error('admin only',403);
-  if (action==='status') return {background_mode:store.background_mode||'auto',admin_ball_always:actor.role==='admin'&&!actor.is_anonymous,admin_ball_event:store.maintenance?null:store.admin_ball_event||null,gold_event:store.gold_event||null,server_time:new Date().toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
+  const sleepBlocked=hours.active&&(actor.role!=='admin'||actor.is_anonymous);
+  if (action==='status') return {sleep_hours:hours,background_mode:store.background_mode||'auto',admin_ball_always:actor.role==='admin'&&!actor.is_anonymous,admin_ball_event:store.maintenance||sleepBlocked?null:store.admin_ball_event||null,gold_event:sleepBlocked?null:store.gold_event||null,server_time:new Date(instant).toISOString(),maintenance:store.maintenance, message:store.message, announcement:store.announcement, role:actor.is_anonymous?'player':actor.role, admin_revision:actor.state.admin_revision||0, moderation:{...actor.moderation,blocked:isBanned(actor)}};
+  if(isBanned(actor))error('이 계정은 이용이 제한되었습니다.',403);
+  if(sleepBlocked)error('수면 시간입니다. 오전 6시부터 다시 이용할 수 있습니다.',503);
   if (store.maintenance && actor.role!=='admin' && !action.startsWith('admin_')) error('점검 중입니다.',503);
-  if (isBanned(actor)) error('이 계정은 이용이 제한되었습니다.',403);
   if(action==='admin_background'){
     if(actor.is_anonymous)error('관리자 권한이 필요합니다.',403);
     if(!['auto','default','halloween'].includes(body.mode))error('배경 설정을 선택하세요.');
