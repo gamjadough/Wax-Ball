@@ -88,3 +88,19 @@ html.mobile-layout{height:100%;overflow:hidden;overscroll-behavior:none}
 .viewport-tight .mascot-peach{width:48px;height:50px;bottom:14px}
 .viewport-tight .floor{bottom:8px}
 @media(hover:none){.player-ball:not(:disabled):hover{filter:none}.mode-card:hover{translate:none}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* Online account controls share the game's paper-and-ink style. */
+button.profile-chip{border:0;background:transparent;text-align:left;padding:0;min-width:0;max-width:230px}
+#profile-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
+button.profile-chip:disabled{opacity:.65}
+.account-card{padding:22px;width:min(430px,calc(100vw - 24px));max-height:calc(var(--app-height,100dvh) - 24px);overflow:auto}
+.account-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.account-heading h2{font-size:25px;margin:0}
+.account-card p{font-size:12px;line-height:1.6}.account-card fieldset{border:0;padding:0;margin:0}
+.account-tabs{display:flex;gap:6px;margin:14px 0}.account-tabs button{flex:1;padding:6px;border:2px solid var(--ink);border-radius:8px;background:var(--paper);font-size:11px}.account-tabs button[aria-pressed=true]{background:var(--purple);font-weight:800}
+.account-card label{display:block;font-size:12px;font-weight:700;margin:10px 0}.account-card input{display:block;width:100%;min-height:44px;margin-top:5px;border:2px solid var(--ink);border-radius:8px;padding:8px 10px;font:inherit;background:white;color:var(--ink)}
+.account-card input:focus-visible{outline:3px solid #7655c5;outline-offset:2px}.account-card .primary-button{margin-top:12px;min-height:44px;font-size:13px}.account-actions{display:flex;gap:10px;align-items:end}.account-actions .primary-button{width:auto;flex:1}
+.account-message{min-height:20px;font-weight:700;overflow-wrap:anywhere}.account-note{font-size:10px!important;opacity:.75}.account-card button:disabled{opacity:.6}
+@media(orientation:landscape) and (max-height:600px){.account-card{padding:12px 18px}.account-heading h2{font-size:20px}.account-card p{font-size:10px;margin:5px 0}.account-tabs{margin:8px 0}.account-card form fieldset{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}.account-card label{margin:0;font-size:10px}.account-card input{margin-top:3px;font-size:12px}.account-card #account-submit{grid-column:1/-1;margin-top:4px}.account-card #account-nickname-row{grid-column:1/-1}.account-note{display:none}#profile-name{max-width:95px}}
+
+.viewport-tight .topbar{height:48px;min-height:48px}
+.account-card #account-verify{grid-column:1/-1;margin-top:6px}

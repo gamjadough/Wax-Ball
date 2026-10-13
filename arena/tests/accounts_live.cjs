@@ -1,0 +1,61 @@
+// Real Firebase integration. Credentials stay in ignored artifacts; never log tokens.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const root = path.join(__dirname, '..');
+const fixturePath = path.join(root, 'artifacts', 'account-live-fixture.json');
+if (process.argv[2] === 'prepare') {
+  const users = ['alpha','beta'].map(name => ({ id:'arena-validation-' + crypto.randomUUID(), email:`arena-validation-${name}-${crypto.randomUUID()}@example.invalid`, password:crypto.randomBytes(32).toString('base64url'), nickname:'검증 공 '+name }));
+  fs.mkdirSync(path.dirname(fixturePath), {recursive:true});
+  fs.writeFileSync(fixturePath, JSON.stringify(users));
+  fs.writeFileSync(path.join(root,'artifacts','account-live-import.json'),JSON.stringify({users:users.map(user=>({localId:user.id,email:user.email,emailVerified:true,displayName:user.nickname,passwordHash:crypto.createHash('sha256').update(user.password).digest('base64')}))}));
+  console.log('Disposable verification fixtures prepared.'); process.exit(0);
+}
+const users = JSON.parse(fs.readFileSync(fixturePath,'utf8'));
+const makeStorage = () => { const rows = new Map(); return {getItem:key=>rows.get(key)??null,setItem:(key,value)=>rows.set(key,value),removeItem:key=>rows.delete(key)}; };
+const context = {window:{localStorage:makeStorage(),sessionStorage:makeStorage()},fetch,URLSearchParams,AbortSignal,Date,Set,Map,Error,Number,JSON};
+vm.createContext(context);
+for(const file of ['config.js','progress.js','account-config.js','firebase-account.js']) vm.runInContext(fs.readFileSync(path.join(root,'js',file),'utf8'),context);
+const {AccountClient,CloudProgressStore,ACCOUNT_CONFIG} = context.window.WaxArena;
+const headers = {'Content-Type':'application/json'};
+(async()=>{
+  const clients=[]; const checks=[];
+  const signupClient=new AccountClient();
+  const email='arena-validation-signup-'+crypto.randomUUID()+'@example.invalid';
+  const password=crypto.randomBytes(32).toString('base64url');
+  const registered=await signupClient.auth('signUp',{email,password,returnSecureToken:true});
+  await assert.rejects(signupClient.signIn(email,password),/인증 링크/);
+  const unread=await fetch(ACCOUNT_CONFIG.databaseURL+'/arena/users/'+registered.localId+'/matches.json?auth='+encodeURIComponent(registered.idToken));
+  assert.equal(unread.status,401);
+  await signupClient.auth('delete',{idToken:registered.idToken});
+  checks.push('real disposable signup; unverified user login and data access rejected; signup removed without sending email');
+  for(const user of users) { const client=new AccountClient(); await client.signIn(user.email,user.password); clients.push(client); }
+  checks.push('real password login and verified server profiles');
+  const [a,b]=clients;
+  const baseline=await a.fetchProgress(); const betaBaseline=await b.fetchProgress();
+  const id=crypto.randomUUID(); const match={id,result:'victory',difficulty:'entry',durationMs:100,completedAt:Date.now()};
+  await a.recordMatch(match); await a.recordMatch(match);
+  const won=await a.fetchProgress(); assert.equal(won.gold,baseline.gold+50);assert.equal(won.wins,baseline.wins+1);assert.equal(won.history.length,baseline.history.length+1);
+  const remote=new AccountClient();await remote.signIn(users[0].email,users[0].password);assert.equal((await remote.fetchProgress()).gold,won.gold);
+  checks.push('real result persistence, duplicate prevention and independent session restore');
+  assert.equal((await b.fetchProgress()).gold,0);
+  const own=ACCOUNT_CONFIG.databaseURL+'/arena/users/'+users[0].id+'/matches';
+  const token=await b.accessToken();
+  assert.equal((await fetch(own+'.json?auth='+encodeURIComponent(token))).status,401);
+  assert.equal((await fetch(own+'.json')).status,401);
+  const aToken=await a.accessToken();
+  assert.equal((await fetch(own+'/'+id+'.json?auth='+encodeURIComponent(aToken),{method:'PUT',headers,body:JSON.stringify(match)})).status,401);
+  assert.equal((await fetch(own+'/'+id+'.json?auth='+encodeURIComponent(aToken),{method:'DELETE'})).status,401);
+  assert.equal((await fetch(own+'/'+crypto.randomUUID()+'.json?auth='+encodeURIComponent(aToken),{method:'PUT',headers,body:JSON.stringify({...match,id:crypto.randomUUID(),reward:999})})).status,401);
+  checks.push('anonymous access, cross-user reads, overwrite, deletion and extra reward fields rejected');
+  a.session.expires_at=0; await a.accessToken(); assert.equal((await a.fetchProgress()).gold,won.gold);
+  checks.push('real refresh-token exchange');
+  const cloud=new CloudProgressStore(b);await cloud.refresh();cloud.recordResult(crypto.randomUUID(),'defeat','advanced',200);await cloud.refresh();
+  assert.equal(cloud.getSnapshot().losses,betaBaseline.losses+1);assert.equal(cloud.getSnapshot().gold,0);assert.equal(cloud.getSnapshot().pending,0);
+  checks.push('real queued cloud save and zero defeat reward');
+  await a.signOut();assert.equal(a.session,null);checks.push('logout removes session');
+  fs.writeFileSync(path.join(root,'artifacts','accounts-live-results.json'),JSON.stringify({passed:checks,backend:'real Firebase',project:ACCOUNT_CONFIG.projectId},null,2));
+  for(const check of checks) console.log('PASS '+check);
+})().catch(error=>{console.error(error.message);process.exitCode=1;});

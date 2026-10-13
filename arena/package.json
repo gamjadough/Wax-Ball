@@ -10,6 +10,7 @@
     "test:mobile": "node tests/mobile.test.cjs",
     "test:lobby": "node tests/lobby.test.cjs",
     "test:progress": "node tests/progress.test.cjs",
-    "test:rewards": "node tests/rewards.test.cjs"
+    "test:rewards": "node tests/rewards.test.cjs",
+    "test:accounts": "node tests/accounts.test.cjs"
   }
 }

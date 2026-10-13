@@ -1,0 +1,16 @@
+{
+  "auth": {
+    "authorizedDomains": [
+      "localhost",
+      "127.0.0.1",
+      "gamjadough.github.io",
+      "waxball-arena.firebaseapp.com"
+    ],
+    "providers": {
+      "emailPassword": true
+    }
+  },
+  "database": {
+    "rules": "firebase/database.rules.json"
+  }
+}

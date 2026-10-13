@@ -30,18 +30,22 @@
   const portraitQuery = window.matchMedia('(orientation: portrait) and (max-width: 900px), (orientation: portrait) and (pointer: coarse)');
   let orientationBlocked = portraitQuery.matches;
   let screen = SCREENS.LOBBY;
-  const progress = new window.WaxArena.ProgressStore();
+  const guestProgress = new window.WaxArena.ProgressStore();
+  let progress = guestProgress;
   let matchId = null;
   let matchReward = null;
   function renderProgress() {
     const saved = progress.getSnapshot();
     $('gold-amount').textContent = `${saved.gold.toLocaleString()} G`;
-    $('record-summary').textContent = `${saved.wins.toLocaleString()}승 · ${saved.losses.toLocaleString()}패${saved.issue === 'unavailable' ? ' · 저장 불가' : saved.issue === 'corrupt' ? ' · 기록 복구 필요' : ''}`;
+    const cloud = progress !== guestProgress;
+    const issues = { unavailable: '저장 불가', corrupt: '기록 복구 필요', loading: '계정 불러오는 중', offline: '동기화 필요', pending: '저장 대기', volatile: '저장 불가 · 창 유지' };
+    $('record-summary').textContent = `${saved.wins.toLocaleString()}승 · ${saved.losses.toLocaleString()}패${issues[saved.issue] ? ' · ' + issues[saved.issue] : ''}`;
     $('record-summary').title = saved.issue === 'unavailable' ? '저장할 수 없어 현재 화면에서만 유지됩니다.' : saved.issue === 'corrupt' ? '기존 저장 기록을 읽지 못했습니다. 새 대전 결과부터 다시 저장합니다.' : '골드와 전적은 이 브라우저에 저장됩니다.';
     $('result-reward').hidden = !matchReward;
     if (matchReward) {
-      $('result-reward').textContent = matchReward.result === STATES.VICTORY ? `승리 보상 +${matchReward.reward} G` : '패배 · 골드 보상 없음';
-      $('result-save-note').textContent = saved.issue === 'unavailable' ? '저장 불가 · 현재 화면에서만 기록이 유지됩니다.' : '골드와 전적을 이 브라우저에 저장했습니다.';
+      const confirmed = !cloud || saved.history.some(match => match.id === matchReward.id);
+      $('result-reward').textContent = matchReward.result === STATES.VICTORY ? (confirmed ? `승리 보상 +${matchReward.reward} G` : '승리 · 보상 저장 대기') : '패배 · 골드 보상 없음';
+      $('result-save-note').textContent = cloud ? (confirmed ? '골드와 전적을 온라인 계정에 저장했습니다.' : saved.issue === 'volatile' ? '저장 불가 · 창을 닫지 말고 로비에서 동기화해 주세요.' : '계정 저장 대기 · 로비에서 동기화해 주세요.') : saved.issue === 'unavailable' ? '저장 불가 · 현재 화면에서만 기록이 유지됩니다.' : '골드와 전적을 이 브라우저에 저장했습니다.';
     }
   }
   renderProgress();
@@ -61,6 +65,7 @@
     $('mode-screen').hidden = screen !== SCREENS.MODES;
     $('battle-screen').hidden = screen !== SCREENS.BATTLE && screen !== SCREENS.RESULT;
     $('result').hidden = screen !== SCREENS.RESULT;
+    window.dispatchEvent(new Event('arena-screen-change'));
     // Native modal dialogs trap focus; result controls use inert backgrounds.
     document.querySelectorAll('.battle-heading,.health-row,.arena-top,.arena-grid,.arena-bottom').forEach(node => { node.inert = screen === SCREENS.RESULT; });
   }
@@ -227,7 +232,7 @@
     clearEffects();
     for (const side of ['player', 'ai']) $(`${side}-fill`).style.transition = 'none';
     battle.reset(true, difficultySelect.value);
-    matchId = window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    matchId = window.crypto?.randomUUID ? window.crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, character => { const digit = Math.floor(Math.random() * 16); return (character === 'x' ? digit : digit & 3 | 8).toString(16); });
     matchReward = null;
     renderProgress();
     debugLog.length = 0;
@@ -281,6 +286,7 @@
     const blocked = portraitQuery.matches;
     orientationBlocked = blocked;
     if (orientationBlocked && difficultyDialog.open) difficultyDialog.close();
+    if (orientationBlocked && $('account-dialog').open) $('account-dialog').close();
     $('game-root').inert = orientationBlocked;
     document.body.classList.toggle('orientation-blocked', orientationBlocked);
     $('orientation-gate').hidden = !orientationBlocked;
@@ -326,4 +332,16 @@
   window.WaxArena.getDebugLog = () => debugLog.map(entry => ({ ...entry }));
   window.WaxArena.getScreen = () => screen;
   window.WaxArena.getProgress = () => progress.getSnapshot();
+  window.WaxArena.useAccountProgress = (store, nickname = '게스트 공') => {
+    if (![SCREENS.LOBBY, SCREENS.MODES].includes(screen)) return false;
+    progress.onChange = () => {};
+    progress = store || guestProgress;
+    progress.onChange = renderProgress;
+    if (!store) guestProgress.refresh();
+    matchReward = null;
+    $('profile-name').textContent = nickname;
+    renderProgress();
+    return true;
+  };
+  window.WaxArena.syncAccountProgress = () => Promise.resolve(progress.refresh());
 })();
