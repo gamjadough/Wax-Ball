@@ -34,7 +34,8 @@ test('items SQL: atomic draw, pity, inventory, effects, stale-save rejection and
   assert.deepEqual((await db.query('select rank,count(*)::integer as count from wakppu_item_defs group by rank order by rank')).rows.map(r=>[r.rank,r.count]),[['common',10],['hero',7],['legendary',2],['rare',10],['transcendent',1]]);
   assert.equal((await db.query('select sum(weight)::integer as weight from wakppu_item_ranks')).rows[0].weight,10000);
   const get=()=>rpc(player,{action:'items'});
-  const send=async(action,args={})=>rpc(player,{action,...args,request_id:crypto.randomUUID(),item_revision:(await get()).revision});
+  const sent=[];
+  const send=async(action,args={})=>{const body={action,...args,request_id:crypto.randomUUID(),item_revision:(await get()).revision};sent.push(body);return rpc(player,body);};
   await get();
   await db.exec("update game_states set gold=100000000000000000001 where user_id='"+player+"';update wakppu_items set pity=99 where user_id='"+player+"'");
   const request={action:'item_draw',count:5,request_id:crypto.randomUUID(),item_revision:0};
@@ -45,7 +46,7 @@ test('items SQL: atomic draw, pity, inventory, effects, stale-save rejection and
   await assert.rejects(rpc(null,{action:'items'}));
   await assert.rejects(send('item_draw',{count:2}));
   await db.exec("update wakppu_items set inventory=inventory||'{\"hero_golden_honey\":3,\"common_crack_piece\":2,\"legendary_golden_coating\":2}'::jsonb where user_id='"+player+"'");
-  let used=await send('item_use',{item_id:'hero_golden_honey'});const expiry=used.effects.hero_golden_honey.expires_at;
+  let used=await send('item_use',{item_id:'hero_golden_honey'});const firstUse=sent.at(-1),expiry=used.effects.hero_golden_honey.expires_at;
   used=await send('item_use',{item_id:'hero_golden_honey'});assert.equal(used.effects.hero_golden_honey.expires_at,expiry+900000);
   await send('item_use',{item_id:'common_crack_piece'});await send('item_use',{item_id:'legendary_golden_coating'});
   const hit=await send('item_hit');assert.equal(hit.clicks,3);assert.equal(hit.effects.common_crack_piece.remaining,29);assert.equal(hit.reward,'0');
@@ -54,6 +55,8 @@ test('items SQL: atomic draw, pity, inventory, effects, stale-save rejection and
   const charged=await rpc(player,useRequest);assert.equal(charged.effects.common_crack_piece.remaining,58);assert.deepEqual(await rpc(player,useRequest),charged);
   await rpc(player,{action:'save_progress',item_revision:charged.revision,gold:end.gold,admin_revision:0,rebirths:1,unlocked_ball_ids:['yellow'],selected_ball_id:'yellow'});
   const reborn=await get();assert.deepEqual(reborn.effects,{});assert.equal(reborn.pity,charged.pity);assert.deepEqual(reborn.inventory,charged.inventory);
+  const historic=await rpc(player,firstUse);assert.equal(historic.inventory.hero_golden_honey,2);assert.equal(reborn.inventory.hero_golden_honey,1);assert.ok(historic.revision<reborn.revision);
+  assert.deepEqual(await get(),reborn); // Retry returns an old snapshot, but cannot refund the server inventory.
   const beforeRemake=await get();
   const remake=await readFile(new URL('../supabase/migrations/20261019_items_remake.sql',import.meta.url),'utf8');
   await db.exec(remake);await db.exec(remake);

@@ -106,14 +106,14 @@ try:
         page.screenshot(path=str(out/'items-inventory-desktop.png'))
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
         # Render sparse and empty snapshots to verify owned-only rank filters and empty messages.
-        page.evaluate("WakppuItems.accept({...WakppuItems.data,inventory:{common_mini_hammer:1,hero_golden_honey:0}})")
+        page.evaluate("WakppuItems.accept({...WakppuItems.data,inventory:{common_mini_hammer:1,hero_golden_honey:0}},false)")
         expect(page.locator('.item-card')).to_have_count(1)
         expect(page.locator('[data-use="hero_golden_honey"]')).to_have_count(0)
         page.locator('[data-filter="legendary"]').click()
         expect(page.locator('.item-card')).to_have_count(0)
         expect(page.locator('#inventoryList')).to_contain_text('이 등급에 보유한 아이템이 없습니다.')
         page.locator('[data-filter="all"]').click()
-        page.evaluate("WakppuItems.accept({...WakppuItems.data,inventory:{common_mini_hammer:0}})")
+        page.evaluate("WakppuItems.accept({...WakppuItems.data,inventory:{common_mini_hammer:0}},false)")
         expect(page.locator('.item-card')).to_have_count(0)
         expect(page.locator('#inventoryList')).to_contain_text('보유한 아이템이 없습니다.')
         assert not errors,errors

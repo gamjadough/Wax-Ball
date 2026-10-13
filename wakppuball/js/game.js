@@ -636,7 +636,8 @@
       try{result=await WakppuAuth.invoke(action,req);}catch(error){if(error.status)throw error;result=await WakppuAuth.invoke(action,req);}
       if(account!==state.account?.id)return;
       itemBreakTiming=BigInt(result.reward)>0n?timing:null;
-      WakppuItems.accept(result);state.gold=BigInt(result.gold);itemRevision=result.revision;
+      if(WakppuItems.accept(result)===false){itemBreakTiming=null;await restoreAccount();return;}
+      state.gold=BigInt(result.gold);itemRevision=result.revision;
       if(result.limited)WakppuLimited.accept(result.limited);
       if(result.candy_drop)floatText('🍬 사탕 +1',ballCenter().x,ballCenter().y-70);
       if(epoch!==animationEpoch){itemBreakTiming=null;return;}
@@ -1318,7 +1319,7 @@
     read:()=>({gold:String(state.gold),revision:itemRevision,ready:state.remoteReady,account:state.account?.id,test:!!testSnapshot,busy:state.busy||eventRequest,blocked:!!window.wakppuServerBlocked,honey:state.honeyExpiresAt,coating:state.coatingExpiresAt}),
     flush:async()=>{clearTimeout(remoteSaveTimer);await remoteInFlight.catch(()=>{});if(state.remoteReady)await WakppuAuth.invoke('save_progress',remotePayload());},
     // Inventory reads can lag behind unsaved ball rewards. Only transactions replace Gold.
-    accept:(data,syncGold=true)=>{if(syncGold)state.gold=BigInt(data.gold);itemRevision=data.revision;updateAll();if(!state.busy)updateCracks(state.clicks/currentBall().clicks);},
+    accept:(data,syncGold=true)=>{if(Number(data.revision)<itemRevision)return false;if(syncGold)state.gold=BigInt(data.gold);itemRevision=Number(data.revision);updateAll();if(!state.busy)updateCracks(state.clicks/currentBall().clicks);return true;},
     restore:restoreAccount
   };
   window.WakppuLimitedGame={render:renderCollection,resetCollection:()=>{collectionDetailIndex=null;renderCollection();},sync:(selected,clicks=0)=>{if(eventSelected)switchEvent(false);if(selected)ordinaryClicks.set(state.selected,state.clicks);wrap.classList.remove('broken');spawnBall(true);state.clicks=selected?clicks:(ordinaryClicks.get(state.selected)||0);updateCracks(state.clicks/currentBall().clicks);updateAll();},test:()=>!!testSnapshot};

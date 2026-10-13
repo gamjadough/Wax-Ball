@@ -1,5 +1,5 @@
 (() => {
- let data=null,busy=false,filter='all',order='asc',page=0,selectedId=null,lastResults=[],sequence=0,inventoryMarkup='',detailMarkup='';
+ let data=null,busy=false,filter='all',order='asc',page=0,selectedId=null,lastResults=[],sequence=0,inventoryMarkup='',detailMarkup='',itemAccount=null,transactionFloor=0;
  const pageSize=9;
  let showShop=()=>{};
  function status(message){for(const id of ['itemsStatus','shopItemsStatus']){const node=document.getElementById(id);if(node)node.textContent=message;}}
@@ -8,7 +8,14 @@
  const rank=id=>ranks.find(r=>r.id===id);
  const ready=()=>{const g=window.WakppuItemGame?.read();return g?.ready&&!g.test&&!g.busy&&!g.blocked;};
  function active(){return !!data&&defs.some(d=>{const e=data.effects[d.id];return e&&(d.seconds?e.expires_at>Date.now():e.remaining>0);});}
- function accept(next,syncGold=true){if(syncGold)++sequence;data=next;window.WakppuItemGame?.accept(next,syncGold);render();}
+ function accept(next,syncGold=true){
+  const game=window.WakppuItemGame?.read(),revision=Number(next?.revision);
+  if(itemAccount!==game?.account){itemAccount=game?.account;transactionFloor=0;}
+  // Historic idempotent responses describe their original transaction, not current stock.
+  // Rebirth also invalidates transactions from the prior run at the same revision.
+  if(!Number.isSafeInteger(revision)||revision<Number(game?.revision||0)||(revision<transactionFloor&&(syncGold||Object.keys(next.effects||{}).length>0)))return false;
+  if(syncGold)++sequence;data=next;window.WakppuItemGame?.accept(next,syncGold);render();return true;
+ }
  async function refresh(){const seq=++sequence,account=window.WakppuItemGame?.read().account;if(!account){data=null;render();return;}try{const next=await WakppuAuth.invoke('items');if(seq===sequence&&account===window.WakppuItemGame?.read().account)accept(next,false);}catch(e){status(e.message);}}
  function effectText(d,e){if(d.seconds){const left=Math.max(0,Math.ceil((e.expires_at-Date.now())/1000));return Math.floor(left/60)+':'+String(left%60).padStart(2,'0');}return e.remaining+(d.unit==='hit'?'타격':'회 파괴');}
  function render(){
@@ -59,7 +66,7 @@
    const request={...payload,request_id:crypto.randomUUID(),item_revision:window.WakppuItemGame.read().revision};let result;
    try{result=await WakppuAuth.invoke(action,request);}catch(e){if(e.status)throw e;result=await WakppuAuth.invoke(action,request);}
    if(account!==window.WakppuItemGame.read().account)return;
-   accept(result);
+   if(!accept(result)){await refresh();status('이전 요청 응답을 무시하고 최신 아이템 상태를 확인했습니다.');return;}
    if(action==='item_draw'){
     lastResults=result.results;window.WakppuDrawReveal.start(lastResults,account);
     status(payload.count+'개 아이템 지급 완료. 왁뿌볼을 깨서 확인하세요. 스킵은 연출만 생략합니다.');
@@ -117,5 +124,5 @@
   window.addEventListener('wakppu-account-restored',()=>{window.WakppuDrawReveal?.restore();if(!busy)refresh();});
   setInterval(render,1000);render();
  });
- window.WakppuItems={get data(){return data;},get busy(){return busy;},active,accept,refresh,render,status,showShop:mode=>showShop(mode),openDraw:()=>{document.querySelector('#shopBtn').click();showShop('draw');},clearEffects(){if(data)data.effects={};render();}};
+ window.WakppuItems={get data(){return data;},get busy(){return busy;},active,accept,refresh,render,status,showShop:mode=>showShop(mode),openDraw:()=>{document.querySelector('#shopBtn').click();showShop('draw');},clearEffects(){++sequence;const game=window.WakppuItemGame?.read();itemAccount=game?.account;transactionFloor=Number(game?.revision||0)+1;if(data)data.effects={};render();}};
 })();
