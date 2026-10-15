@@ -26,7 +26,7 @@
   const debugLog = [];
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const inputVerb = window.matchMedia('(pointer: coarse)').matches ? '터치' : '클릭';
-  const SCREENS = Object.freeze({ LOBBY: 'lobby', MODES: 'modes', BATTLE: 'battle', RESULT: 'result' });
+  const SCREENS = Object.freeze({ LOBBY: 'lobby', MODES: 'modes', LAB: 'lab', BATTLE: 'battle', RESULT: 'result' });
   const portraitQuery = window.matchMedia('(orientation: portrait) and (max-width: 900px), (orientation: portrait) and (pointer: coarse)');
   let orientationBlocked = portraitQuery.matches;
   let screen = SCREENS.LOBBY;
@@ -37,6 +37,7 @@
   function renderProgress() {
     const saved = progress.getSnapshot();
     $('gold-amount').textContent = `${saved.gold.toLocaleString()} G`;
+    $('lab-gold').textContent = `${saved.gold.toLocaleString()} G`;
     const cloud = progress !== guestProgress;
     const issues = { unavailable: '저장 불가', corrupt: '기록 복구 필요', loading: '계정 불러오는 중', offline: '동기화 필요', pending: '저장 대기', volatile: '저장 불가 · 창 유지' };
     $('record-summary').textContent = `${saved.wins.toLocaleString()}승 · ${saved.losses.toLocaleString()}패${issues[saved.issue] ? ' · ' + issues[saved.issue] : ''}`;
@@ -63,6 +64,9 @@
     document.body.dataset.screen = screen;
     $('lobby-screen').hidden = screen !== SCREENS.LOBBY;
     $('mode-screen').hidden = screen !== SCREENS.MODES;
+    $('lab-screen').hidden = screen !== SCREENS.LAB;
+    document.querySelector('.topbar').hidden = screen === SCREENS.LAB;
+    document.querySelector('.page-footer').hidden = screen === SCREENS.LAB;
     $('battle-screen').hidden = screen !== SCREENS.BATTLE && screen !== SCREENS.RESULT;
     $('result').hidden = screen !== SCREENS.RESULT;
     window.dispatchEvent(new Event('arena-screen-change'));
@@ -71,8 +75,10 @@
   }
   function returnToLobby() {
     if (screen === SCREENS.LOBBY) return;
+    const fromLab = screen === SCREENS.LAB;
     stopLoop();
     difficultyDialog.close();
+    $('lab-dialog').close();
     clearEffects();
     battle.reset(false);
     lastSecond = -1;
@@ -80,7 +86,7 @@
     $('menu-notice').textContent = '';
     showScreen(SCREENS.LOBBY);
     processEvents();
-    if (!orientationBlocked) $('fight-button').focus({ preventScroll: true });
+    if (!orientationBlocked) $(fromLab ? 'lab-open' : 'fight-button').focus({ preventScroll: true });
   }
   function clock(ms) {
     const seconds = Math.floor(ms / 1000);
@@ -262,6 +268,32 @@
   $('confirm-battle').addEventListener('click', () => { if (difficultyDialog.open) start(); });
   $('mode-open').addEventListener('click', () => { if (!orientationBlocked) { showScreen(SCREENS.MODES); $('ai-mode-button').focus(); } });
   $('mode-back').addEventListener('click', returnToLobby);
+  $('lab-open').addEventListener('click', () => {
+    if (orientationBlocked || screen !== SCREENS.LOBBY) return;
+    showScreen(SCREENS.LAB);
+    renderProgress();
+    $('lab-back').focus({ preventScroll: true });
+  });
+  $('lab-back').addEventListener('click', returnToLobby);
+  const labCopy = {
+    upgrade: { title: '강화 실험실', intro: '더 세질 수도, 공중분해될 수도.', warning: '강화에 실패하면 왁뿌볼이 파괴될 수 있어요.', button: '강화 실험 준비 중', speech: '성공하면 내 덕. 터지면 공 탓.' },
+    draw: { title: '왁뿌볼 뽑기', intro: '어떤 공이 나올지는 박사도 모름.', warning: '새로운 왁뿌볼을 만나는 실험을 준비 중입니다.', button: '뽑기 실험 준비 중', speech: '이번 공은… 아마 둥글 겁니다.' }
+  };
+  for (const button of document.querySelectorAll('[data-lab-action]')) button.addEventListener('click', () => {
+    if (orientationBlocked || screen !== SCREENS.LAB) return;
+    const mode = button.dataset.labAction, copy = labCopy[mode];
+    $('lab-dialog').dataset.mode = mode;
+    $('lab-dialog-title').textContent = copy.title;
+    $('lab-dialog-intro').textContent = copy.intro;
+    $('lab-risk').textContent = copy.warning;
+    $('lab-future-action').textContent = copy.button;
+    $('lab-scientist-speech').textContent = copy.speech;
+    $('lab-upgrade-details').hidden = mode !== 'upgrade';
+    $('lab-draw-details').hidden = mode !== 'draw';
+    $('lab-dialog').showModal();
+    $('lab-dialog-close').focus();
+  });
+  $('lab-dialog-close').addEventListener('click', () => $('lab-dialog').close());
   $('lobby-button').addEventListener('click', returnToLobby);
   $('leave-battle-button').addEventListener('click', returnToLobby);
   document.querySelectorAll('[data-unavailable]').forEach(button => button.addEventListener('click', () => {
@@ -287,6 +319,7 @@
     orientationBlocked = blocked;
     if (orientationBlocked && difficultyDialog.open) difficultyDialog.close();
     if (orientationBlocked && $('account-dialog').open) $('account-dialog').close();
+    if (orientationBlocked && $('lab-dialog').open) $('lab-dialog').close();
     $('game-root').inert = orientationBlocked;
     document.body.classList.toggle('orientation-blocked', orientationBlocked);
     $('orientation-gate').hidden = !orientationBlocked;
@@ -296,8 +329,15 @@
     if (orientationBlocked) $('rotate-title').focus({ preventScroll: true });
     else {
       if (screen === SCREENS.BATTLE && battle.status === STATES.RUNNING && !document.hidden) frame = requestAnimationFrame(tick);
-    const target = screen === SCREENS.BATTLE ? balls.player : screen === SCREENS.RESULT ? $('start-button') : screen === SCREENS.MODES ? $('ai-mode-button') : $('fight-button');
-      if (target && !target.disabled) target.focus({ preventScroll: true });
+    const target = screen === SCREENS.BATTLE ? balls.player : screen === SCREENS.RESULT ? $('start-button') : screen === SCREENS.MODES ? $('ai-mode-button') : screen === SCREENS.LAB ? $('lab-back') : $('fight-button');
+      if (target && !target.disabled) {
+        target.focus({ preventScroll: true });
+        // Let the orientation gate's hidden/inert styles settle before restoring
+        // focus after a native modal was closed during rotation.
+        if (screen === SCREENS.LAB) requestAnimationFrame(() => {
+          if (!orientationBlocked && screen === SCREENS.LAB && !$('lab-dialog').open) $('lab-back').focus({ preventScroll: true });
+        });
+      }
     }
   }
   portraitQuery.addEventListener('change', updateOrientation);

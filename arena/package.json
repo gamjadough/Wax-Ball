@@ -12,6 +12,7 @@
     "test:progress": "node tests/progress.test.cjs",
     "test:rewards": "node tests/rewards.test.cjs",
     "test:accounts": "node tests/accounts.test.cjs",
-    "test:verification": "node tests/verification.test.cjs"
+    "test:verification": "node tests/verification.test.cjs",
+    "test:lab": "node tests/lab.test.cjs"
   }
 }

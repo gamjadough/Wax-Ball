@@ -12,7 +12,7 @@ const { assert, fs, path, artifacts, launch, monitor, load, snapshot, clock } = 
     }
     await page.clock.runFor(5000); assert.deepEqual(await snapshot(page), idle);
     await page.screenshot({ path: path.join(artifacts, 'comic-lobby-desktop.png'), fullPage: true });
-    pass('reference lobby: profile, wallet, shop, lab, friend notice; no idle simulation');
+    pass('reference lobby: profile, wallet, shop and friend notice; no idle simulation');
     const modeButton = page.locator('#mode-open');
     assert.equal(await modeButton.evaluate(el => el.tagName), 'BUTTON');
     assert.equal(await modeButton.locator('button').count(), 0);
