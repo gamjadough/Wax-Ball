@@ -63,15 +63,16 @@
         if (!$('account-nickname').value.trim()) throw new Error('닉네임을 입력해 주세요.');
         const signedIn = await client.signUp(email, password, $('account-nickname').value.trim());
         if (signedIn) { await attach(); status('가입했습니다.'); }
-        else { mode = 'login'; status('이메일의 인증 링크를 눌러 가입을 완료한 뒤 로그인해 주세요.'); }
+        else { mode = 'login'; status('인증 메일 발송 요청이 접수되었습니다. 메일(스팸함 포함)의 인증 링크로 가입을 완료한 뒤 로그인해 주세요. 숫자 인증번호가 아닌 링크 방식입니다.'); }
       } else { await client.signIn(email, password); await attach(); status('로그인했습니다.'); }
     } catch (error) { status(error.message); }
     finally { $('account-password').value = ''; busy = false; render(); }
   });
   $('account-verify').addEventListener('click', async () => {
-    if (busy || !form.reportValidity()) return;
+    if (busy) return;
+    if (!form.reportValidity()) { status('인증 메일을 다시 요청하려면 가입한 이메일과 비밀번호를 입력해 주세요.'); return; }
     busy = true; render(); status('인증 메일 요청 중…');
-    try { await client.resendVerification($('account-email').value.trim(), $('account-password').value); status('인증 메일을 보냈습니다. 메일의 링크를 눌러주세요.'); }
+    try { await client.resendVerification($('account-email').value.trim(), $('account-password').value); status('인증 메일 발송 요청이 접수되었습니다. 받은편지함과 스팸함에서 인증 링크 메일을 확인해 주세요. 요청 접수는 실제 메일함 도착을 보장하지 않습니다.'); }
     catch (error) { status(error.message); }
     finally { busy = false; $('account-password').value = ''; render(); }
   });

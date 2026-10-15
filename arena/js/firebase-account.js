@@ -19,12 +19,20 @@
       if (!response.ok) {
         const code = (data?.error?.message || '').split(' : ')[0];
         const messages = { INVALID_LOGIN_CREDENTIALS: '이메일 또는 비밀번호를 확인해 주세요.', INVALID_PASSWORD: '이메일 또는 비밀번호를 확인해 주세요.', EMAIL_NOT_FOUND: '이메일 또는 비밀번호를 확인해 주세요.', EMAIL_EXISTS: '이미 가입된 이메일입니다. 로그인해 주세요.', TOO_MANY_ATTEMPTS_TRY_LATER: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.', WEAK_PASSWORD: '비밀번호를 8자 이상 입력해 주세요.', TOKEN_EXPIRED: '로그인이 만료되었습니다. 다시 로그인해 주세요.', INVALID_ID_TOKEN: '다시 로그인해 주세요.', USER_DISABLED: '이 계정은 사용할 수 없습니다.' };
+        Object.assign(messages, {
+          INVALID_EMAIL: '이메일 주소를 확인해 주세요.',
+          QUOTA_EXCEEDED: 'Firebase 이메일 발송 한도를 초과했습니다. 지금은 메일을 보낼 수 없습니다. 잠시 후 다시 시도해 주세요.',
+          RESET_PASSWORD_EXCEED_LIMIT: '이메일 요청이 너무 많아 발송이 제한되었습니다. 잠시 후 다시 시도해 주세요.',
+          OPERATION_NOT_ALLOWED: '이메일 인증 서비스가 비활성화되어 있습니다. 관리자에게 문의해 주세요.',
+          INVALID_CONTINUE_URI: '인증 메일의 이동 주소 설정에 문제가 있습니다. 관리자에게 문의해 주세요.',
+          UNAUTHORIZED_DOMAIN: '인증 메일의 도메인 설정에 문제가 있습니다. 관리자에게 문의해 주세요.'
+        });
         const error = new Error(messages[code] || (response.status === 429 ? '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' : '요청을 처리하지 못했습니다. 연결을 확인하고 다시 시도해 주세요.'));
         error.status = response.status; error.code = code; throw error;
       }
       return data;
     }
-    auth(action, body) { return this.request('https://identitytoolkit.googleapis.com/v1/accounts:' + action + '?key=' + encodeURIComponent(this.config.apiKey), body); }
+    auth(action, body) { return this.request('https://identitytoolkit.googleapis.com/v1/accounts:' + action + '?key=' + encodeURIComponent(this.config.apiKey), body, 'POST', { 'X-Firebase-Locale': 'ko' }); }
     saveSession(data) {
       if (!data?.idToken || !data?.refreshToken || !data?.localId) throw new Error('로그인 응답을 확인하지 못했습니다.');
       this.session = { access_token: data.idToken, refresh_token: data.refreshToken, user: { id: data.localId, email: data.email, user_metadata: { nickname: data.displayName || '온라인 공' } }, expires_at: Math.floor(Date.now() / 1000) + Number(data.expiresIn || 3600) };
@@ -60,7 +68,10 @@
       const registered = await this.auth('signUp', { email, password, returnSecureToken: true });
       await this.auth('update', { idToken: registered.idToken, displayName: nickname, returnSecureToken: false });
       try { await this.auth('sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: registered.idToken }); }
-      catch { throw new Error('계정은 생성했지만 인증 메일을 보내지 못했습니다. 로그인 탭에서 인증 메일을 다시 요청해 주세요.'); }
+      catch (cause) {
+        const error = new Error(`계정은 생성했지만 인증 메일 발송 요청에 실패했습니다. ${cause.message} 로그인 탭에서 이메일과 비밀번호를 입력한 뒤 인증 메일을 다시 요청해 주세요.`);
+        error.code = cause.code; error.status = cause.status; throw error;
+      }
       return false;
     }
     async resendVerification(email, password) {

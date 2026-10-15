@@ -26,6 +26,24 @@ const respond = (body, status = 200) => ({ ok:status < 400, status, json:async (
     assert.equal(client.session,null); assert.equal(requests[2].body.requestType,'VERIFY_EMAIL');
     assert.equal(JSON.stringify([...sessions]).includes('password123'),false);
   });
+  await test('verification signup failures preserve quota errors instead of hiding their cause', async () => {
+    const client = new AccountClient(settings);
+    context.fetch=async (url, options) => {
+      assert.equal(options.headers['X-Firebase-Locale'], 'ko');
+      return url.includes(':sendOobCode') ? respond({ error: { message: 'QUOTA_EXCEEDED : Email quota exceeded' } },400) : respond({ idToken:'signup-token',refreshToken:'refresh',localId:'alice' });
+    };
+    await assert.rejects(client.signUp('a@example.test','password123','민트'), error => error.code === 'QUOTA_EXCEEDED' && /발송 한도/.test(error.message));
+    assert.equal(client.session, null);
+  });
+  await test('verification resend reports throttling and only uses VERIFY_EMAIL requests', async () => {
+    const client = new AccountClient(settings); const actions=[];
+    context.fetch=async (url, options) => {
+      actions.push(JSON.parse(options.body));
+      return url.includes(':sendOobCode') ? respond({error:{message:'TOO_MANY_ATTEMPTS_TRY_LATER'}},400) : respond({idToken:'resend-token'});
+    };
+    await assert.rejects(client.resendVerification('a@example.test','password123'), /요청이 너무 많습니다/);
+    assert.equal(actions[1].requestType,'VERIFY_EMAIL'); assert.equal(client.session,null);
+  });
   await test('unverified login is rejected and verified profile is taken from server', async () => {
     const client = new AccountClient(settings); let verified=false;
     context.fetch=async url => respond(url.includes(':lookup') ? { users:[{ localId:'alice', emailVerified:verified, displayName:'민트' }] } : { idToken:'login',refreshToken:'refresh',localId:'alice' });
