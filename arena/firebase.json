@@ -4,10 +4,12 @@
       "localhost",
       "127.0.0.1",
       "gamjadough.github.io",
-      "waxball-arena.firebaseapp.com"
+      "waxball-arena.firebaseapp.com",
+      "waxball-arena.web.app"
     ],
     "providers": {
-      "emailPassword": true
+      "emailPassword": true,
+      "anonymous": true
     }
   },
   "database": {

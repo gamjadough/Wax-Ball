@@ -26,7 +26,7 @@
   const debugLog = [];
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const inputVerb = window.matchMedia('(pointer: coarse)').matches ? '터치' : '클릭';
-  const SCREENS = Object.freeze({ LOBBY: 'lobby', MODES: 'modes', LAB: 'lab', BATTLE: 'battle', RESULT: 'result' });
+  const SCREENS = Object.freeze({ LOBBY: 'lobby', MODES: 'modes', LAB: 'lab', FRIENDS: 'friends', BATTLE: 'battle', RESULT: 'result' });
   const portraitQuery = window.matchMedia('(orientation: portrait) and (max-width: 900px), (orientation: portrait) and (pointer: coarse)');
   let orientationBlocked = portraitQuery.matches;
   let screen = SCREENS.LOBBY;
@@ -65,6 +65,7 @@
     $('lobby-screen').hidden = screen !== SCREENS.LOBBY;
     $('mode-screen').hidden = screen !== SCREENS.MODES;
     $('lab-screen').hidden = screen !== SCREENS.LAB;
+    $('friend-screen').hidden = screen !== SCREENS.FRIENDS;
     document.querySelector('.topbar').hidden = screen === SCREENS.LAB;
     document.querySelector('.page-footer').hidden = screen === SCREENS.LAB;
     $('battle-screen').hidden = screen !== SCREENS.BATTLE && screen !== SCREENS.RESULT;
@@ -266,7 +267,11 @@
   $('fight-button').addEventListener('click', openDifficulty);
   $('ai-mode-button').addEventListener('click', openDifficulty);
   $('confirm-battle').addEventListener('click', () => { if (difficultyDialog.open) start(); });
-  $('mode-open').addEventListener('click', () => { if (!orientationBlocked) { showScreen(SCREENS.MODES); $('ai-mode-button').focus(); } });
+  $('mode-open').addEventListener('click', () => { if (!orientationBlocked && screen === SCREENS.LOBBY) { showScreen(SCREENS.MODES); $('ai-mode-button').focus(); } });
+  $('friend-mode-button').addEventListener('click', () => {
+    if (orientationBlocked || screen !== SCREENS.MODES) return;
+    showScreen(SCREENS.FRIENDS); $('friend-name').focus();
+  });
   $('mode-back').addEventListener('click', returnToLobby);
   $('lab-open').addEventListener('click', () => {
     if (orientationBlocked || screen !== SCREENS.LOBBY) return;
@@ -298,7 +303,7 @@
   $('leave-battle-button').addEventListener('click', returnToLobby);
   document.querySelectorAll('[data-unavailable]').forEach(button => button.addEventListener('click', () => {
     if (orientationBlocked) return;
-    $(screen === SCREENS.MODES ? 'mode-notice' : 'menu-notice').textContent = '아직 개발 안 함 ㅋㅋ · 지금은 AI 대전만 가능!';
+    $(screen === SCREENS.MODES ? 'mode-notice' : 'menu-notice').textContent = '아직 개발 안 함 ㅋㅋ · AI 대전이나 친구 대전을 선택해 주세요!';
     animate(button, [{ transform: 'scale(1)' }, { transform: 'scale(.92) rotate(-2deg)' }, { transform: 'scale(1)' }], { duration: 180 });
   }));
   $('start-button').addEventListener('click', start);
@@ -326,10 +331,11 @@
     stopLoop();
     clearEffects();
     render();
+    window.dispatchEvent(new Event('arena-orientation-change'));
     if (orientationBlocked) $('rotate-title').focus({ preventScroll: true });
     else {
       if (screen === SCREENS.BATTLE && battle.status === STATES.RUNNING && !document.hidden) frame = requestAnimationFrame(tick);
-    const target = screen === SCREENS.BATTLE ? balls.player : screen === SCREENS.RESULT ? $('start-button') : screen === SCREENS.MODES ? $('ai-mode-button') : screen === SCREENS.LAB ? $('lab-back') : $('fight-button');
+    const target = screen === SCREENS.BATTLE ? balls.player : screen === SCREENS.RESULT ? $('start-button') : screen === SCREENS.MODES ? $('ai-mode-button') : screen === SCREENS.LAB ? $('lab-back') : screen === SCREENS.FRIENDS ? $('friend-back') : $('fight-button');
       if (target && !target.disabled) {
         target.focus({ preventScroll: true });
         // Let the orientation gate's hidden/inert styles settle before restoring
@@ -371,6 +377,7 @@
   window.WaxArena.getSnapshot = () => ({ status: battle.status, difficulty: battle.difficulty, aiHitIntervalMs: battle.aiHitIntervalMs, round: battle.round, time: battle.time, player: { ...battle.fighters.player }, ai: { ...battle.fighters.ai }, pendingCount: battle.pending.length });
   window.WaxArena.getDebugLog = () => debugLog.map(entry => ({ ...entry }));
   window.WaxArena.getScreen = () => screen;
+  window.WaxArena.returnFromFriends = () => { if (screen === SCREENS.FRIENDS) returnToLobby(); };
   window.WaxArena.getProgress = () => progress.getSnapshot();
   window.WaxArena.useAccountProgress = (store, nickname = '게스트 공') => {
     if (![SCREENS.LOBBY, SCREENS.MODES].includes(screen)) return false;

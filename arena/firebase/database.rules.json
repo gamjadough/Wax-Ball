@@ -10,13 +10,83 @@
             "$matchId": {
               ".write": "auth != null && auth.uid === $uid && auth.token.email_verified === true && !data.exists() && newData.exists()",
               ".validate": "$matchId.matches(/^[a-f0-9-]{36}$/) && newData.hasChildren(['id', 'result', 'difficulty', 'durationMs', 'completedAt'])",
-              "id": { ".validate": "newData.isString() && newData.val() === $matchId" },
-              "result": { ".validate": "newData.val() === 'victory' || newData.val() === 'defeat'" },
-              "difficulty": { ".validate": "newData.val() === 'entry' || newData.val() === 'beginner' || newData.val() === 'intermediate' || newData.val() === 'advanced'" },
-              "durationMs": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 86400000 && newData.val() % 1 === 0" },
-              "completedAt": { ".validate": "newData.isNumber() && newData.val() === now" },
-              "$other": { ".validate": false }
+              "id": {
+                ".validate": "newData.isString() && newData.val() === $matchId"
+              },
+              "result": {
+                ".validate": "newData.val() === 'victory' || newData.val() === 'defeat'"
+              },
+              "difficulty": {
+                ".validate": "newData.val() === 'entry' || newData.val() === 'beginner' || newData.val() === 'intermediate' || newData.val() === 'advanced'"
+              },
+              "durationMs": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 86400000 && newData.val() % 1 === 0"
+              },
+              "completedAt": {
+                ".validate": "newData.isNumber() && newData.val() === now"
+              },
+              "$other": {
+                ".validate": false
+              }
             }
+          }
+        }
+      },
+      "duels": {
+        "$code": {
+          ".read": "auth != null && (!data.exists() || (data.child('createdAt').val() + 3600000 > now && (data.child('players/host/uid').val() === auth.uid || data.child('players/guest/uid').val() === auth.uid || !data.child('players/guest').exists())))",
+          ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('players/host/uid').val() === auth.uid) || (data.child('players/host/uid').val() === auth.uid && !newData.exists()))",
+          ".validate": "$code.matches(/^[A-HJ-NP-Z2-9]{8}$/) && newData.hasChildren(['version','createdAt','players']) && (data.exists() || (!newData.child('players/guest').exists() && !newData.child('startedAt').exists() && !newData.child('forfeit').exists()))",
+          "version": {
+            ".validate": "newData.val() === 1"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && (data.exists() ? newData.val() === data.val() : newData.val() === now)"
+          },
+          "players": {
+            ".validate": "newData.hasChildren(['host'])",
+            "$slot": {
+              ".write": "auth != null && root.child('arena/duels').child($code).exists() && root.child('arena/duels').child($code).child('createdAt').val() + 3600000 > now && (data.exists() ? (data.child('uid').val() === auth.uid && (newData.exists() || ($slot === 'guest' && !root.child('arena/duels').child($code).child('startedAt').exists()))) : ($slot === 'guest' && !root.child('arena/duels').child($code).child('startedAt').exists() && root.child('arena/duels').child($code).child('players/host/uid').val() !== auth.uid && newData.child('uid').val() === auth.uid))",
+              ".validate": "($slot === 'host' || $slot === 'guest') && newData.hasChildren(['uid','name','clicks','lastHitAt','ready','online','active','lastSeenAt'])",
+              "uid": {
+                ".validate": "newData.isString() && (data.exists() ? newData.val() === data.val() : newData.val() === auth.uid)"
+              },
+              "name": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20 && (!data.exists() || newData.val() === data.val())"
+              },
+              "clicks": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 500 && newData.val() % 1 === 0 && (data.exists() ? (newData.val() === data.val() || (newData.val() === data.val() + 1 && root.child('arena/duels').child($code).child('startedAt').exists() && now >= root.child('arena/duels').child($code).child('startedAt').val() + 3000 && !root.child('arena/duels').child($code).child('forfeit').exists() && root.child('arena/duels').child($code).child('players').child($slot).child('online').val() === true && root.child('arena/duels').child($code).child('players').child($slot === 'host' ? 'guest' : 'host').child('online').val() === true && root.child('arena/duels').child($code).child('players').child($slot).child('active').val() === true && root.child('arena/duels').child($code).child('players').child($slot === 'host' ? 'guest' : 'host').child('active').val() === true && root.child('arena/duels').child($code).child('players').child($slot === 'host' ? 'guest' : 'host').child('clicks').val() < 500 && now - root.child('arena/duels').child($code).child('players').child($slot).child('lastHitAt').val() >= (data.val() % 5 === 0 ? 160 : 60) && newData.parent().child('lastHitAt').val() === now)) : newData.val() === 0)"
+              },
+              "lastHitAt": {
+                ".validate": "newData.isNumber() && (data.exists() ? (newData.parent().child('clicks').val() === data.parent().child('clicks').val() ? newData.val() === data.val() : newData.val() === now) : newData.val() === 0)"
+              },
+              "ready": {
+                ".validate": "newData.isBoolean() && (data.exists() ? (newData.val() === data.val() || !root.child('arena/duels').child($code).child('startedAt').exists()) : newData.val() === false)"
+              },
+              "online": {
+                ".validate": "newData.isBoolean()"
+              },
+              "active": {
+                ".validate": "newData.isBoolean()"
+              },
+              "lastSeenAt": {
+                ".validate": "newData.isNumber() && (data.exists() ? (newData.val() === data.val() || newData.val() === now) : newData.val() === now)"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "startedAt": {
+            ".write": "auth != null && !data.exists() && root.child('arena/duels').child($code).child('players/host/uid').val() === auth.uid && root.child('arena/duels').child($code).child('createdAt').val() + 3600000 > now && !root.child('arena/duels').child($code).child('forfeit').exists() && root.child('arena/duels').child($code).child('players/host/ready').val() === true && root.child('arena/duels').child($code).child('players/guest/ready').val() === true && root.child('arena/duels').child($code).child('players/host/online').val() === true && root.child('arena/duels').child($code).child('players/guest/online').val() === true && root.child('arena/duels').child($code).child('players/host/active').val() === true && root.child('arena/duels').child($code).child('players/guest/active').val() === true",
+            ".validate": "newData.isNumber() && newData.val() === now"
+          },
+          "forfeit": {
+            ".write": "auth != null && !data.exists() && root.child('arena/duels').child($code).child('startedAt').exists() && root.child('arena/duels').child($code).child('players/host/clicks').val() < 500 && root.child('arena/duels').child($code).child('players/guest/clicks').val() < 500 && ((newData.val() === 'host' && (root.child('arena/duels').child($code).child('players/host/uid').val() === auth.uid || (root.child('arena/duels').child($code).child('players/guest/uid').val() === auth.uid && root.child('arena/duels').child($code).child('players/host/online').val() === false && now - root.child('arena/duels').child($code).child('players/host/lastSeenAt').val() >= 20000))) || (newData.val() === 'guest' && (root.child('arena/duels').child($code).child('players/guest/uid').val() === auth.uid || (root.child('arena/duels').child($code).child('players/host/uid').val() === auth.uid && root.child('arena/duels').child($code).child('players/guest/online').val() === false && now - root.child('arena/duels').child($code).child('players/guest/lastSeenAt').val() >= 20000))))",
+            ".validate": "newData.val() === 'host' || newData.val() === 'guest'"
+          },
+          "$other": {
+            ".validate": false
           }
         }
       }

@@ -13,6 +13,10 @@
     "test:rewards": "node tests/rewards.test.cjs",
     "test:accounts": "node tests/accounts.test.cjs",
     "test:verification": "node tests/verification.test.cjs",
-    "test:lab": "node tests/lab.test.cjs"
+    "test:lab": "node tests/lab.test.cjs",
+    "test:friends": "node tests/friends.test.cjs",
+    "test:friends:layout": "node tests/friends-layout.test.cjs",
+    "test:friends:live": "node tests/friends-live.test.cjs",
+    "test:friends:rules": "node tests/friends-rules.test.cjs"
   }
 }

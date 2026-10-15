@@ -1,0 +1,39 @@
+const {assert,launch,load,monitor,artifacts,path,fits,noOverflow}=require('./helpers.cjs');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function open(page,name){await load(page);await page.locator('#mode-open').click();await page.locator('#friend-mode-button').click();await page.locator('#friend-name').fill(name);}
+async function cleanup(page){if(page.isClosed())return;await page.evaluate(async()=>{const base='https://www.gstatic.com/firebasejs/13.0.0/';const {getApps}=await import(base+'firebase-app.js');const app=getApps().find(a=>a.name==='arena-friends');if(app){const {getAuth,deleteUser}=await import(base+'firebase-auth.js');const a=getAuth(app);if(a.currentUser)await deleteUser(a.currentUser);}}).catch(()=>{});}
+(async()=>{const b=await launch();const contexts=[],errors=[];let host,guest,third;
+try{
+const pages=[];for(let i=0;i<3;i++){const c=await b.newContext({viewport:{width:1280,height:850}});contexts.push(c);const p=await c.newPage();p.on('pageerror',e=>errors.push(e.message));pages.push(p)}[host,guest,third]=pages;
+await Promise.all(pages.map((p,i)=>open(p,['방장 공','친구 공','세번째 공'][i])));
+await host.locator('#friend-create').click();await host.waitForFunction(()=>/^[A-HJ-NP-Z2-9]{8}$/.test(document.getElementById('friend-code').textContent),null,{timeout:30000});const code=await host.locator('#friend-code').textContent();
+await guest.locator('#friend-code-input').fill(code.toLowerCase());await guest.locator('#friend-join').click();await host.waitForFunction(()=>document.getElementById('friend-opponent-name').textContent==='친구 공',null,{timeout:30000});
+await third.locator('#friend-code-input').fill(code);await third.locator('#friend-join').click();await third.waitForFunction(()=>document.getElementById('friend-message').textContent.includes('가득'));assert.equal(await third.locator('#friend-setup').isVisible(),true);console.log('PASS create, lowercase code join, third player denied');
+for(const [width,height]of [[844,390],[568,320],[568,240]]){await host.setViewportSize({width,height});for(const selector of ['#friend-back','#friend-copy','#friend-ready','#friend-start'])await fits(host,selector,44);await noOverflow(host);}await host.setViewportSize({width:1280,height:850});
+await host.locator('#friend-ready').click();await guest.locator('#friend-ready').click();await host.locator('#friend-start').click();await host.waitForFunction(()=>!document.getElementById('friend-player-ball').disabled,null,{timeout:15000});
+await host.screenshot({path:path.join(artifacts,'friends-room.png')});
+const gold=await Promise.all([host,guest].map(p=>p.evaluate(()=>WaxArena.getProgress())));
+async function hit(p){const previous=await p.locator('#friend-player-hits').textContent();for(let i=0;i<10;i++){await p.waitForFunction(()=>!document.getElementById('friend-player-ball').disabled);await p.locator('#friend-player-ball').click();await sleep(200);if(await p.locator('#friend-player-hits').textContent()!==previous)return;}throw Error('confirmed hit not received');}
+for(let i=0;i<5;i++)await hit(host);
+await guest.waitForFunction(()=>document.getElementById('friend-player-hp').textContent==='990');assert.equal(await host.locator('#friend-opponent-hp').textContent(),'990');console.log('PASS ready, synchronized countdown, confirmed hits and mirrored health');
+// Rotate a touch-sized participant; both must stop while its orientation gate is active.
+await guest.setViewportSize({width:390,height:844});await host.waitForFunction(()=>document.getElementById('friend-status').textContent.includes('잠깐'));assert.equal(await host.locator('#friend-player-ball').isDisabled(),true);await guest.setViewportSize({width:844,height:390});await host.waitForFunction(()=>!document.getElementById('friend-player-ball').disabled);console.log('PASS rotation pauses both players and resumes');
+await guest.screenshot({path:path.join(artifacts,'friends-mobile-room.png')});
+if(process.env.FRIEND_QUICK){await guest.locator('#friend-back').click();await host.waitForFunction(()=>!document.getElementById('friend-result').hidden);assert.match(await host.locator('#friend-result-title').textContent(),/이겼다/);console.log('PASS opponent leave forfeits');}
+else {await host.evaluate(()=>{window.friendTestTimer=setInterval(()=>document.getElementById('friend-player-ball').click(),25)});await host.waitForFunction(()=>!document.getElementById('friend-result').hidden,null,{timeout:180000});await host.evaluate(()=>clearInterval(window.friendTestTimer));await Promise.all([host,guest].map(p=>p.waitForFunction(()=>!document.getElementById('friend-result').hidden)));assert.match(await host.locator('#friend-result-title').textContent(),/이겼다/);assert.match(await guest.locator('#friend-result-title').textContent(),/독했다/);assert.equal(await guest.locator('#friend-player-hp').textContent(),'0');console.log('PASS full 500-click duel, victory and defeat synchronized');}
+assert.deepEqual(await Promise.all([host,guest].map(p=>p.evaluate(()=>WaxArena.getProgress()))),gold);assert.deepEqual(errors,[]);console.log('PASS no gold farming or existing record changes, no runtime errors');await host.setViewportSize({width:568,height:240});await fits(host,'#friend-again',44);await host.screenshot({path:path.join(artifacts,'friends-small-result.png')});await host.setViewportSize({width:1280,height:850});
+await host.locator('#friend-back').click();
+await guest.locator('#friend-back').click().catch(()=>{});
+// Reuse the same isolated guest identities for a second room.
+await Promise.all([open(host,'재접속 방장'),open(guest,'재접속 친구')]);
+await host.locator('#friend-create').click();await host.waitForFunction(()=>/^[A-HJ-NP-Z2-9]{8}$/.test(document.getElementById('friend-code').textContent));
+await guest.locator('#friend-code-input').fill(await host.locator('#friend-code').textContent());await guest.locator('#friend-join').click();await guest.locator('#friend-ready').waitFor({state:'visible'});
+await host.locator('#friend-ready').click();await guest.locator('#friend-ready').click();await host.locator('#friend-start').click();await guest.waitForFunction(()=>!document.getElementById('friend-player-ball').disabled);
+async function network(online){await guest.evaluate(async online=>{const base='https://www.gstatic.com/firebasejs/13.0.0/';const {getApp}=await import(base+'firebase-app.js');const db=await import(base+'firebase-database.js');db[online?'goOnline':'goOffline'](db.getDatabase(getApp('arena-friends')));},online);}
+await network(false);await host.waitForFunction(()=>document.getElementById('friend-status').textContent.includes('잠깐'));assert.equal(await host.locator('#friend-claim').isVisible(),false);await network(true);await host.waitForFunction(()=>!document.getElementById('friend-player-ball').disabled);console.log('PASS disconnect pauses, reconnection resumes');
+for(const [width,height]of [[844,390],[568,320],[568,240]]){await host.setViewportSize({width,height});await host.waitForTimeout(100);for(const selector of ['#friend-back','#friend-copy','#friend-player-ball'])await fits(host,selector,44);await noOverflow(host);}
+await host.setViewportSize({width:1280,height:850});
+await network(false);await host.locator('#friend-claim').waitFor({state:'visible',timeout:30000});await host.locator('#friend-claim').click();assert.match(await host.locator('#friend-result-title').textContent(),/이겼다/);await network(true);await guest.waitForFunction(()=>!document.getElementById('friend-result').hidden);assert.match(await guest.locator('#friend-result-title').textContent(),/독했다/);console.log('PASS 20-second offline claim and mirrored forfeit result');
+await host.locator('#friend-back').click();await sleep(700);
+for(const p of pages)await cleanup(p);
+}finally{for(const c of contexts){for(const p of c.pages()){await p.locator('#friend-back').click({timeout:1000}).catch(()=>{});await cleanup(p);}await c.close();}await b.close()}})().catch(e=>{console.error(e);process.exitCode=1});
