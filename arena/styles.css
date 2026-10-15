@@ -104,3 +104,9 @@ button.profile-chip:disabled{opacity:.65}
 
 .viewport-tight .topbar{height:48px;min-height:48px}
 .account-card #account-verify{grid-column:1/-1;margin-top:6px}
+
+/* Make the account entry explicit beside the profile. */
+.account-header{display:flex;align-items:center;gap:14px;min-width:0}
+.account-entry{flex-shrink:0;min-width:80px;min-height:44px;border:2px solid var(--ink);border-radius:9px;background:var(--lime);padding:9px 14px;box-shadow:2px 3px 0 var(--ink);font-size:12px;font-weight:800;white-space:nowrap}
+.account-entry:hover{background:#c7f353}.account-entry:disabled{opacity:.65}
+@media(max-width:950px),(pointer:coarse){.account-header{gap:8px}.account-entry{min-width:62px;padding:6px 9px;font-size:11px}#account-entry-signup{display:none}}

@@ -11,6 +11,11 @@
     for (const id of ['fight-button','ai-mode-button','confirm-battle']) $(id).disabled = busy;
     $('account-open').disabled = busy || !['lobby','modes'].includes(window.WaxArena.getScreen());
     $('account-open').title = ['lobby','modes'].includes(window.WaxArena.getScreen()) ? '계정 관리' : '계정 변경은 로비에서 가능합니다.';
+    $('account-entry').disabled = $('account-open').disabled;
+    $('account-entry').title = $('account-open').title;
+    $('account-entry-label').textContent = logged ? '계정 관리' : '로그인';
+    $('account-entry-signup').hidden = logged;
+    $('account-entry').setAttribute('aria-label', logged ? '계정 관리' : '로그인 / 회원가입');
     $('account-fields').hidden = logged || !client.configured;
     $('account-actions').hidden = !logged;
     $('account-tabs').hidden = logged || !client.configured;
@@ -34,9 +39,14 @@
     window.WaxArena.useAccountProgress(store, typeof nickname === 'string' && nickname.trim() ? nickname.slice(0,20) : '온라인 공');
     await store.refresh();
   }
-  $('account-open').addEventListener('click', () => {
+  function openAccount() {
     if (busy || !['lobby','modes'].includes(window.WaxArena.getScreen())) return;
     status(''); render(); dialog.showModal();
+  }
+  $('account-open').addEventListener('click', openAccount);
+  $('account-entry').addEventListener('click', () => {
+    if (!client.session) mode = 'login';
+    openAccount();
   });
   $('account-close').addEventListener('click', () => { dialog.close(); $('account-password').value = ''; });
   dialog.addEventListener('close', () => { $('account-password').value = ''; });

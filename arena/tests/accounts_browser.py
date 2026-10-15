@@ -94,11 +94,19 @@ with sync_playwright() as p:
         setup(context)
         page = context.new_page()
         load(page)
+        assert page.locator('#account-entry').inner_text() == '로그인 / 회원가입'
+        page.locator('#account-entry').focus()
+        page.locator('#account-entry').press('Enter')
+        assert page.locator('#account-dialog').is_visible()
+        page.keyboard.press('Escape')
+        assert page.locator('#account-entry').evaluate('(el)=>el===document.activeElement')
+        checks.append('explicit desktop login/signup button opens by keyboard and restores focus')
         win(page)
         assert page.locator('#gold-amount').inner_text() == '50 G'
         page.locator('#lobby-button').click()
         login(page, 'alice@example.test')
         assert page.locator('#profile-name').inner_text() == '민트 공'
+        assert page.locator('#account-entry').inner_text() == '계정 관리'
         assert page.locator('#gold-amount').inner_text() == '0 G'
         win(page)
         page.wait_for_function("WaxArena.getProgress().gold === 50")
@@ -153,6 +161,9 @@ with sync_playwright() as p:
         second.locator('[data-account-mode=login]').click()
         for width, height in [(568,240),(568,320),(844,390)]:
             second.set_viewport_size({'width':width, 'height':height})
+            entry = second.locator('#account-entry').bounding_box()
+            assert entry['x'] >= 0 and entry['y'] >= 0 and entry['x']+entry['width'] <= width and entry['height'] >= 44
+            assert second.locator('#account-entry').inner_text() == '로그인'
             profile = second.locator('#account-open').bounding_box()
             assert profile['y'] >= 0 and profile['height'] >= 44
             dialog = second.locator('#account-dialog').bounding_box()
@@ -164,10 +175,15 @@ with sync_playwright() as p:
             second.screenshot(path=str(ARTIFACTS / f'accounts-{width}x{height}.png'))
         second.set_viewport_size({'width':390,'height':844})
         assert not second.locator('#account-dialog').evaluate('(el) => el.open')
+        second.set_viewport_size({'width':568,'height':240})
+        second.locator('#account-entry').click()
+        assert second.locator('#account-dialog').is_visible()
+        second.locator('#account-close').click()
         checks.append('account modal fits landscape phones and closes under portrait gate')
         page.locator('#account-open').click()
         page.locator('#account-logout').click()
         assert page.locator('#gold-amount').inner_text() == '50 G'
+        assert page.locator('#account-entry').inner_text() == '로그인 / 회원가입'
         page.locator('#account-close').click()
         checks.append('logout restores original guest progress')
         assert errors == [], errors
