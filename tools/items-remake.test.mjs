@@ -5,15 +5,19 @@ import {createStore,execute} from './admin-service.mjs';
 test('shop stacks with exactly one strongest draw Gold; heart covers three channels',()=>{
  const now=1000,effects={common_honey_small:{expires_at:10000},hero_gem_honey:{expires_at:10000},legendary_golden_coating:{remaining:20},transcendent_wax_heart:{expires_at:10000}};
  const e=itemData.effective(effects,10000,10000,now);
- assert.equal(e.reward.value,400);assert.equal(itemData.reward(1000,5,2,e),1536000n);
- assert.equal(e.animation.value,200);assert.equal(e.respawn.value,300);
+ assert.equal(e.reward.value,600);assert.equal(itemData.reward(1000,5,2,e),2304000n);
+ assert.equal(e.animation.value,250);assert.equal(e.respawn.value,400);
+ assert.equal(e.reward.id,'transcendent_wax_heart');
  assert.equal(itemData.damage(451845,e),451845);assert.equal(itemData.required(184320,e,true),368640);
  const heart=itemData.effective({transcendent_wax_heart:{expires_at:10000}},10000,10000,now);
- assert.equal(itemData.reward(1000,0,1,heart),18000n);
- assert.equal(itemData.timing(heart).animation,2);
- assert.equal(itemData.timing(heart).respawn,3);
+ assert.equal(itemData.reward(1000,0,1,heart),36000n);
+ assert.equal(itemData.timing(heart).animation,2.5);
+ assert.equal(itemData.timing(heart).respawn,4);
  for(const d of itemData.list)assert.ok(!['add','damage','difficulty','honey'].includes(d.group));
  assert.equal(itemData.list.length,30);
+ const withoutHeart=itemData.effective(effects,10000,10000,10001);
+ assert.equal(withoutHeart.reward.value,400);assert.equal(withoutHeart.animation.value,100);assert.equal(withoutHeart.respawn.value,100);
+ assert.equal(itemData.list.find(d=>d.group==='heart').seconds,1800);
 });
 test('counted respawn consumes only winning effect on break, preserves weaker inventory',()=>{
  const s=createStore(),p=s.players[1],inv=itemState(p);

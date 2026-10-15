@@ -18,6 +18,7 @@ list.push(...[
  ['hero_destruction_crystal','💎','파괴 증폭석','hero',0,'reward',300,10],
 ].map(([id,icon,name,rank,seconds,group,value,count])=>({id,icon,name,rank,seconds,group,value,count,unit:group==='add'?'hit':'break'})));
 // Keep IDs, inventory, duration and charges; only remake names and effect channels.
+const heartBalance={reward:600,animation:250,respawn:400};
 const remakes={
  common_crack_piece:['재생 조각',110],common_mini_hammer:['작은 재생의 종',115],
  common_candle:['새싹 양초',105],common_wax_thread:['재생 실',110],
@@ -28,6 +29,7 @@ const remakes={
  legendary_destruction_core:['재생의 핵',300],
 };
 for(const d of list){
+ if(d.group==='heart')d.value=heartBalance.reward;
  if(remakes[d.id]){[d.name,d.value]=remakes[d.id];d.group='respawn';d.unit='break';}
  if(d.group==='honey')d.group='reward';
 }
@@ -36,7 +38,7 @@ list.find(d=>d.id==='rare_amplifying_crystal').name='보상 증폭석';
 list.find(d=>d.id==='hero_destruction_crystal').name='파괴 보상석';
 list.sort((a,b)=>ranks.findIndex(r=>r.id===a.rank)-ranks.findIndex(r=>r.id===b.rank));
 const prices={1:'5000000000000000000',3:'14000000000000000000',5:'22000000000000000000'};
-function channels(d){return d.group==='heart'?[['reward',300],['animation',200],['respawn',300]]:d.id==='hero_haste_wax'?[['respawn',200],['animation',150]]:[[d.group,d.value]];}
+function channels(d){return d.group==='heart'?Object.entries(heartBalance):d.id==='hero_haste_wax'?[['respawn',200],['animation',150]]:[[d.group,d.value]];}
 function description(d){const effect=channels(d).map(([g,v])=>g==='respawn'?'재등장 대기시간 −'+Math.round((1-100/v)*100)+'%':g==='animation'?'파괴 모션 속도 ×'+v/100:'Gold ×'+v/100).join(' · ');return effect+' / '+(d.seconds?d.seconds/60+'분':'다음 '+d.count+'회 파괴');}
 function effective(effects,honey=0,coating=0,now=Date.now()){
  const winning={honey:{value:honey>now?200:100},shopReward:{value:coating>now?300:100},reward:{value:100},add:{value:0},damage:{value:100},difficulty:{value:100},animation:{value:100},respawn:{value:100}};

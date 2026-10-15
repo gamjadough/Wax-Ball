@@ -76,10 +76,10 @@ try:
         for _ in range(10):
             page.locator('#ballSvg').click(position={'x':150,'y':150})
             page.wait_for_timeout(220)
-        page.wait_for_function("WakppuItemGame.read().gold==='58999999999994970024'")
+        page.wait_for_function("WakppuItemGame.read().gold==='58999999999994970036'")
         page.wait_for_timeout(1500)
         assert item()['effects']['common_mini_hammer']['remaining']==20
-        assert item()['effects']['legendary_golden_coating']['remaining']==19
+        assert item()['effects']['legendary_golden_coating']['remaining']==20
         prior=item();page.reload();page.wait_for_load_state('domcontentloaded')
         page.wait_for_function('(revision)=>WakppuItems.data?.revision===revision',arg=prior['revision'])
         assert item()['effects']==prior['effects']
