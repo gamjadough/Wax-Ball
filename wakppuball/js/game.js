@@ -170,7 +170,7 @@
       if(result.reward&&BigInt(result.reward)>0n)state.gold=BigInt(result.gold);
       if(epoch!==animationEpoch||!eventSelected){updateAll();return;}
       eventAward=result.reward?BigInt(result.reward):null;displayEventReward=eventAward||0n;
-      onHit(x,y,result.clicks-state.clicks,state.hammerOwned,true,result.required_clicks);
+      onHit(x,y,result.clicks-state.clicks,activeHammerLevel()>0,true,result.required_clicks);
     }catch(error){await restoreAccount();hintEl.textContent=error.message||'이벤트 상태를 확인해주세요.';hintEl.classList.remove('gone');}
     finally{eventRequest=false;syncBallEvent();if(!state.busy)saveProgress();}
   }
@@ -227,7 +227,7 @@
       state.selected = selected;
       state.hammerOwned = saved.hammerOwned === true;
       state.hammerLevel = state.hammerOwned && Number.isInteger(saved.hammerLevel) && saved.hammerLevel >= 1 && saved.hammerLevel <= HAMMERS.length ? saved.hammerLevel : (state.hammerOwned ? 1 : 0);
-      state.hammerSelectedLevel=Number.isInteger(saved.hammerSelectedLevel)&&saved.hammerSelectedLevel>=1&&saved.hammerSelectedLevel<=state.hammerLevel?saved.hammerSelectedLevel:null;
+      state.hammerSelectedLevel=Number.isInteger(saved.hammerSelectedLevel)&&saved.hammerSelectedLevel>=0&&saved.hammerSelectedLevel<=state.hammerLevel?saved.hammerSelectedLevel:null;
       state.honeyExpiresAt = Number.isSafeInteger(saved.honeyExpiresAt) && saved.honeyExpiresAt > Date.now() ? saved.honeyExpiresAt : 0;
       state.coatingExpiresAt = Number.isSafeInteger(saved.coatingExpiresAt) && saved.coatingExpiresAt > Date.now() ? saved.coatingExpiresAt : 0;
     } catch (error) {
@@ -466,7 +466,7 @@
       state.selected = selected >= 0 && state.unlocked[selected] ? selected : 0;
       state.hammerOwned = saved.hammer_owned === true;
       state.hammerLevel = state.hammerOwned ? Math.min(HAMMERS.length, Math.max(1, Number(saved.hammer_level) || 1)) : 0;
-      state.hammerSelectedLevel=Number.isInteger(saved.hammer_selected_level)&&saved.hammer_selected_level>=1&&saved.hammer_selected_level<=state.hammerLevel?saved.hammer_selected_level:null;
+      state.hammerSelectedLevel=Number.isInteger(saved.hammer_selected_level)&&saved.hammer_selected_level>=0&&saved.hammer_selected_level<=state.hammerLevel?saved.hammer_selected_level:null;
       state.honeyExpiresAt = saved.honey_expires_at && new Date(saved.honey_expires_at).getTime() > Date.now() ? new Date(saved.honey_expires_at).getTime() : 0;
       state.coatingExpiresAt = saved.coating_expires_at && new Date(saved.coating_expires_at).getTime() > Date.now() ? new Date(saved.coating_expires_at).getTime() : 0;
       state.remoteReady = true;
@@ -594,13 +594,13 @@
   /* ==========================================================================
      3. 클릭 처리
      ========================================================================== */
-  function onHit(clientX, clientY, damage = null, isHammer = state.hammerOwned, authorizedEvent=false,requiredTotal=null) {
+  function onHit(clientX, clientY, damage = null, isHammer = activeHammerLevel()>0, authorizedEvent=false,requiredTotal=null) {
     if (hammerSelectionBusy || state.busy || window.wakppuServerBlocked || window.WakppuItems?.busy || window.WakppuLimited?.busy) return;
     if(!authorizedEvent&&!testSnapshot&&(window.WakppuItems?.active()||limitedSelected()||window.WakppuLimited?.data?.season.active)&&state.remoteReady){hitItem(clientX,clientY);return;}
     if(eventSelected&&!authorizedEvent){hitEvent(clientX,clientY);return;}
     if (!testSnapshot) window.dispatchEvent(new Event('wakppu-real-play'));
     const data = requiredTotal?{...currentBall(),clicks:requiredTotal}:currentBall();
-    damage = damage ?? (state.hammerOwned ? HAMMERS[activeHammerLevel() - 1].cracks : 1);
+    damage = damage ?? (state.hammerOwned ? (HAMMERS[activeHammerLevel() - 1]?.cracks||1) : 1);
 
     state.clicks = Math.min(data.clicks, state.clicks + damage);
     if(!eventSelected&&!limitedSelected()&&ordinaryClicks.has(state.selected))ordinaryClicks.set(state.selected,state.clicks);
@@ -651,7 +651,7 @@
       if(epoch!==animationEpoch){itemBreakTiming=null;return;}
       if(!eventSelected&&BigInt(result.reward)>0n)itemAward=BigInt(result.reward);
       if(eventSelected){eventAward=BigInt(result.reward);displayEventReward=eventAward;}
-      onHit(x,y,result.clicks-state.clicks,state.hammerOwned,true,result.required_clicks);
+      onHit(x,y,result.clicks-state.clicks,activeHammerLevel()>0,true,result.required_clicks);
     }catch(error){await restoreAccount();hintEl.textContent=error.message;hintEl.classList.remove('gone');}
     finally{eventRequest=false;if(!state.busy){updateAll();const next=pendingItemHits.shift();if(next)queueMicrotask(()=>hitItem(...next));}else pendingItemHits=[];}
   }
@@ -659,7 +659,7 @@
   async function selectHammerLevel(){
     const select=$('hammerLevelSelect'),raw=select.value,level=raw==='auto'?null:Number(raw);
     if(hammerSelectionBusy||eventRequest||state.busy||testSnapshot||window.wakppuServerBlocked||window.WakppuItems?.busy||window.WakppuLimited?.busy||!state.hammerOwned)return renderShop();
-    if(level!==null&&(!Number.isInteger(level)||level<1||level>state.hammerLevel))return renderShop();
+    if(level!==null&&(!Number.isInteger(level)||level<0||level>state.hammerLevel))return renderShop();
     const user=state.account?.id;hammerSelectionBusy=true;renderShop();
     try{
       if(state.remoteReady){
@@ -670,7 +670,7 @@
         if(WakppuItems.accept(result)===false){await restoreAccount();return;}
         state.hammerSelectedLevel=result.hammer_selected_level;
       }else state.hammerSelectedLevel=level;
-      $('hammerLevelStatus').textContent=level===null?'최고 레벨을 자동으로 사용합니다.':`Lv.${level} 망치를 사용합니다.`;
+      $('hammerLevelStatus').textContent=level===null?'최고 레벨을 자동으로 사용합니다.':level===0?'Lv.0 · 맨손으로 타격합니다.':`Lv.${level} 망치를 사용합니다.`;
       updateAll();
     }catch(e){$('hammerLevelStatus').textContent=e.message;if(e.status===409)await restoreAccount();}
     finally{hammerSelectionBusy=false;renderShop();}
@@ -1090,14 +1090,14 @@
       hammerBtn.textContent = '구매 · 100G';
       hammerBtn.disabled = state.gold < HAMMERS[0].cost;
     } else {
-      const hammer = HAMMERS[activeHammerLevel() - 1];
+      const hammer = HAMMERS[activeHammerLevel() - 1]||{cracks:1};
       const next = HAMMERS[state.hammerLevel];
       hammerInfo.textContent = next ? `보유 최고 레벨: Lv.${state.hammerLevel} · 사용: Lv.${activeHammerLevel()}\n균열 증가: +${hammer.cracks}\n다음 Lv.${state.hammerLevel + 1}: +${next.cracks}` : `보유 최고 레벨: Lv.${HAMMERS.length} · 사용: Lv.${activeHammerLevel()}\n균열 증가: +${hammer.cracks}\n최대 레벨`;
       hammerBtn.textContent = next ? `업그레이드 · ${fmt(next.cost)}G` : '최대 레벨';
       hammerBtn.disabled = !next || state.gold < next.cost;
     }
     const selector=$('hammerLevelSelect');
-    const options=state.hammerOwned?'<option value="auto">자동 · 최고 Lv.'+state.hammerLevel+'</option>'+HAMMERS.slice(0,state.hammerLevel).map((h,i)=>'<option value="'+(i+1)+'">Lv.'+(i+1)+' · +'+h.cracks+'</option>').join(''):'<option value="auto">망치 구매 후 선택</option>';
+    const options=state.hammerOwned?'<option value="auto">자동 · 최고 Lv.'+state.hammerLevel+'</option><option value="0">Lv.0 · 맨손 +1</option>'+HAMMERS.slice(0,state.hammerLevel).map((h,i)=>'<option value="'+(i+1)+'">Lv.'+(i+1)+' · +'+h.cracks+'</option>').join(''):'<option value="auto">망치 구매 후 선택</option>';
     if(selector.innerHTML!==options)selector.innerHTML=options;
     selector.value=state.hammerSelectedLevel===null?'auto':String(state.hammerSelectedLevel);
     selector.disabled=!state.hammerOwned||hammerSelectionBusy||eventRequest||state.busy||!!testSnapshot||!!window.wakppuServerBlocked||!!window.WakppuItems?.busy||!!window.WakppuLimited?.busy;

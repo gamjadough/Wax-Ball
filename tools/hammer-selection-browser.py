@@ -27,7 +27,7 @@ try:
                 # The local administrator is shared by both viewports; the first pass bought seven levels.
                 expect(selector).to_be_enabled()
             max_level=page.evaluate('(async()=>{await WakppuItemGame.flush();return (await WakppuAuth.invoke("bootstrap")).state.hammer_level})()')
-            assert selector.locator('option').count()==max_level+1
+            assert selector.locator('option').count()==max_level+2
             before=page.evaluate('WakppuItemGame.read().gold');selector.select_option('1');page.wait_for_function('!WakppuItemGame.read().busy')
             expect(selector).to_have_value('1');expect(page.locator('#hammerInfo')).to_contain_text('사용: Lv.1');expect(page.locator('#hammerInfo')).to_contain_text('균열 증가: +3')
             assert page.evaluate('WakppuItemGame.read().gold')==before
@@ -35,14 +35,15 @@ try:
             page.locator('#hammerBtn').click();expect(page.locator('#hammerInfo')).to_contain_text('사용: Lv.1')
             selector.select_option('auto');page.wait_for_function('!WakppuItemGame.read().busy');page.locator('#hammerBtn').click()
             expect(page.locator('#hammerInfo')).to_contain_text('사용: Lv.'+str(max_level+2))
-            selector.select_option('1');page.wait_for_function('!WakppuItemGame.read().busy')
+            selector.select_option('0');page.wait_for_function('!WakppuItemGame.read().busy')
+            expect(page.locator('#hammerInfo')).to_contain_text('사용: Lv.0');expect(page.locator('#hammerInfo')).to_contain_text('균열 증가: +1')
             selector.scroll_into_view_if_needed();a=page.locator('#hammerBtn').bounding_box();b=selector.bounding_box();assert b['x']>a['x']+a['width'];assert abs((a['y']+a['height'])-(b['y']+b['height']))<2
             page.screenshot(path=str(ROOT/'tools/test-results'/('hammer-selection-mobile.png' if mobile else 'hammer-selection-desktop.png')))
-            page.reload();page.wait_for_function('WakppuItems.data&&WakppuItemGame.read().ready');page.locator('#shopBtn').click();page.locator('#shopPurchaseTab').click();expect(selector).to_have_value('1')
+            page.reload();page.wait_for_function('WakppuItems.data&&WakppuItemGame.read().ready');page.locator('#shopBtn').click();page.locator('#shopPurchaseTab').click();expect(selector).to_have_value('0')
             page.locator('[data-close="shop"]').click()
             page.locator('#ballSvg').click(position={'x':150,'y':150})
             saved=page.evaluate('(async()=>{await WakppuItemGame.flush();return (await WakppuAuth.invoke("bootstrap")).state})()')
-            assert saved['current_clicks']==3,saved
+            assert saved['current_clicks']==1,saved
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth');assert not errors,errors;ctx.close()
             # Reset only local hit progress for the next viewport.
             if not mobile:

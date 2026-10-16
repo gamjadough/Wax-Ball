@@ -91,7 +91,7 @@ export function execute(store, actor, body) {
     if(cached){if(cached.action!==action)error('요청 ID 충돌');return structuredClone(cached.result);}
     if(!/^[a-f0-9-]{36}$/.test(body.request_id||''))error('잘못된 요청입니다.');
     if(body.item_revision!==inv.revision)error('상태를 다시 불러옵니다.',409);
-    if(!('level' in body)||!actor.state.hammer_owned||(body.level!==null&&(!Number.isInteger(body.level)||body.level<1||body.level>actor.state.hammer_level)))error('구매한 망치 레벨 안에서 선택해주세요.');
+    if(!('level' in body)||!actor.state.hammer_owned||(body.level!==null&&(!Number.isInteger(body.level)||body.level<0||body.level>actor.state.hammer_level)))error('구매한 망치 레벨 안에서 선택해주세요.');
     actor.state.hammer_selected_level=body.level;inv.revision++;actor.state.item_revision=inv.revision;
     const result=snapshot(actor);inv.requests.set(body.request_id,{action,result:structuredClone(result)});return result;
   }
