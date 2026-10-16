@@ -1,5 +1,8 @@
 여기에 효과음(mp3)을 넣으세요. 파일 이름은 아래와 똑같이 맞춰야 해요.
 
+  yellow-crack-482875.mp3  노란 왁뿌볼 전용 타격·파괴음
+  사용자 제공 원본: dragon-studio-bones-cracking-482875.mp3 (변환 없이 복사)
+
   tap1.mp3     톡     (초반)
   tap2.mp3     툭     (초반)
   tap3.mp3     딱     (초반~중반)
