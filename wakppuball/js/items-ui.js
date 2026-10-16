@@ -1,7 +1,7 @@
 (() => {
  let data=null,busy=false,filter='all',order='asc',page=0,selectedId=null,lastResults=[],sequence=0,inventoryMarkup='',detailMarkup='',itemAccount=null,transactionFloor=0;
  const pageSize=9;
- let showShop=()=>{};
+ let shopMode='purchase',showShop=()=>{};
  function status(message){for(const id of ['itemsStatus','shopItemsStatus']){const node=document.getElementById(id);if(node)node.textContent=message;}}
  const ranks=WakppuItemData.ranks,defs=WakppuItemData.list;
  const format=n=>WakppuGold.compact(n);
@@ -81,7 +81,7 @@
   document.body.append(modal);
   const shop=document.querySelector('#shop'),purchase=document.querySelector('#shopPurchase'),draw=document.querySelector('#shopDraw'),drawPanel=document.querySelector('#drawPanel');
   draw.append(drawPanel);
-  showShop=mode=>{const drawing=mode==='draw';modal.hidden=true;shop.hidden=false;purchase.hidden=drawing;draw.hidden=!drawing;drawPanel.hidden=!drawing;shop.querySelector('.sheet').classList.toggle('compact',!drawing);shop.querySelector('.sheet').classList.toggle('items-sheet',drawing);for(const button of document.querySelectorAll('.shop-tabs [role="tab"]')){const selected=button.id===(drawing?'shopDrawTab':'shopPurchaseTab');button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;}if(drawing)refresh();render();};
+  showShop=(mode=shopMode)=>{const drawing=mode==='draw';shopMode=drawing?'draw':'purchase';modal.hidden=true;shop.hidden=false;purchase.hidden=drawing;draw.hidden=!drawing;drawPanel.hidden=!drawing;shop.querySelector('.sheet').classList.toggle('compact',!drawing);shop.querySelector('.sheet').classList.toggle('items-sheet',drawing);for(const button of document.querySelectorAll('.shop-tabs [role="tab"]')){const selected=button.id===(drawing?'shopDrawTab':'shopPurchaseTab');button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;}if(drawing)refresh();render();};
   for(const button of document.querySelectorAll('.shop-tabs [role="tab"]'))button.onclick=()=>showShop(button.id==='shopDrawTab'?'draw':'purchase');
   document.querySelector('.shop-tabs').onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const drawing=e.key==='End'||(e.key!=='Home'&&draw.hidden);showShop(drawing?'draw':'purchase');document.querySelector(drawing?'#shopDrawTab':'#shopPurchaseTab').focus();}};
   drawPanel.addEventListener('click',e=>{const button=e.target.closest('[data-pulls]');if(button)transact('item_draw',{count:Number(button.dataset.pulls)});});

@@ -29,14 +29,30 @@ try:
             page.locator('#shopDrawTab').click()
             expect(page.locator('#shopDraw')).to_be_visible();expect(page.locator('#shopPurchase')).to_be_hidden()
             expect(page.locator('#itemsModal')).to_be_hidden()
+            page.locator('[data-close="shop"]').click()
+            page.locator('#shopBtn').click()
+            expect(page.locator('#shopDraw')).to_be_visible()
+            expect(page.locator('#shopDrawTab')).to_have_attribute('aria-selected','true')
+            page.locator('#shopPurchaseTab').click()
+            page.locator('[data-close="shop"]').click()
+            page.locator('#shopBtn').click()
+            expect(page.locator('#shopPurchase')).to_be_visible()
+            expect(page.locator('#shopPurchaseTab')).to_have_attribute('aria-selected','true')
+            page.locator('#shopDrawTab').click()
             page.locator('[data-pulls="1"]').click();page.wait_for_function('!WakppuItems.busy&&WakppuDrawReveal.pending')
             before=page.evaluate('WakppuItems.data');page.locator('#drawWaxBall').click()
             page.locator('#shopPurchaseTab').click();page.locator('#shopDrawTab').click()
             assert page.locator('.draw-ball-crack').count()>0
             page.locator('[data-close="shop"]').click();expect(page.locator('#shopBtn')).to_be_focused()
+            page.locator('#shopBtn').click()
+            expect(page.locator('#shopDraw')).to_be_visible()
+            assert page.locator('.draw-ball-crack').count()>0
+            page.keyboard.press('Escape')
             page.reload();page.wait_for_function('WakppuDrawReveal.pending&&WakppuItems.data!==null')
             page.add_style_tag(content='.local-items-preview{display:none}')
-            page.locator('#shopBtn').click();page.locator('#shopDrawTab').click()
+            page.locator('#shopBtn').click()
+            expect(page.locator('#shopPurchase')).to_be_visible() # New page session defaults to purchase.
+            page.locator('#shopDrawTab').click()
             assert page.locator('.draw-ball-crack').count()>0
             assert page.evaluate('WakppuItems.data.inventory')==before['inventory']
             page.locator('#drawSkipAll').click();expect(page.locator('.draw-result')).to_have_count(1)
@@ -46,6 +62,9 @@ try:
             page.locator('#shopDrawTab').focus();page.keyboard.press('ArrowLeft')
             expect(page.locator('#shopPurchaseTab')).to_be_focused();expect(page.locator('#shopPurchase')).to_be_visible()
             page.keyboard.press('Escape');expect(page.locator('#shop')).to_be_hidden()
+            page.locator('#shopBtn').click()
+            expect(page.locator('#shopPurchase')).to_be_visible()
+            page.keyboard.press('Escape')
             # Change only isolated local server season; real production schedule is untouched.
             page.evaluate("""async()=>{const s=JSON.parse(sessionStorage.getItem('wakppu-local-session'));await fetch('/local/halloween-demo',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+s.token},body:JSON.stringify({mode:'active'})});await WakppuItemGame.restore();await WakppuLimited.refresh();}""")
             expect(page.locator('#halloweenCurrency')).to_be_visible();expect(page.locator('#halloweenCurrencyValue')).to_have_text('100')

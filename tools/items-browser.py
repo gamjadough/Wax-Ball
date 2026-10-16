@@ -71,6 +71,7 @@ try:
         page.screenshot(path=str(out/'items-inventory-mobile.png'),full_page=True)
         page.locator('#itemsClose').click()
         page.locator('#shopBtn').click()
+        page.locator('#shopPurchaseTab').click() # Reopening now preserves the previous draw tab.
         page.locator('#honeyBtn').click();page.locator('#coatingBtn').click()
         page.locator('[data-close="shop"]').click()
         for _ in range(10):

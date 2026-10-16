@@ -1065,7 +1065,7 @@
     }
   }
 
-  function openShop() { renderShop(); shopModal.hidden = false;window.WakppuItems?.showShop('purchase'); }
+  function openShop() { renderShop(); shopModal.hidden = false;window.WakppuItems?.showShop(); }
 
   /* ---------- 도감 ---------- */
   function renderCollection() {
