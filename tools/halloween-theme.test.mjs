@@ -11,7 +11,7 @@ function setup(hostname,search='',now=Date.parse('2026-10-08T00:00:00+09:00')) {
 test('annual Korean-time season boundaries independent of host timezone',()=>{
   const {api}=setup('example.com');
   for(const year of [2026,2027,2028]) {
-    for(const [date,expected] of [['10-23T23:59:59.999',false],['10-24T00:00:00',true],['10-31T12:00:00',true],['11-14T23:59:59.999',true],['11-15T00:00:00',false],['01-01T00:00:00',false]])assert.equal(api.activeAt(Date.parse(`${year}-${date}+09:00`)),expected);
+    for(const [date,expected] of [['10-16T23:59:59.999',false],['10-17T00:00:00',year===2026],['10-23T23:59:59.999',year===2026],['10-24T00:00:00',true],['10-31T12:00:00',true],['11-14T23:59:59.999',true],['11-15T00:00:00',false],['01-01T00:00:00',false]])assert.equal(api.activeAt(Date.parse(`${year}-${date}+09:00`)),expected);
   }
 });
 test('preview only forces scenery on loopback hosts; production follows schedule',()=>{

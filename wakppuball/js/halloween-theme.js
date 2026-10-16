@@ -1,9 +1,9 @@
 (() => {
-  // Annual season: October 24 00:00 through November 14 23:59:59, Asia/Seoul.
+  // This year's early opening: October 17 KST. Future annual dates stay unchanged.
   function activeAt(timestamp) {
     const korea = new Date(Number(timestamp) + 9 * 60 * 60 * 1000);
     const day = (korea.getUTCMonth() + 1) * 100 + korea.getUTCDate();
-    return day >= 1024 && day <= 1114;
+    return day >= (korea.getUTCFullYear()===2026?1017:1024) && day <= 1114;
   }
   const local = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
   const params=new URLSearchParams(location.search);

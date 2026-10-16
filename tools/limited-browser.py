@@ -20,6 +20,8 @@ try:
             page.locator('#collectionBtn').click();expect(page.locator('#normalCollectionTab')).to_have_attribute('aria-selected','true')
             assert page.locator('#collectionGrid [data-detail]').count()==9
             page.locator('#limitedCollectionTab').click();expect(page.locator('#limitedCollection')).to_be_visible();expect(page.locator('#collectionGrid')).to_be_hidden()
+            expect(page.locator('#limitedPeriod')).to_contain_text('2026.10.17 00:00')
+            expect(page.locator('#limitedPeriod')).to_contain_text('2026.11.14 23:59')
             expect(page.locator('#limitedBalance')).to_contain_text('100개');expect(page.locator('#limitedBalance')).to_contain_text('10%')
             page.locator('[data-limited-detail]').click();expect(page.locator('[data-limited-buy]')).to_be_enabled()
             page.locator('[data-limited-buy]').click();page.wait_for_function('!WakppuLimited.busy')

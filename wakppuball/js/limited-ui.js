@@ -12,12 +12,14 @@
   if(!$('limitedCollection'))return;
   $('limitedCollection').hidden=tab!=='limited';if(tab!=='limited')return;
   $('collectionGrid').hidden=true;$('collectionDetail').hidden=true;$('collectionPager').hidden=true;
+  const season=data?.season||config.season;
   const owned=data?.owned[config.ball.id],selected=data?.selected===config.ball.id,active=!!data?.season.active,admin=!!data?.admin_access;
-  const state=selected?'사용 중':owned?'보유 중':admin?'관리자 상시 이용':active?'획득 가능':Date.now()<Date.parse(config.season.starts_at)?'시작 전':'기간 종료';
+  const state=selected?'사용 중':owned?'보유 중':admin?'관리자 상시 이용':active?'획득 가능':Date.now()<Date.parse(season.starts_at)?'시작 전':'기간 종료';
   const base=WakppuGold.compact(config.ball.reward);
   $('limitedSeason').textContent=config.season.name+' · 수집 '+(owned?1:0)+' / 1';
   $('limitedBalance').textContent='🍬 할로윈 사탕 '+(data?.tokens||0)+'개 · 일반 볼 파괴 시 10% 확률로 1개';
-  $('limitedPeriod').textContent='한국 시간 2026.10.24 00:00 ~ 11.14 23:59 · '+(active?'진행 중':admin?'이벤트 비활성':state==='시작 전'?'시작 전':'기간 종료');
+  const date=t=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(t)).replaceAll('-','.');
+  $('limitedPeriod').textContent='한국 시간 '+date(season.starts_at)+' ~ '+date(Date.parse(season.ends_at)-1)+' · '+(active?'진행 중':admin?'이벤트 비활성':state==='시작 전'?'시작 전':'기간 종료');
   const card='<span class="thumb">'+buildBallThumb(config.ball)+'</span><span class="collection-name">'+config.ball.name+'</span><span class="collection-state">'+state+'</span>';
   $('limitedCards').innerHTML=detail?'<button class="btn small" data-limited-back>〈 목록으로</button><article class="card limited-detail">'+card+'<p>기본 필요 타격량 100회 · 기존 아이템·환생 배율 적용</p><p>기본 파괴 보상 '+base+' G · 영겁의 왁스볼 ×1.5'+'</p><p>기간 종료·환생 후에도 보유하고 선택할 수 있습니다.</p>'+(admin?'<p>관리자는 이벤트 기간·사탕 보유 여부와 관계없이 사용할 수 있습니다.</p>':'')+(owned||admin?'<button class="btn" data-limited-select '+(!ready()||selected?'disabled':'')+'>'+(selected?'사용 중':'선택')+'</button>':'<button class="btn" data-limited-buy '+(!active||!ready()||(data?.tokens||0)<100?'disabled':'')+'>🍬 사탕 100개로 구매</button>')+'</article>':'<button class="card collection-card" data-limited-detail aria-label="'+config.ball.name+' · '+state+' · 상세 보기">'+card+'</button>';
  }

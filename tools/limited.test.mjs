@@ -63,6 +63,15 @@ test('limited SQL: real item wrapper, purchase transaction, separate progress, e
  await db.exec(`update players set role='player' where user_id='${admin}'`);
  assert.equal((await rpc({action:'limited'},admin)).selected,null);await assert.rejects(asAdmin('limited_hit'));
  await db.exec(`update players set role='admin' where user_id='${admin}'`);
+ const early=await readFile(new URL('../supabase/migrations/20261016101249_halloween_early_start.sql',import.meta.url),'utf8');
+ await db.exec("update wakppu_limited_settings set ends_at='2026-11-14T15:00:00Z'");
+ const playersBefore=(await db.query('select * from wakppu_limited_players order by user_id')).rows;
+ const endBefore=(await db.query('select ends_at from wakppu_limited_settings')).rows[0].ends_at;
+ await db.exec(early);await db.exec(early);
+ assert.deepEqual((await db.query('select * from wakppu_limited_players order by user_id')).rows,playersBefore);
+ assert.deepEqual((await db.query('select ends_at from wakppu_limited_settings')).rows[0].ends_at,endBefore);
+ const start=(await db.query("select starts_at='2026-10-17T00:00:00+09:00'::timestamptz as correct,'2026-10-16T23:59:59.999+09:00'::timestamptz>=starts_at as before,'2026-10-17T00:00:00+09:00'::timestamptz>=starts_at as active from wakppu_limited_settings")).rows[0];assert.deepEqual(start,{correct:true,before:false,active:true});
+ assert.equal((await db.query("select pg_get_functiondef('public.wakppu_api(jsonb)'::regprocedure) as body")).rows[0].body,wrapper);
  await db.exec('set role authenticated');await assert.rejects(db.exec('update wakppu_limited_players set tokens=999'));await assert.rejects(db.exec('select * from wakppu_limited_settings'));await db.exec('reset role');
  }finally{await db.close();}
 });
