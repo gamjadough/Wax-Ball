@@ -73,6 +73,7 @@ const server=http.createServer(async(req,res)=>{
     if(name==='/index.html') data=Buffer.from(data.toString().replace(/<script src="js\/account.js[^\"]*"><\/script>/,'<script src="js/local-account.js"></script>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='whitehole')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-whitehole-preview.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='transcendent')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-transcendent-preview.js"></script></body>'));
+    if(name==='/index.html'&&url.searchParams.get('preview')==='skin-sounds')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-skin-sounds-preview.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='items')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-items-preview.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='halloween')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-halloween-preview.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='adminball')data=Buffer.from(data.toString().replace('</body>',`<script src="js/local-admin-ball-preview.js"></script><script>WakppuLocalAdminBallPreview(${JSON.stringify(password)});</script></body>`));

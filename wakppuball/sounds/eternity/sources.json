@@ -1,0 +1,513 @@
+{
+  "license": "CC0-1.0",
+  "author": "Kenney",
+  "sources": {
+    "soft": {
+      "pack": "impact",
+      "file": "impactSoft_medium_000.ogg",
+      "sha256": "7d3ba0bb5e60a11b5d3e558c141303dcf494256675fbf753c0d252d2cf0481e3"
+    },
+    "wood": {
+      "pack": "impact",
+      "file": "impactWood_light_001.ogg",
+      "sha256": "4b76bf3ccc8e60d19188f3165b778a7817786faa6887c55d9049bcbeef3b425f"
+    },
+    "plank": {
+      "pack": "impact",
+      "file": "impactPlank_medium_002.ogg",
+      "sha256": "f6a14da45994229676b4f29e6a35f504b5c2ec2b8166fb1a3b1aa004bc6911ef"
+    },
+    "glass": {
+      "pack": "impact",
+      "file": "impactGlass_light_002.ogg",
+      "sha256": "710db7451bb7857b9140dfe6afe4621ea2188ad65eda3919c569d1bb285b933d"
+    },
+    "shatter": {
+      "pack": "impact",
+      "file": "impactGlass_heavy_001.ogg",
+      "sha256": "58686e0e562612cc566791844a10e269f8d1921f4766c14ba43976fd0a429f4e"
+    },
+    "bell": {
+      "pack": "impact",
+      "file": "impactBell_heavy_002.ogg",
+      "sha256": "a4171ed1a4a17fb858a38de1c59b5b42e50d8f046c525706c0e3ac8671f189f5"
+    },
+    "fire": {
+      "pack": "scifi",
+      "file": "thrusterFire_000.ogg",
+      "sha256": "0fdc474d93f209debf1fc4ea77765a669dcb7676db31b4d8a0a509685bccf374"
+    },
+    "field": {
+      "pack": "scifi",
+      "file": "forceField_001.ogg",
+      "sha256": "5574e69dd04e5f59322c5ddffde5978f077b09170ae5e29cec0bd9901828cd90"
+    },
+    "space": {
+      "pack": "scifi",
+      "file": "lowFrequency_explosion_000.ogg",
+      "sha256": "3cb48d86dab63140cfb9aaeea4d4a6846abaca5831d157d8adbec0490da26343"
+    }
+  },
+  "outputs": [
+    {
+      "file": "common-early.mp3",
+      "duration": 0.18,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          1,
+          0.8
+        ],
+        [
+          "wood",
+          0.85,
+          0.3
+        ],
+        [
+          "plank",
+          0.85,
+          0.55
+        ]
+      ]
+    },
+    {
+      "file": "common-mid.mp3",
+      "duration": 0.3,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          1,
+          0.8
+        ],
+        [
+          "wood",
+          0.85,
+          0.3
+        ],
+        [
+          "plank",
+          0.85,
+          0.55
+        ]
+      ]
+    },
+    {
+      "file": "common-late.mp3",
+      "duration": 0.45,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          1,
+          0.8
+        ],
+        [
+          "wood",
+          0.85,
+          0.3
+        ],
+        [
+          "plank",
+          0.85,
+          0.55
+        ]
+      ]
+    },
+    {
+      "file": "common-final.mp3",
+      "duration": 0.85,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          1,
+          0.8
+        ],
+        [
+          "wood",
+          0.85,
+          0.3
+        ],
+        [
+          "plank",
+          0.85,
+          0.55
+        ]
+      ]
+    },
+    {
+      "file": "rare-early.mp3",
+      "duration": 0.18,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          1,
+          0.6
+        ],
+        [
+          "glass",
+          1.12,
+          0.35
+        ],
+        [
+          "shatter",
+          1,
+          0.55
+        ]
+      ]
+    },
+    {
+      "file": "rare-mid.mp3",
+      "duration": 0.3,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          1,
+          0.6
+        ],
+        [
+          "glass",
+          1.12,
+          0.35
+        ],
+        [
+          "shatter",
+          1,
+          0.55
+        ]
+      ]
+    },
+    {
+      "file": "rare-late.mp3",
+      "duration": 0.45,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          1,
+          0.6
+        ],
+        [
+          "glass",
+          1.12,
+          0.35
+        ],
+        [
+          "shatter",
+          1,
+          0.55
+        ]
+      ]
+    },
+    {
+      "file": "rare-final.mp3",
+      "duration": 0.85,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          1,
+          0.6
+        ],
+        [
+          "glass",
+          1.12,
+          0.35
+        ],
+        [
+          "shatter",
+          1,
+          0.55
+        ]
+      ]
+    },
+    {
+      "file": "hero-early.mp3",
+      "duration": 0.18,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          0.82,
+          0.7
+        ],
+        [
+          "plank",
+          0.9,
+          0.55
+        ],
+        [
+          "fire",
+          1.2,
+          0.28
+        ]
+      ]
+    },
+    {
+      "file": "hero-mid.mp3",
+      "duration": 0.3,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          0.82,
+          0.7
+        ],
+        [
+          "plank",
+          0.9,
+          0.55
+        ],
+        [
+          "fire",
+          1.2,
+          0.28
+        ]
+      ]
+    },
+    {
+      "file": "hero-late.mp3",
+      "duration": 0.45,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          0.82,
+          0.7
+        ],
+        [
+          "plank",
+          0.9,
+          0.55
+        ],
+        [
+          "fire",
+          1.2,
+          0.28
+        ]
+      ]
+    },
+    {
+      "file": "hero-final.mp3",
+      "duration": 0.85,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          0.82,
+          0.7
+        ],
+        [
+          "plank",
+          0.9,
+          0.55
+        ],
+        [
+          "fire",
+          1.2,
+          0.28
+        ]
+      ]
+    },
+    {
+      "file": "legendary-early.mp3",
+      "duration": 0.18,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          0.85,
+          0.7
+        ],
+        [
+          "bell",
+          1.3,
+          0.2
+        ],
+        [
+          "field",
+          1.25,
+          0.3
+        ]
+      ]
+    },
+    {
+      "file": "legendary-mid.mp3",
+      "duration": 0.3,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          0.85,
+          0.7
+        ],
+        [
+          "bell",
+          1.3,
+          0.2
+        ],
+        [
+          "field",
+          1.25,
+          0.3
+        ]
+      ]
+    },
+    {
+      "file": "legendary-late.mp3",
+      "duration": 0.45,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          0.85,
+          0.7
+        ],
+        [
+          "bell",
+          1.3,
+          0.2
+        ],
+        [
+          "field",
+          1.25,
+          0.3
+        ]
+      ]
+    },
+    {
+      "file": "legendary-final.mp3",
+      "duration": 1.15,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          0.85,
+          0.7
+        ],
+        [
+          "bell",
+          1.3,
+          0.2
+        ],
+        [
+          "field",
+          1.25,
+          0.3
+        ]
+      ]
+    },
+    {
+      "file": "transcendent-early.mp3",
+      "duration": 0.18,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          0.72,
+          0.8
+        ],
+        [
+          "plank",
+          0.7,
+          0.5
+        ],
+        [
+          "space",
+          1.1,
+          0.3
+        ],
+        [
+          "field",
+          0.8,
+          0.22
+        ]
+      ]
+    },
+    {
+      "file": "transcendent-mid.mp3",
+      "duration": 0.3,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          0.72,
+          0.8
+        ],
+        [
+          "plank",
+          0.7,
+          0.5
+        ],
+        [
+          "space",
+          1.1,
+          0.3
+        ],
+        [
+          "field",
+          0.8,
+          0.22
+        ]
+      ]
+    },
+    {
+      "file": "transcendent-late.mp3",
+      "duration": 0.45,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          0.72,
+          0.8
+        ],
+        [
+          "plank",
+          0.7,
+          0.5
+        ],
+        [
+          "space",
+          1.1,
+          0.3
+        ],
+        [
+          "field",
+          0.8,
+          0.22
+        ]
+      ]
+    },
+    {
+      "file": "transcendent-final.mp3",
+      "duration": 1.15,
+      "peak": 0.72,
+      "layers": [
+        [
+          "soft",
+          0.72,
+          0.8
+        ],
+        [
+          "plank",
+          0.7,
+          0.5
+        ],
+        [
+          "space",
+          1.1,
+          0.3
+        ],
+        [
+          "field",
+          0.8,
+          0.22
+        ]
+      ]
+    }
+  ]
+}

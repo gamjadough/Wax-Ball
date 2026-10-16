@@ -10,7 +10,8 @@
 
 /* 왁뿌볼 하나의 최종 사운드 설정 (기본값 + 그 볼의 개별 설정) */
 function getSoundConfig(ball) {
-  return Object.assign({}, DEFAULT_SOUNDS, ball.sound || {});
+  const skin=ball.id==='eternity'?window.WakppuSkinSounds?.config(ball.skinId):null;
+  return Object.assign({}, DEFAULT_SOUNDS, ball.sound || {}, skin ? {...skin,pitch:1,pitchRandom:.025,volume:.65,volumeRandom:.04} : {});
 }
 
 const SoundManager = (() => {
@@ -45,6 +46,7 @@ const SoundManager = (() => {
   // names: 사용할 소리 이름 목록 (예: ['tap1', 'tap2', ...])
   function init(names) {
     names.forEach((name) => {
+      if (pools[name]) return;
       const src = SOUND_SETTINGS.folder + name + SOUND_SETTINGS.extension;
       const pool = { items: [], next: 0, ok: false };
       pools[name] = pool;
