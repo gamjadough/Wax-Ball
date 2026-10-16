@@ -17,6 +17,26 @@ const SoundManager = (() => {
   const pools = {};      // 소리 이름 → { items: [Audio...], next: 0, ok: false }
   let ctx = null;        // 임시 합성음용 AudioContext
   let noiseBuffer = null;
+  let bgm = null, bgmStarting = false;
+
+  // Called directly from the first pointer gesture, including on mobile Safari.
+  // Keep one player; later taps must not restart or overlap the music.
+  function startBgm() {
+    if (!bgm) {
+      bgm = new Audio('sounds/halloween-waltz.mp3');
+      bgm.id = 'backgroundMusic';
+      bgm.loop = true;
+      bgm.volume = 0.3;
+      bgm.preload = 'none';
+      bgm.hidden = true;
+      document.body.append(bgm);
+    }
+    if (!bgm.paused || bgmStarting) return;
+    bgmStarting = true;
+    try {
+      Promise.resolve(bgm.play()).catch(() => {}).finally(() => { bgmStarting = false; });
+    } catch (error) { bgmStarting = false; }
+  }
 
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const rand = (a, b) => a + Math.random() * (b - a);
@@ -50,6 +70,7 @@ const SoundManager = (() => {
 
   /* ---------- 브라우저 정책상 첫 터치 때 오디오를 깨워야 해요 ---------- */
   function unlock() {
+    startBgm();
     if (!SOUND_SETTINGS.usePlaceholderSound) return;
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
