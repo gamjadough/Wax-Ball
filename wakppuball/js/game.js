@@ -379,7 +379,7 @@
     drawCracks(layer, state.cracks, data.design);
     updateCracks(0);
 
-    if (animate) {
+    if (animate&&!window.WakppuSettings?.reduced()) {
       wrap.animate([
         { transform: 'scale(0.55)', opacity: 0 },
         { transform: 'scale(1.06)', opacity: 1, offset: 0.65 },
@@ -699,6 +699,7 @@
   /* 살짝 눌리는 애니메이션 */
   let squishAnim = null;
   function squish(clientX, v, isHammer = false) {
+    if(window.WakppuSettings?.reduced()){squishAnim?.cancel();return;}
     const rect = wrap.getBoundingClientRect();
     const nx = clamp(((clientX - rect.left) / rect.width - 0.5) * 2, -1, 1);
     const press = (isHammer ? 0.12 : 0.06) + 0.03 * v;
@@ -729,7 +730,7 @@
     }
     if(data.id==='admin-event'){
       const earned=eventAward;eventAward=null;wrap.classList.add('admin-ball-breaking');
-      const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const reduced=window.WakppuSettings?.reduced()??matchMedia('(prefers-reduced-motion: reduce)').matches;
       const fade=adminFade=svgEl.animate(reduced?[{opacity:1},{opacity:0}]:[{opacity:1,transform:'scale(1)'},{opacity:.4,transform:'scale(.96)',offset:.65},{opacity:0,transform:'scale(.8)'}],{duration:1100/speed,easing:'ease-in',fill:'forwards'});
       const epoch=animationEpoch;
       state.respawnTimer=setTimeout(()=>{
@@ -792,6 +793,7 @@
 
   /* 왁뿌볼을 조각으로 쪼개서 날리기 */
   function makeShards(shape,speed=1) {
+    const reduced=window.WakppuSettings?.reduced()??false;
     const uid = state.uid;
     const defs = svgEl.querySelector('#' + uid + '-defs');
     const inner = svgEl.querySelector('#' + uid + '-inner');
@@ -801,7 +803,7 @@
     defs.appendChild(inner);
     hit.remove();
 
-    const S = 9;                          // 방향 개수
+    const S = reduced?3:9;                // 방향 개수
     const radii = [0, 34, 68, 140];       // 안쪽 → 바깥쪽 고리
     const startAng = Math.random() * Math.PI * 2;
     const P = [null];                     // P[고리][방향] = 꼭짓점 좌표
@@ -838,6 +840,7 @@
 
     // 조각마다 바깥으로 튀며 회전하고 떨어지는 애니메이션
     group.querySelectorAll('.shard').forEach((el, n) => {
+      if(reduced){el.animate([{opacity:1},{opacity:0}],{duration:260/speed,fill:'forwards'});return;}
       const c = cells[n];
       const mx = c.pts.reduce((s, p) => s + p[0], 0) / c.pts.length;
       const my = c.pts.reduce((s, p) => s + p[1], 0) / c.pts.length;
@@ -874,6 +877,7 @@
 
   /* 튀는 왁스 조각 */
   function spawnChips(x, y, count, power, data) {
+    if(window.WakppuSettings?.reduced())return;
     const colors = [].concat(data.design.chip);
     for (let i = 0; i < count; i++) {
       const el = document.createElement('span');
@@ -913,6 +917,7 @@
 
   /* 파괴 순간 짧은 섬광 */
   function flash(data) {
+    if(window.WakppuSettings&&!WakppuSettings.flashes())return;
     const c = ballCenter();
     flashEl.style.left = c.x + 'px';
     flashEl.style.top = c.y + 'px';

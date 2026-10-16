@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="transcendent.css?v=20261009-effects1">
   <link rel="stylesheet" href="admin-selection.css?v=20261006-selection1">
   <link rel="stylesheet" href="admin-ball.css?v=20261007-admin-ball1">
+  <link rel="stylesheet" href="player-settings.css?v=20261016-settings1">
 </head>
 <body>
   <div id="halloweenScenery" class="halloween-scenery" aria-hidden="true" hidden>
@@ -43,7 +44,10 @@
       <div id="halloweenCurrency" class="season-currency" hidden aria-label="보유 할로윈 사탕"><span aria-hidden="true">🍬</span><span id="halloweenCurrencyValue">0</span><span>사탕</span></div>
       <button id="shopBtn" class="btn top-btn" type="button">🛒 상점</button>
       <button id="rebirthBtn" class="btn top-btn" type="button">환생</button>
-      <button id="accountBtn" class="btn top-btn" type="button">계정</button>
+      <div class="account-tools">
+        <button id="accountBtn" class="btn top-btn" type="button">계정</button>
+        <button id="settingsBtn" class="btn top-btn" type="button" aria-haspopup="dialog" aria-controls="playerSettings">⚙️ 설정</button>
+      </div>
       <button id="adminBtn" class="btn top-btn" type="button" hidden>관리자 패널</button>
       <div id="goldEventBanner" class="gold-event-banner" hidden role="status"></div>
     </header>
@@ -74,6 +78,29 @@
       </div>
     </footer>
   </main>
+
+  <div id="playerSettings" class="modal" hidden>
+    <div class="sheet settings-sheet" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="sheet-head"><h2 id="settingsTitle">⚙️ 설정</h2><button id="settingsClose" class="btn small" type="button">닫기</button></div>
+      <p class="settings-note">설정은 이 기기와 브라우저에 저장됩니다.</p>
+      <fieldset><legend>사운드</legend>
+        <label class="setting-check"><input id="settingsMuted" type="checkbox" data-setting="muted">전체 음소거</label>
+        <label class="setting-check"><input id="settingsSfx" type="checkbox" data-setting="sfx">효과음</label>
+        <label class="setting-volume" for="settingsSfxVolume"><span>효과음 음량</span><output for="settingsSfxVolume" data-setting-output="sfxVolume">70%</output><input id="settingsSfxVolume" type="range" min="0" max="100" step="1" value="70" data-setting="sfxVolume"></label>
+        <button id="settingsSoundPreview" class="btn small" type="button">효과음 들어보기</button>
+        <label class="setting-check"><input id="settingsMusic" type="checkbox" data-setting="music">배경음악</label>
+        <label class="setting-volume" for="settingsMusicVolume"><span>배경음악 음량</span><output for="settingsMusicVolume" data-setting-output="musicVolume">25%</output><input id="settingsMusicVolume" type="range" min="0" max="100" step="1" value="25" data-setting="musicVolume"></label>
+        <p id="settingsMusicNote" class="settings-note">잔잔한 멜로디 · 다른 탭이나 잠금 화면에서는 음악이 멈춰요.</p>
+      </fieldset>
+      <fieldset><legend>화면 효과</legend>
+        <label class="setting-check"><input id="settingsReduce" type="checkbox" data-setting="reduceEffects">화면 효과 줄이기</label>
+        <p class="settings-note">움직임·반짝임·파편을 줄여요. 기기의 동작 줄이기 설정도 함께 적용됩니다.</p>
+        <label class="setting-check"><input id="settingsFlashes" type="checkbox" data-setting="flashes">섬광 효과</label>
+      </fieldset>
+      <button id="settingsReset" class="btn small" type="button">기본 설정으로 복원</button>
+      <p id="settingsStorageStatus" class="settings-note" role="status"></p>
+    </div>
+  </div>
 
   <!-- 도감 (선택 / 해금) -->
   <div id="collection" class="modal" hidden>
@@ -197,26 +224,27 @@
   <script src="js/account.js?v=20261016-ranking-presence"></script>
   <script src="js/gold-format.js?v=20261011-rebirth500"></script>
   <script src="js/balls-data.js?v=20261012-rebirth3"></script>
-  <script src="js/sound.js?v=20261002-progression1"></script>
+  <script src="js/player-settings.js?v=20261016-settings1"></script>
+  <script src="js/sound.js?v=20261016-settings1"></script>
   <script src="js/limited-data.js?v=20261016-reward1"></script>
-  <script src="js/halloween-effects.js?v=20261019-items-remake"></script>
+  <script src="js/halloween-effects.js?v=20261016-settings1"></script>
   <script src="js/limited-ui.js?v=20261010-shop-tabs"></script>
   <script src="js/items-data.js?v=20261015-heart-buff"></script>
   <script src="js/sleep-hours.js?v=20261013-sleep2"></script>
   <script src="js/items-ui.js?v=20261016-shop-tab"></script>
-  <script src="js/items-reveal.js?v=20261010-shop-tabs"></script>
+  <script src="js/items-reveal.js?v=20261016-settings1"></script>
   <script src="js/ball-art.js?v=20261016-reward1"></script>
   <script src="js/event-time.js?v=20261018-countdown1"></script>
   <script src="js/gold-event.js?v=20261018-countdown1"></script>
-  <script src="js/whitehole-effects.js?v=20261019-items-remake"></script>
-  <script src="js/transcendent-effects.js?v=20261019-items-remake"></script>
+  <script src="js/whitehole-effects.js?v=20261016-settings1"></script>
+  <script src="js/transcendent-effects.js?v=20261016-settings1"></script>
   <script src="js/admin-ball-event.js?v=20261018-countdown1"></script>
   <script src="js/hammers-data.js?v=20261007-hammer30"></script>
-  <script src="js/game.js?v=20261016-shop-tab"></script>
+  <script src="js/game.js?v=20261016-settings1"></script>
   <script src="js/event-schedule.js?v=20261020-weekly1"></script>
   <script src="js/weekly-events.js?v=20261020-weekly1"></script>
   <script src="js/presence.js?v=20261016-ranking-presence"></script>
-  <script src="js/admin-panel.js?v=20261013-sleep2"></script>
+  <script src="js/admin-panel.js?v=20261016-settings1"></script>
   <script src="js/guest-lifecycle.js?v=20261006-guest1"></script>
   <script src="js/halloween-theme.js?v=20261017-background1"></script>
 </body>

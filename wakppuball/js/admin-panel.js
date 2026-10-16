@@ -108,13 +108,15 @@
   let refreshing=false,lastServerStatus=null,serverInstant=0,serverAnchor=0;
   function currentSleep(){return lastServerStatus?.sleep_hours?(Number.isFinite(serverInstant)?WakppuSleepHours.at(serverInstant+Math.max(0,performance.now()-serverAnchor)):lastServerStatus.sleep_hours):null;}
   function renderAccess(result){
+    const previousBlocked=window.wakppuServerBlocked;
     const banned=result.moderation?.blocked===true,sleeping=currentSleep()?.active&&result.role!=='admin';
     window.wakppuServerBlocked=!!(banned||sleeping||(result.maintenance&&result.role!=='admin'));
     $('game').hidden=window.wakppuServerBlocked;
     $('maintenance').hidden=!window.wakppuServerBlocked;
     if(window.wakppuServerBlocked){
-      for(const id of ['shop','collection','rebirth','itemsModal']){const modal=$(id);if(modal)modal.hidden=true;}
+      for(const id of ['shop','collection','rebirth','itemsModal','playerSettings']){const modal=$(id);if(modal)modal.hidden=true;}
     }
+    if(previousBlocked!==window.wakppuServerBlocked)window.dispatchEvent(new Event('wakppu-access-changed'));
     $('maintenanceTitle').textContent=banned?'계정 이용 제한':sleeping?'수면 시간':'왁뿌볼 패치 중';
     $('maintenanceDescription').textContent=banned?'이 계정은 현재 플레이와 저장이 제한되어 있습니다.':sleeping?'수면 시간입니다. 오전 6시부터 다시 이용할 수 있습니다.':'현재 게임이 업데이트 중입니다. 잠시 후 다시 접속해주세요.';
     $('maintenanceRanking').hidden=banned;

@@ -12,7 +12,7 @@
     eternity:{kind:'convergence',colors:['#fff1c9','#ea9aa5','#bedfff','#c4aaff'],duration:2100}
   };
   function play({ball,wrap,svg,effects,center,radius,valid,reward,respawn,speed=1,respawnSpeed=1}){
-    const profile=profiles[ball.design.motif],reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const profile=profiles[ball.design.motif],reduced=window.WakppuSettings?.reduced()??matchMedia('(prefers-reduced-motion: reduce)').matches;
     const timers=[],nodes=[],animations=[];let stopped=false,paid=false;
     const duration=(reduced?650:profile.duration)/speed;
     const phase=name=>{wrap.dataset.transcendentPhase=name;wrap.dispatchEvent(new CustomEvent('transcendent-phase',{detail:{id:ball.id,phase:name,kind:profile.kind}}));};
