@@ -982,7 +982,7 @@
     state.honeyExpiresAt = 0;
     state.coatingExpiresAt = 0;
     window.WakppuItems?.clearEffects();
-    state.unlocked = WAKPPU_BALLS.map((_, i) => i === 0);
+    state.unlocked = WAKPPU_BALLS.map((_, i) => i === 0 || (accountRole==='admin'&&state.account&&!state.account.is_anonymous&&!testSnapshot));
     state.selected = 0;
     wrap.classList.remove('broken');
     spawnBall(true);
