@@ -69,7 +69,7 @@ const SoundManager = (() => {
   // names: 사용할 소리 이름 목록 (예: ['tap1', 'tap2', ...])
   function init(names) {
     names.forEach((name) => {
-      const src = SOUND_SETTINGS.folder + name + SOUND_SETTINGS.extension;
+      const src = SOUND_SETTINGS.folder + name + (/\.(?:mp3|wav|ogg)$/i.test(name)?'':SOUND_SETTINGS.extension);
       const pool = { items: [], next: 0, ok: false };
       pools[name] = pool;
 
