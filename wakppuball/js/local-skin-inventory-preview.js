@@ -27,6 +27,8 @@ document.addEventListener('DOMContentLoaded',()=>{
  for(const [mode,text,id] of [['last','공 마지막 타격 준비','skinSoundLast'],['normal','공 처음부터 타격','skinSoundNormal']]){const b=document.createElement('button');b.className='btn small';b.id=id;b.textContent=text;b.onclick=()=>prepare(mode);panel.append(b);}
  for(const progress of [.25,.6,.9]){const b=document.createElement('button');b.className='btn small';b.dataset.skinProgress=progress;b.textContent='균열 '+Math.round(progress*100)+'%';b.onclick=()=>{prepare('normal');WakppuGameTest.localSkinProgress(progress);};panel.append(b);}
  document.body.append(panel);
+ const cutscene=document.createElement('button');cutscene.id='previewSkinCutscene';cutscene.className='btn small';cutscene.textContent='초월 획득 컷신 미리보기';
+ cutscene.onclick=()=>{silence();WakppuSkinCutscene.open({opener:cutscene,onEquip:()=>equip('transcendent')});};panel.append(cutscene);WakppuSkinCutscene.preload();
  const modal=document.querySelector('#itemsModal'),sheet=modal.querySelector('.sheet'),header=sheet.querySelector('.sheet-head');
  const items=document.createElement('div');items.id='inventoryItemsPage';
  for(const child of [...sheet.children])if(child!==header)items.append(child);
