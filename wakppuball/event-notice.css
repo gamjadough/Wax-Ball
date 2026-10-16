@@ -1,0 +1,8 @@
+.weekly-event-notice { position:absolute;top:8px;right:0;z-index:2;max-width:min(80%,230px);padding:8px 11px;border:1px solid #7fa7c440;border-radius:11px;background:#152532e8;color:#c2dceb;box-shadow:0 3px 12px #0002;pointer-events:none;text-align:left;font-size:11px;line-height:1.55; }
+.weekly-event-notice strong { display:block;font-size:11px;color:#e1eff7; }
+.weekly-event-notice p { margin:2px 0 0;overflow-wrap:anywhere; }
+.stage.has-weekly-event { padding-top:80px; }
+.gold-event-banner[data-source="manual"] { border-color:#d6a7ec;background:#34203f;color:#f1d4ff; }
+.gold-event-banner[data-source="manual"][data-phase="active"] { background:#4b2b5c; }
+#adminBallEventBanner[data-source="manual"] { background:#2d1738;color:#eed0fb; }
+@media(max-height:600px) { .weekly-event-notice {top:2px;padding:5px 8px;font-size:10px;line-height:1.4;} .weekly-event-notice strong {font-size:10px;} .stage.has-weekly-event {padding-top:68px;} .stage.has-weekly-event .ball-wrap {width:min(54vw,30vh,260px);} }
