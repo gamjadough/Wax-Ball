@@ -33,17 +33,25 @@ try:
                 expect(button).to_have_text('장착 중')
                 page.locator('#itemsClose').click()
                 expect(page.locator(f'#ballSvg [data-eternity-skin="{rank}"]')).to_have_count(1)
+                if rank=='legendary':
+                    page.evaluate("WakppuSkinClock.update(document.querySelector('#ballSvg'),Date.parse('2026-10-15T18:25:30Z'))")
+                    expect(page.locator('#ballSvg [data-clock-hand="hour"]')).to_have_attribute('transform','rotate(102.75 100 100)')
+                    expect(page.locator('#ballSvg [data-clock-hand="minute"]')).to_have_attribute('transform','rotate(153 100 100)')
+                    assert page.locator('#ballSvg [data-clock-hand="minute"]').evaluate('(e)=>getComputedStyle(e).animationName')=='none'
+                    page.wait_for_function("(()=>{const a=WakppuSkinClock.angles();const el=document.querySelector('#ballSvg [data-clock-hand=minute]');return Math.abs(parseFloat(el.getAttribute('transform').slice(7))-a.minute)<.15})()",timeout=3000)
                 for progress in ['0.25','0.6','0.9']:
                     page.locator(f'[data-skin-progress="{progress}"]').click()
                     if rank=='common':expect(page.locator('[data-skin-impact]')).to_have_count(0)
                     else:expect(page.locator(f'[data-skin-impact="{rank}"]')).to_have_count(1)
                     if rank=='transcendent':
-                        expect(page.locator('[data-skin-seams] path')).to_have_count(20)
+                        assert page.locator('[data-seam-core]').count()>5
+                        expect(page.locator('[data-skin-seams]')).to_have_count(0) # No independent crack geometry.
                         expect(page.locator('[data-skin-impact]')).to_have_attribute('data-glow-phase','faint' if progress=='0.25' else 'pulse')
-                        expect(page.locator('.skin-seam-light')).to_have_count(5)
+                        assert page.evaluate("""[...document.querySelectorAll('.skin-seam-light')].every(g=>{const dark=g.previousElementSibling;return [...g.children].every(p=>p.getAttribute('d')===dark.getAttribute('d')&&p.style.strokeDashoffset===dark.style.strokeDashoffset&&p.style.visibility===dark.style.visibility&&!p.hasAttribute('transform'))})""")
                         assert page.locator('.skin-light-particle').count()<=(6 if progress!='0.25' else 0)
                         animation=page.locator('.skin-seam-light').first.evaluate('(e)=>getComputedStyle(e).animationName')
                         assert animation==('skin-seam-pulse' if not reduced and progress!='0.25' else 'none')
+                        page.wait_for_timeout(220) # Let the real shared crack reveal transition finish.
                         page.screenshot(path=str(out/f'skin-light-{progress}-{width}-reduced{reduced}.png'))
                     else:expect(page.locator('.skin-seam-light')).to_have_count(0)
                 if not reduced:page.screenshot(path=str(out/f'skin-hit-{rank}-{width}.png'))
@@ -70,7 +78,10 @@ try:
                 assert page.evaluate('WakppuItemGame.read().gold')==before
                 assert page.evaluate('WakppuItemGame.read().test')
                 expect(page.locator('.transcendent-fx')).to_have_count(0)
-                expect(page.locator('[data-skin-impact]')).to_have_count(0)
+                if rank=='transcendent':
+                    assert page.evaluate("[...document.querySelectorAll('[data-seam-core]')].every(p=>p.style.visibility==='hidden'&&p.style.strokeDashoffset==='1')")
+                    expect(page.locator('.skin-light-particle')).to_have_count(0)
+                else:expect(page.locator('[data-skin-impact]')).to_have_count(0)
                 if rank=='legendary' and not reduced:
                     assert page.evaluate("skinPhases.some(e=>e.phase==='freeze')&&skinPhases.some(e=>e.phase==='rewind')")
                 if rank=='transcendent' and not reduced:assert page.evaluate("skinPhases.some(e=>e.phase==='fold')")

@@ -318,6 +318,7 @@
   /* 금을 SVG 에 그려 넣기 (처음엔 모두 숨김) */
   function drawCracks(layer, cracks, design) {
     const c = design.crack;
+    const luminous=design.skin==='transcendent';
     cracks.forEach((cr) => {
       const common = {
         d: cr.d, pathLength: '1', fill: 'none',
@@ -329,10 +330,17 @@
       cr.light = mk('path', Object.assign({}, common, {
         class: 'crack', stroke: c.light, 'stroke-opacity': '0.6', transform: 'translate(0.9 0.9)',
       }));
-      [cr.wide, cr.dark, cr.light].forEach((el) => {
+      if(luminous){
+        cr.dark.setAttribute('stroke','#080b21');cr.wide.setAttribute('stroke','#ab74ff');
+        cr.light.setAttribute('stroke','#6edfff');cr.light.setAttribute('stroke-opacity','.9');cr.light.removeAttribute('transform');
+        cr.core=mk('path',Object.assign({},common,{class:'crack','data-seam-core':'',stroke:'#f0f6ff'}));
+        cr.glow=mk('g',{class:'skin-seam-light'});layer.appendChild(cr.dark);
+        [cr.wide,cr.light,cr.core].forEach(el=>cr.glow.appendChild(el));layer.appendChild(cr.glow);
+      }
+      [cr.wide, cr.dark, cr.light,cr.core].filter(Boolean).forEach((el) => {
         el.style.strokeDashoffset = '1';
         el.style.visibility = 'hidden';
-        layer.appendChild(el);
+        if(!luminous)layer.appendChild(el);
       });
     });
   }
@@ -342,6 +350,7 @@
     state.cracks.forEach((cr) => {
       // v === 0 (아직 클릭 전)이면 금이 하나도 보이면 안 돼요
       const frac = v <= 0 ? 0 : clamp((v - cr.start) / (cr.end - cr.start), 0, 1);
+      cr.frac=frac;
       const vis = frac > 0.001 ? 'visible' : 'hidden';
       const off = String(1 - frac);
       const w = cr.weight * (0.8 + v * 1.9);          // 진행될수록 금이 굵어져요
@@ -349,11 +358,13 @@
       cr.wide.style.strokeOpacity = (0.08 + 0.22 * v).toFixed(2);
       cr.dark.style.strokeWidth = w.toFixed(2);
       cr.light.style.strokeWidth = (w * 0.45).toFixed(2);
-      [cr.wide, cr.dark, cr.light].forEach((el) => {
+      if(cr.core){cr.wide.style.strokeOpacity='.3';cr.dark.style.strokeWidth=(w*1.6).toFixed(2);cr.light.style.strokeWidth=(w*.7).toFixed(2);cr.core.style.strokeWidth=(w*.23).toFixed(2);}
+      [cr.wide, cr.dark, cr.light,cr.core].filter(Boolean).forEach((el) => {
         el.style.strokeDashoffset = off;
         el.style.visibility = vis;
       });
     });
+    window.WakppuSkinEffects?.syncCracks({ball:currentBall(),svg:svgEl,cracks:state.cracks,progress:v});
   }
 
   /* ==========================================================================
@@ -373,6 +384,7 @@
     state.uid = uid;
     state.clicks = 0;
     svgEl.innerHTML = buildBallSvgInner(data, uid);
+    window.WakppuSkinClock?.update(svgEl);
 
     const layer = svgEl.querySelector('#' + uid + '-cracks');
     const rng = mulberry32((Math.random() * 4294967296) >>> 0);
