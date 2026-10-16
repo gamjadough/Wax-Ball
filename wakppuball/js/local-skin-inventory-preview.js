@@ -13,7 +13,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(equipped==='none')delete ball.skinId;else ball.skinId=equipped;
   const cfg=WakppuSkinSounds.config(equipped);if(cfg)SoundManager.init(Object.values(cfg).flat());
   WakppuGameTest.run(mode,'eternity');
-  note.textContent='장착: '+(profiles.find(p=>p.id===equipped)?.name||'기본 영겁')+' · 인벤토리에서 장착/해제 · 성능 변경 없음';
+  const motion={common:'기본 파괴 연출',rare:'눈꽃 균열 → 얼음 파편',hero:'내부 불꽃·불씨 → 화염 분출',legendary:'시계 회전 → 파편 정지 → 역회전',transcendent:'공간 균열 → 수축 → 별빛 소멸'};
+  note.textContent='장착: '+(profiles.find(p=>p.id===equipped)?.name||'기본 영겁')+' · '+(motion[equipped]||'기본 파괴 연출')+' · 속도·보상 동일';
   panel.querySelectorAll('[data-skin-stage]').forEach(b=>b.disabled=!cfg);
  }
  for(const p of profiles)for(const names of Object.values(WakppuSkinSounds.config(p.id))){const name=names[0],a=new Audio('sounds/'+name+'.mp3');a.preload='auto';clips.set(name,a);}
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   button.onclick=()=>{silence();const turn=serial,a=clips.get(WakppuSkinSounds.config(equipped)?.[stage]?.[0]);if(!a)return;a.volume=.65;a.play().catch(()=>{if(turn===serial)note.textContent='재생 실패 · 다시 눌러주세요.';});};panel.append(button);
  }
  for(const [mode,text,id] of [['last','공 마지막 타격 준비','skinSoundLast'],['normal','공 처음부터 타격','skinSoundNormal']]){const b=document.createElement('button');b.className='btn small';b.id=id;b.textContent=text;b.onclick=()=>prepare(mode);panel.append(b);}
+ for(const progress of [.25,.6,.9]){const b=document.createElement('button');b.className='btn small';b.dataset.skinProgress=progress;b.textContent='균열 '+Math.round(progress*100)+'%';b.onclick=()=>{prepare('normal');WakppuGameTest.localSkinProgress(progress);};panel.append(b);}
  document.body.append(panel);
  const modal=document.querySelector('#itemsModal'),sheet=modal.querySelector('.sheet'),header=sheet.querySelector('.sheet-head');
  const items=document.createElement('div');items.id='inventoryItemsPage';

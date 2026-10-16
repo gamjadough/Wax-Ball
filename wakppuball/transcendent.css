@@ -7,6 +7,7 @@
 .transcendent-fx.wisp{background:radial-gradient(ellipse at 30% 30%,currentColor,transparent 70%);border-radius:50% 50% 20% 70%;box-shadow:none}
 .transcendent-fx.wax-half{background:radial-gradient(circle at 35% 30%,#ffffff88,currentColor 65%);box-shadow:inset -10px -12px 24px #0008}
 .transcendent-fx.ring{border:2px solid currentColor;box-shadow:none}
+.transcendent-fx.star{border-radius:0;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);box-shadow:none}
 .transcendent-idle{transform-origin:100px 100px}
 .transcendent-idle.glow{animation:transcendent-glow 4s ease-in-out infinite}
 .transcendent-idle.fire{animation:transcendent-flame 1.8s ease-in-out infinite}
@@ -27,3 +28,13 @@
 @keyframes transcendent-orbit{to{transform:rotate(360deg)}}
 @keyframes transcendent-soul{50%{transform:translateY(-10px) rotate(7deg);opacity:.35}}
 @media(prefers-reduced-motion:reduce){.transcendent-idle{animation:none!important}}
+.skin-motif{transform-origin:100px 100px}
+.skin-rare{animation:skin-frost 3s ease-in-out infinite}
+.skin-hero{animation:skin-fire 1.3s ease-in-out infinite}
+.skin-legendary>path{transform-origin:100px 100px;animation:skin-clock 12s steps(12,end) infinite}
+.skin-transcendent>g:first-of-type{transform-origin:100px 100px;animation:skin-orbit 14s linear infinite}
+@keyframes skin-frost{50%{opacity:.55}}
+@keyframes skin-fire{50%{transform:translateY(-3px) scaleY(1.06);opacity:.8}}
+@keyframes skin-clock{to{transform:rotate(360deg)}}
+@keyframes skin-orbit{to{transform:rotate(-360deg)}}
+@media(prefers-reduced-motion:reduce){.skin-motif,.skin-motif *{animation:none!important}}

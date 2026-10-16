@@ -317,7 +317,7 @@ const ART = {
       legendary:`<circle cx="100" cy="100" r="66" fill="${c.dark}" stroke="${c.light}" stroke-width="4"/><g stroke="${c.light}" stroke-width="3">${marks}</g><circle cx="100" cy="100" r="48" fill="none" stroke="${c.mid}" stroke-width="2"/><path d="M100 100V57M100 100L131 120" stroke="#fff0bf" stroke-width="5" stroke-linecap="round"/><circle cx="100" cy="100" r="7" fill="#fff0bf"/>`,
       transcendent:`<circle cx="100" cy="100" r="60" fill="#11132e"/><g fill="none" stroke-width="3"><ellipse cx="100" cy="100" rx="73" ry="28" stroke="#c49eff" transform="rotate(-32 100 100)"/><ellipse cx="100" cy="100" rx="73" ry="28" stroke="#68e2ff" transform="rotate(32 100 100)"/></g><path d="M53 100C53 64 81 69 100 100S147 136 147 100S119 64 100 100S53 136 53 100" fill="none" stroke="#eadeff" stroke-width="7"/><g fill="#f4edff">${Array.from({length:18},(_,i)=>`<circle cx="${32+i*31%137}" cy="${33+i*47%135}" r="${i%3===0?2:1}"/>`).join('')}</g>`
     };
-    return {defs:radialGrad(uid+'-skin-wax',c),art:`<g data-eternity-skin="${s}"><circle cx="100" cy="100" r="82" fill="url(#${uid}-skin-wax)"/><circle cx="100" cy="100" r="76" fill="none" stroke="${c.light}" stroke-width="2" opacity=".4"/>${motifs[s]||motifs.common}</g>`};
+    return {defs:radialGrad(uid+'-skin-wax',c),art:`<g data-eternity-skin="${s}"><circle cx="100" cy="100" r="82" fill="url(#${uid}-skin-wax)"/><circle cx="100" cy="100" r="76" fill="none" stroke="${c.light}" stroke-width="2" opacity=".4"/><g class="skin-motif skin-${s}">${motifs[s]||motifs.common}</g></g>`};
   },
   transcendent(uid,ball) {
     const d=ball.design,m=d.motif;

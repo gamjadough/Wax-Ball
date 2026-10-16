@@ -360,6 +360,7 @@
      2. 왁뿌볼 등장시키기
      ========================================================================== */
   function spawnBall(animate) {
+    window.WakppuSkinEffects?.reset(svgEl);
     adminFade?.cancel();adminFade=null;
     whiteholeEffect?.cancel();whiteholeEffect=null;
     transcendentEffect?.cancel();transcendentEffect=null;itemAward=null;pendingItemHits=[];
@@ -602,6 +603,7 @@
 
     hintEl.classList.add('gone');
     playHitSound(data, v, isFinal);      // ① 소리
+    window.WakppuSkinEffects?.hit({ball:data,svg:svgEl,progress:v});
     squish(clientX, v, isHammer);        // ② 눌림
     if (isFinal) {
       breakBall(data);                   // ③ 마지막: 깨짐
@@ -1251,6 +1253,14 @@
 
   loadProgress();
   window.WakppuGameTest = {
+    localSkinProgress(value) {
+      if(!window.WakppuAuth?.local||!testSnapshot||state.busy||WAKPPU_BALLS[state.selected].id!=='eternity')return;
+      const progress=Number(value);if(!Number.isFinite(progress))return;
+      state.clicks=Math.floor(currentBall().clicks*clamp(progress,0,.99));
+      updateCracks(state.clicks/currentBall().clicks);
+      window.WakppuSkinEffects?.hit({ball:currentBall(),svg:svgEl,progress:state.clicks/currentBall().clicks});
+      updateAll();
+    },
     prepareLocalTranscendent(id='starlight',mode='last') {
       if(!window.WakppuAuth?.local)return;
       const index=WAKPPU_BALLS.findIndex(b=>b.id===id&&b.grade==='초월');if(index<0)return;
