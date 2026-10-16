@@ -293,3 +293,9 @@ body {
 .ranking-nickname { line-height:1.4; }
 
 .hammer-actions{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:end;gap:8px}.hammer-level-label{display:flex;flex-direction:column;min-width:0;gap:5px;font-size:12px}.hammer-level-label select{width:100%;min-width:0;font:inherit;text-overflow:ellipsis}.hammer-actions .btn{padding:10px 7px;font-size:13px}#hammerInfo{white-space:pre-line}
+
+/* Native select popups must not inherit light text over a browser-default light menu. */
+.hammer-level-label select{color-scheme:dark;background:#252a38;color:#f5f7ff;border-color:#69748c}
+.hammer-level-label select:hover:not(:disabled),.hammer-level-label select:focus{background:#30394b;color:#f5f7ff}
+.hammer-level-label select option{background:#252a38;color:#f5f7ff}
+.hammer-level-label select:disabled{opacity:1;background:#303543;color:#adb7cc;border-color:#4b5468}
