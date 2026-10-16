@@ -89,6 +89,7 @@
     uid: '',            // 현재 SVG 의 id 접두어
     cracks: [],         // 현재 왁뿌볼의 금 목록
     respawnTimer: null,
+    soundStep: 0,
     lastSound: null,    // 같은 소리가 연달아 나오지 않게 기억
     hammerOwned: false,
     hammerLevel: 0,
@@ -371,6 +372,7 @@
 
     state.uid = uid;
     state.clicks = 0;
+    state.soundStep = 0;
     svgEl.innerHTML = buildBallSvgInner(data, uid);
 
     const layer = svgEl.querySelector('#' + uid + '-cracks');
@@ -680,9 +682,9 @@
     else if (v < SOUND_PHASE_LIMITS.mid) list = cfg.mid;
     else list = cfg.late;
 
-    // 방금 낸 소리는 피해서 랜덤 선택 (같은 소리 반복 방지)
-    let name = pick(list);
-    if (list.length > 1) {
+    // 순차 음원은 클릭마다 다음 조각으로, 일반 음원은 같은 소리를 피해 랜덤 선택.
+    let name = cfg.sequence?.length ? cfg.sequence[state.soundStep++ % cfg.sequence.length] : pick(list);
+    if (!cfg.sequence?.length && list.length > 1) {
       let guard = 0;
       while (name === state.lastSound && guard++ < 8) name = pick(list);
     }
@@ -1250,7 +1252,7 @@
   const soundNames = new Set();
   WAKPPU_BALLS.forEach((b) => {
     const cfg = getSoundConfig(b);
-    ['early', 'mid', 'late', 'final'].forEach((k) => cfg[k].forEach((n) => soundNames.add(n)));
+    ['early', 'mid', 'late', 'final', 'sequence'].forEach((k) => (cfg[k]||[]).forEach((n) => soundNames.add(n)));
   });
   SoundManager.init(Array.from(soundNames));
 
