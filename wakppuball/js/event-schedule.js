@@ -19,7 +19,8 @@
   function render(){
     $('scheduleList').replaceChildren();
     for(const [type,label,key] of [['gold','전체 골드 타임','gold_event'],['ball','관리자 왁뿌볼','admin_ball_event']]){
-      const event=snapshot[key];if(!event)continue;
+      const manualKey=type==='gold'?'manual_gold_event':'manual_ball_event';
+      const event=Object.prototype.hasOwnProperty.call(snapshot,manualKey)?snapshot[manualKey]:(snapshot[key]?.source==='weekly'?null:snapshot[key]);if(!event)continue;
       const now=Date.parse(snapshot.server_time),start=Date.parse(event.starts_at),end=Date.parse(event.ends_at);
       if(end<=now)continue;
       const row=document.createElement('p'),text=document.createElement('span'),button=document.createElement('button');

@@ -1,12 +1,3 @@
-.ball-info-row { width:100%; }
-.ball-info-row.has-weekly-event { display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px; }
-.ball-info-row.has-weekly-event .info { grid-column:2;min-width:0; }
-.ball-info-row.has-weekly-event .name { overflow-wrap:anywhere;text-align:center; }
-.weekly-event-notice { grid-column:1;justify-self:end;max-width:230px;padding:8px 11px;border:1px solid #7fa7c440;border-radius:11px;background:#152532e8;color:#c2dceb;box-shadow:0 3px 12px #0002;pointer-events:none;text-align:left;font-size:11px;line-height:1.55; }
-.weekly-event-notice strong { display:block;font-size:11px;color:#e1eff7; }
-.weekly-event-notice p { margin:2px 0 0;overflow-wrap:anywhere; }
 .gold-event-banner[data-source="manual"] { border-color:#d6a7ec;background:#34203f;color:#f1d4ff; }
 .gold-event-banner[data-source="manual"][data-phase="active"] { background:#4b2b5c; }
 #adminBallEventBanner[data-source="manual"] { background:#2d1738;color:#eed0fb; }
-@media(max-width:600px) { .ball-info-row.has-weekly-event {grid-template-columns:minmax(105px, .8fr) minmax(0,1.4fr);gap:10px;} .weekly-event-notice {justify-self:start;max-width:100%;padding:6px 8px;} }
-@media(max-height:600px) { .weekly-event-notice {padding:5px 8px;font-size:10px;line-height:1.4;} .weekly-event-notice strong {font-size:10px;} }

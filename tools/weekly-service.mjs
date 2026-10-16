@@ -9,5 +9,14 @@ export function weeklyCandidate(rows,kind,now=Date.now()){
  }
  return events.sort((a,b)=>Date.parse(a.starts_at)-Date.parse(b.starts_at))[0]||null;
 }
-export function refreshWeekly(s,now=Date.now()){if(!s.weekly_events||s.maintenance)return;for(const [kind,key] of [['gold','gold_event'],['ball','admin_ball_event']]){const e=s[key];if(e&&e.source!=='weekly'&&Date.parse(e.ends_at)>now)continue;s[key]=weeklyCandidate(s.weekly_events,kind,now);}}
+export function refreshWeekly(s,now=Date.now()){
+ if(s._manual_editing||!s.weekly_events||s.maintenance)return;
+ for(const [kind,key] of [['gold','gold_event'],['ball','admin_ball_event']]){
+  if(s.separated_events){
+   const manual=s[kind==='gold'?'manual_gold_event':'manual_ball_event'],weekly=weeklyCandidate(s.weekly_events,kind,now);
+   const active=e=>e&&Date.parse(e.starts_at)<=now&&Date.parse(e.ends_at)>now;
+   s[key]=active(manual)?manual:active(weekly)?weekly:manual&&Date.parse(manual.ends_at)>now&&(!weekly||Date.parse(manual.starts_at)<=Date.parse(weekly.starts_at))?manual:weekly;
+  }else {const e=s[key];if(e&&e.source!=='weekly'&&Date.parse(e.ends_at)>now)continue;s[key]=weeklyCandidate(s.weekly_events,kind,now);}
+ }
+}
 export function skipWeekly(s,kind){const e=s[kind==='gold'?'gold_event':'admin_ball_event'];if(e?.source==='weekly'){const r=weeklyRows(s).find(r=>r.id===e.schedule_id);r['skip_'+kind]=new Date(Date.parse(e.starts_at)+9*3600000).toISOString().slice(0,10);}}
