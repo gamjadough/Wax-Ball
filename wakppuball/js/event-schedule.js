@@ -19,11 +19,12 @@
   function render(){
     $('scheduleList').replaceChildren();
     for(const [type,label,key] of [['gold','전체 골드 타임','gold_event'],['ball','관리자 왁뿌볼','admin_ball_event']]){
-      const event=snapshot[key];if(!event)continue;
+      const manualKey=type==='gold'?'manual_gold_event':'manual_ball_event';
+      const event=Object.prototype.hasOwnProperty.call(snapshot,manualKey)?snapshot[manualKey]:(snapshot[key]?.source==='weekly'?null:snapshot[key]);if(!event)continue;
       const now=Date.parse(snapshot.server_time),start=Date.parse(event.starts_at),end=Date.parse(event.ends_at);
       if(end<=now)continue;
       const row=document.createElement('p'),text=document.createElement('span'),button=document.createElement('button');
-      text.textContent=`${label} · ${now<start?'예약':'진행 중'} · 시작 ${korean(start)} · 종료 ${korean(end)}${type==='gold'?' · Gold ×'+event.multiplier:''} (한국 시간) `;
+      text.textContent=`${event.source==='weekly'?'📅 금요일 정기 이벤트':'👑 관리자 특별 이벤트'} · ${label} · ${now<start?'예약':'진행 중'} · 시작 ${korean(start)} · 종료 ${korean(end)}${type==='gold'?' · Gold ×'+event.multiplier:''} (한국 시간) `;
       button.className='btn small';button.type='button';button.textContent=now<start?'예약 취소':'즉시 종료';button.disabled=pending;
       button.onclick=async()=>{
         if(pending||!confirm(`${label} ${button.textContent}하시겠습니까?`))return;

@@ -18,3 +18,10 @@ The user has authorized automatically deploying future completed changes in this
 - Integrate tested changes into the current remote main without overwriting concurrent work, then push main and verify the production deployment.
 - Apply and verify required database or server changes as part of deployment. Do not treat a Git push alone as proof that these changes are live.
 - Do not ask for deployment approval again. Report any failed checks or deployment blockers instead of deploying an unverified patch.
+
+## Administrator content access
+
+- New items, skins and wax balls must be immediately usable by a signed-in, non-anonymous administrator without purchases, draws or event dates. Use the shared server-side administrator content check; never trust client metadata for roles.
+- Normal balls and inventory items use their server catalogs for automatic access. When adding a new content category such as skins, connect its ownership/selection API and UI to the same rule, including future catalog additions.
+- Administrator consumable use must preserve actual purchased stock. Keep effect duration, request idempotency, revisions, bans and server availability checks intact.
+- Preserve administrator access after rebirth; test ordinary users and revoked/anonymous administrator sessions separately.

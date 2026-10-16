@@ -1,0 +1,3 @@
+.gold-event-banner[data-source="manual"] { border-color:#d6a7ec;background:#34203f;color:#f1d4ff; }
+.gold-event-banner[data-source="manual"][data-phase="active"] { background:#4b2b5c; }
+#adminBallEventBanner[data-source="manual"] { background:#2d1738;color:#eed0fb; }

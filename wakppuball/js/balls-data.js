@@ -24,7 +24,7 @@ const REBIRTH_COSTS = (() => {
 })();
 const rebirthMultiplier = (count) => 2n ** BigInt(count);
 const WAKPPU_BALLS = [
-  {id:'yellow',name:'노란색 왁뿌볼',grade:'일반',gradeColor:'#aeb5bd',price:0,clicks:5,reward:1,design:{art:'plain',shape:'circle',colors:{light:'#fff0a3',mid:'#f3c83e',dark:'#a97812'},crack:{dark:'#72520b',light:'#fff7c9'},chip:'#edbd2c'},sound:{}},
+  {id:'yellow',name:'노란색 왁뿌볼',grade:'일반',gradeColor:'#aeb5bd',price:0,clicks:5,reward:1,design:{art:'plain',shape:'circle',colors:{light:'#fff0a3',mid:'#f3c83e',dark:'#a97812'},crack:{dark:'#72520b',light:'#fff7c9'},chip:'#edbd2c'},sound:{early:['yellow-crack-1.wav'],mid:['yellow-crack-2.wav'],late:['yellow-crack-4.wav'],final:['yellow-crack-5.wav'],sequence:['yellow-crack-1.wav','yellow-crack-2.wav','yellow-crack-3.wav','yellow-crack-4.wav','yellow-crack-5.wav'],pitchRandom:0,volumeRandom:0}},
   {id:'green',name:'초록색 왁뿌볼',grade:'일반',gradeColor:'#aeb5bd',price:10,clicks:8,reward:10,design:{art:'plain',shape:'circle',colors:{light:'#c9f8b6',mid:'#5fcf63',dark:'#2a8a3f'},crack:{dark:'#1c5a2a',light:'#eaffe3'},chip:'#55c25c'},sound:{}},
   {id:'strawberry',name:'딸기 왁뿌볼',grade:'과일',gradeColor:'#ff7890',price:100,clicks:11,reward:30,design:{art:'strawberry',shape:'strawberry',colors:{light:'#ff9c9c',mid:'#e8283f',dark:'#9a1128'},seed:'#ffe58c',leaf:['#78d95f','#2e8c3c'],crack:{dark:'#4a0613',light:'#ffd6d6'},chip:['#e8283f','#ff7a86']},sound:{pitch:1.04}},
   {id:'apple',name:'사과 왁뿌볼',grade:'과일',gradeColor:'#ff7890',price:250,clicks:14,reward:50,design:{art:'apple',shape:'circle',colors:{light:'#ff9b83',mid:'#df3034',dark:'#83151d'},crack:{dark:'#4e0710',light:'#ffd8d2'},chip:['#df3034','#ff7e67']},sound:{pitch:.98}},

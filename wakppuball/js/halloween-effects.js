@@ -1,5 +1,5 @@
 window.WakppuHalloweenEffects={play({wrap,svg,effects,center,valid,reward,respawn,speed=1,respawnSpeed=1}){
- const nodes=[],animations=[],timers=[];let stopped=false,paid=false;const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const nodes=[],animations=[],timers=[];let stopped=false,paid=false;const reduced=window.WakppuSettings?.reduced()??matchMedia('(prefers-reduced-motion: reduce)').matches;
  function cancel(){stopped=true;timers.forEach(clearTimeout);animations.forEach(a=>a.cancel());nodes.forEach(n=>n.remove());delete wrap.dataset.halloweenPhase;}
  function later(ms,fn){timers.push(setTimeout(()=>{if(stopped)return;if(!valid()){cancel();return;}fn();},ms/speed));}
  wrap.dataset.halloweenPhase='shatter';

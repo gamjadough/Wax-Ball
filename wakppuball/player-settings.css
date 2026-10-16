@@ -1,0 +1,16 @@
+.account-tools{display:flex;align-items:center;gap:6px;flex-shrink:0;white-space:nowrap}
+.settings-sheet{width:min(100%,460px);max-height:88svh;overflow:auto}
+.settings-sheet fieldset{border:1px solid var(--line);border-radius:14px;padding:14px;margin:14px 0;min-width:0}
+.settings-sheet legend{font-weight:700;padding:0 6px}
+.setting-check{display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px;cursor:pointer}
+.setting-check input{width:20px;height:20px;flex-shrink:0;accent-color:#b799ff}
+.setting-volume{display:grid;grid-template-columns:1fr auto;gap:4px 10px;margin:8px 0 16px;font-size:13px}
+.setting-volume input{grid-column:1/-1;width:100%;min-width:0;min-height:32px;margin:0;accent-color:#b799ff}
+.setting-volume output{font-variant-numeric:tabular-nums;color:var(--gold)}
+.settings-sheet .settings-note{font-size:12px;line-height:1.65;color:var(--muted);margin:8px 0}
+.settings-sheet .btn{min-height:44px}.settings-sheet :focus-visible{outline:2px solid #b799ff;outline-offset:3px}
+.reduced-effects .halloween-scenery *,.reduced-effects .halloween-fog::after,.reduced-effects .gem-sparkle,.reduced-effects .gem-shine,.reduced-effects .gold-value.bump,.reduced-effects .transcendent-idle,.reduced-effects .pumpkin-flame,.reduced-effects .pumpkin-ghost{animation:none!important}
+.reduced-effects #ballWrap,.reduced-effects .shard{transform:none!important}
+.reduced-effects .chip,.reduced-effects .whitehole-particle,.reduced-effects .transcendent-fx,.reduced-effects .halloween-fx,.reduced-effects .draw-wax-fragment{display:none!important}
+.no-flashes #flash,.no-flashes .whitehole-glow,.no-flashes .whitehole-wave,.no-flashes .transcendent-fx.ray,.no-flashes .transcendent-fx.ring{display:none!important}
+@media(max-width:420px){.settings-sheet fieldset{padding:10px}.setting-check{font-size:14px}}

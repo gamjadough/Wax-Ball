@@ -1,3 +1,4 @@
+import {unlockAdminBalls} from './admin-content.mjs';
 import {hammerDamage} from './hammer-catalog.mjs';
 import {weeklyRows,refreshWeekly,skipWeekly} from './weekly-service.mjs';
 import {ballCatalog} from './event-ball-catalog.mjs';
@@ -47,6 +48,7 @@ export function execute(store, actor, body) {
   if(isBanned(actor))error('이 계정은 이용이 제한되었습니다.',403);
   if(sleepBlocked)error('수면 시간입니다. 오전 6시부터 다시 이용할 수 있습니다.',503);
   if (store.maintenance && actor.role!=='admin' && !action.startsWith('admin_')) error('점검 중입니다.',503);
+  if(action==='bootstrap')unlockAdminBalls(actor,catalog);
   if(action==='admin_weekly_events'){
     if(actor.is_anonymous)error('관리자 권한이 필요합니다.',403);
     if(!['enable','disable','list'].includes(body.mode))error('반복 예약 작업을 선택하세요.');
@@ -84,6 +86,15 @@ export function execute(store, actor, body) {
     store.logs.push({admin:actor.id,action:'ADMIN_EVENT_SCHEDULE',event_type:kind,after:structuredClone(event),time:new Date().toISOString()});
     return {ok:true,[key]:event,server_time:new Date().toISOString()};
   }
+  if(action==='hammer_select'){
+    const inv=itemState(actor),cached=inv.requests.get(body.request_id);
+    if(cached){if(cached.action!==action)error('요청 ID 충돌');return structuredClone(cached.result);}
+    if(!/^[a-f0-9-]{36}$/.test(body.request_id||''))error('잘못된 요청입니다.');
+    if(body.item_revision!==inv.revision)error('상태를 다시 불러옵니다.',409);
+    if(!('level' in body)||!actor.state.hammer_owned||(body.level!==null&&(!Number.isInteger(body.level)||body.level<0||body.level>actor.state.hammer_level)))error('구매한 망치 레벨 안에서 선택해주세요.');
+    actor.state.hammer_selected_level=body.level;inv.revision++;actor.state.item_revision=inv.revision;
+    const result=snapshot(actor);inv.requests.set(body.request_id,{action,result:structuredClone(result)});return result;
+  }
   if(['items','item_draw','item_use'].includes(action))return itemAction(actor,body);
   if(action==='item_hit'){
     const inv=itemState(actor),cached=inv.requests.get(body.request_id);if(cached){if(cached.action!==action)error('요청 ID 충돌');return structuredClone(cached.result);}
@@ -99,7 +110,7 @@ export function execute(store, actor, body) {
     }
     if(!ball)error('왁뿌볼을 확인해주세요.');
     const coated=Date.parse(actor.state.coating_expires_at)>now,e=itemData.effective(inv.effects,Date.parse(actor.state.honey_expires_at),Date.parse(actor.state.coating_expires_at),now);
-    const total=itemData.required(ball.clicks,e,coated),clicks=Math.min(total,(progress?progress.clicks:(actor.state.current_clicks||0))+itemData.damage(hammerDamage(actor.state.hammer_owned,actor.state.hammer_level),e));
+    const total=itemData.required(ball.clicks,e,coated),clicks=Math.min(total,(progress?progress.clicks:(actor.state.current_clicks||0))+itemData.damage(hammerDamage(actor.state.hammer_owned,actor.state.hammer_level,actor.state.hammer_selected_level),e));
     consumeEffects(actor,'hit',now);let reward=0n;
     if(clicks===total){const g=store.gold_event;reward=itemData.reward(ball.reward,actor.state.rebirths,g&&now>=Date.parse(g.starts_at)&&now<Date.parse(g.ends_at)?g.multiplier:1,e);actor.state.gold=(BigInt(actor.state.gold)+reward).toString();consumeEffects(actor,'break',now);}
     if(progress)progress.clicks=clicks===total?0:clicks;else actor.state.current_clicks=clicks===total?0:clicks;
@@ -113,7 +124,7 @@ export function execute(store, actor, body) {
     if(!/^[a-f0-9-]{36}$/.test(body.request_id||''))error('잘못된 타격 요청입니다.');
     store.event_progress||=new Map();const key=actor.id+':'+e.id,p=store.event_progress.get(key)||{clicks:0};
     if(p.request_id===body.request_id)return p.result;
-    const damage=hammerDamage(actor.state.hammer_owned,actor.state.hammer_level);
+    const damage=hammerDamage(actor.state.hammer_owned,actor.state.hammer_level,actor.state.hammer_selected_level);
     const coated=Date.parse(actor.state.coating_expires_at)>now,total=coated?1200:600;
     const clicks=Math.min(total,p.clicks+damage);let reward=0n;
     if(clicks===total){
@@ -135,7 +146,7 @@ export function execute(store, actor, body) {
   if (action==='bootstrap') return {player:{id:actor.id,nickname:actor.nickname,role:actor.role},state:actor.state,moderation:actor.moderation};
   if (action==='set_nickname') {if(!/^[가-힣a-zA-Z0-9_]{2,16}$/.test(body.nickname)) error('닉네임 형식 오류'); actor.nickname=body.nickname;return {nickname:actor.nickname};}
   // 로컬 샘플 진행도에만 사용됩니다. 운영 저장 검증은 별도 게임 서버에서 처리해야 합니다.
-  if (action==='save_progress') { if((body.item_revision||0)!==itemState(actor).revision)error('아이템 상태를 다시 불러옵니다.',409);if((body.admin_revision||0)!==(actor.state.admin_revision||0)) error('관리자가 변경한 진행도를 다시 불러옵니다.',409);if(Number(body.rebirths)>Number(actor.state.rebirths))itemState(actor).effects={};for(const k of Object.keys(actor.state)) if(k in body && k!=='admin_revision'&&k!=='item_revision') actor.state[k]=body[k];return {state:actor.state}; }
+  if (action==='save_progress') { if((body.item_revision||0)!==itemState(actor).revision)error('아이템 상태를 다시 불러옵니다.',409);if((body.admin_revision||0)!==(actor.state.admin_revision||0)) error('관리자가 변경한 진행도를 다시 불러옵니다.',409);if(Number(body.rebirths)>Number(actor.state.rebirths))itemState(actor).effects={};for(const k of Object.keys(actor.state)) if(k in body && k!=='admin_revision'&&k!=='item_revision'&&k!=='hammer_selected_level') actor.state[k]=body[k];unlockAdminBalls(actor,catalog);return {state:actor.state}; }
   if (action==='admin_search') {const q=String(body.query||'').toLowerCase();return store.players.filter(p=>[p.id,p.nickname].some(v=>v.toLowerCase().includes(q))).map(p=>({id:p.id,nickname:p.nickname,ranking_hidden:p.ranking_hidden===true,state:p.state,moderation:p.moderation}));}
   if (action==='admin_logs') return store.logs.slice(-100).reverse();
   let before, after;

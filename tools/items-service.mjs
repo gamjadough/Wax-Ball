@@ -1,9 +1,10 @@
+import {adminContentAccess} from './admin-content.mjs';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 const sandbox={};vm.runInNewContext(readFileSync(new URL('../wakppuball/js/items-data.js',import.meta.url),'utf8'),sandbox);
 export const itemData=sandbox.WakppuItemData;
 export function itemState(actor){return actor.items||=( {inventory:{},effects:{},pity:0,total:0,revision:0,requests:new Map()} );}
-export function snapshot(actor){const s=itemState(actor);return {inventory:{...s.inventory},effects:structuredClone(s.effects),pity:s.pity,total:s.total,revision:s.revision,gold:String(actor.state.gold)};}
+export function snapshot(actor){const s=itemState(actor);return {admin_content_access:adminContentAccess(actor),inventory:{...s.inventory,...(adminContentAccess(actor)?Object.fromEntries(itemData.list.map(d=>[d.id,Math.max(1,s.inventory[d.id]||0)])):{})},effects:structuredClone(s.effects),pity:s.pity,total:s.total,revision:s.revision,gold:String(actor.state.gold),hammer_selected_level:actor.state.hammer_selected_level??null};}
 export function itemAction(actor,b,{rng=()=>crypto.getRandomValues(new Uint32Array(1))[0]/4294967296,now=Date.now()}={}){
  const s=itemState(actor),fail=(m,status=400)=>{throw Object.assign(new Error(m),{status});};
  if(b.action==='items')return snapshot(actor);
@@ -22,11 +23,11 @@ export function itemAction(actor,b,{rng=()=>crypto.getRandomValues(new Uint32Arr
   }
   actor.state.gold=(BigInt(actor.state.gold)-cost).toString();
  }else if(b.action==='item_use'){
-  const d=itemData.list.find(d=>d.id===b.item_id);if(!d||!(s.inventory[d.id]>0))fail('보유한 아이템이 없습니다.');
+  const d=itemData.list.find(d=>d.id===b.item_id);if(!d||(!adminContentAccess(actor)&&!(s.inventory[d.id]>0)))fail('보유한 아이템이 없습니다.');
   const e=s.effects[d.id]||{};
   if(d.seconds){const end=Math.max(now,e.expires_at||0)+d.seconds*1000;if(end>now+7*86400000)fail('최대 연장 시간은 7일입니다.');s.effects[d.id]={expires_at:end};}
   else s.effects[d.id]={remaining:(e.remaining||0)+d.count};
-  s.inventory[d.id]--;
+  if(!adminContentAccess(actor))s.inventory[d.id]--;
  }else fail('알 수 없는 아이템 작업입니다.');
  s.revision++;actor.state.item_revision=s.revision;
  const result={...snapshot(actor),results};s.requests.set(b.request_id,{action:b.action,result:structuredClone(result)});return result;

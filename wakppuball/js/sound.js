@@ -18,37 +18,60 @@ const SoundManager = (() => {
   const pools = {};      // 소리 이름 → { items: [Audio...], next: 0, ok: false }
   let ctx = null;        // 임시 합성음용 AudioContext
   let noiseBuffer = null;
-  let bgm = null, bgmStarting = false;
-
-  // Called directly from the first pointer gesture, including on mobile Safari.
-  // Keep one player; later taps must not restart or overlap the music.
-  function startBgm() {
-    if (window.WakppuAuth?.local) return;
-    if (!bgm) {
-      bgm = new Audio('sounds/halloween-waltz.mp3');
-      bgm.id = 'backgroundMusic';
-      bgm.loop = true;
-      bgm.volume = 0.3;
-      bgm.preload = 'none';
-      bgm.hidden = true;
-      document.body.append(bgm);
-    }
-    if (!bgm.paused || bgmStarting) return;
-    bgmStarting = true;
-    try {
-      Promise.resolve(bgm.play()).catch(() => {}).finally(() => { bgmStarting = false; });
-    } catch (error) { bgmStarting = false; }
-  }
+  let effectsBus=null,musicBus=null,activated=false,pageActive=true;
+  let bgm=null,bgmStarting=false,musicSource=null,musicAttempt=0;
+  const mediaVolumes=new WeakMap();
 
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const rand = (a, b) => a + Math.random() * (b - a);
+  const audible=()=>pageActive&&!document.hidden&&!window.wakppuServerBlocked;
+  const effectLevel=()=>audible()?(window.WakppuSettings?.effectVolume()??1):0;
+  const musicLevel=()=>!window.WakppuAuth?.local&&audible()?(window.WakppuSettings?.musicVolume()??0):0;
+
+  // Reuse the shared Halloween track. One player, loaded only when enabled.
+  function stopMusic(){
+    musicAttempt++;bgmStarting=false;bgm?.pause();
+  }
+  function startBgm(){
+    if(!bgm){
+      bgm=new Audio();bgm.id='backgroundMusic';bgm.loop=true;bgm.preload='none';bgm.hidden=true;
+      bgm.src='sounds/halloween-waltz.mp3';document.body.append(bgm);
+    }
+    if(ctx&&!musicSource&&ctx.createMediaElementSource){
+      try{musicSource=ctx.createMediaElementSource(bgm);musicSource.connect(musicBus);}catch{}
+    }
+    bgm.volume=musicSource?1:musicLevel();
+    if(!bgm.paused||bgmStarting)return;
+    const attempt=++musicAttempt;bgmStarting=true;
+    try{Promise.resolve(bgm.play()).catch(()=>{}).finally(()=>{if(attempt===musicAttempt)bgmStarting=false;});}
+    catch{bgmStarting=false;}
+  }
+  function syncAudio(){
+    const level=effectLevel();
+    if(effectsBus)effectsBus.gain.value=level;
+    for(const pool of Object.values(pools))for(const audio of pool.items){
+      audio.volume=(mediaVolumes.get(audio)||0)*level;if(level===0)audio.pause();
+    }
+    if(musicBus)musicBus.gain.value=musicLevel();
+    if(!activated||musicLevel()===0){stopMusic();return;}
+    startBgm();
+  }
+  window.addEventListener('wakppu-settings-changed',syncAudio);
+  window.addEventListener('wakppu-access-changed',syncAudio);
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden&&activated&&ctx?.state==='suspended')ctx.resume().then(syncAudio).catch(()=>{});
+    syncAudio();
+  });
+  window.addEventListener('pagehide',()=>{pageActive=false;syncAudio();});
+  window.addEventListener('pageshow',()=>{pageActive=true;syncAudio();});
+  document.addEventListener('keydown',event=>{if(!event.repeat)unlock();},true);
 
   /* ---------- 음원 파일 불러오기 ---------- */
   // names: 사용할 소리 이름 목록 (예: ['tap1', 'tap2', ...])
   function init(names) {
     names.forEach((name) => {
-      if (pools[name]) return;
-      const src = SOUND_SETTINGS.folder + name + SOUND_SETTINGS.extension;
+      if(pools[name])return;
+      const src = SOUND_SETTINGS.folder + name + (/\.(?:mp3|wav|ogg)$/i.test(name)?'':SOUND_SETTINGS.extension);
       const pool = { items: [], next: 0, ok: false };
       pools[name] = pool;
 
@@ -73,19 +96,27 @@ const SoundManager = (() => {
 
   /* ---------- 브라우저 정책상 첫 터치 때 오디오를 깨워야 해요 ---------- */
   function unlock() {
-    startBgm();
-    if (!SOUND_SETTINGS.usePlaceholderSound) return;
-    if (!ctx) {
+    activated=true;
+    if(!audible()||(effectLevel()===0&&musicLevel()===0))return;
+    if (!ctx||ctx.state==='closed') {
       const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      ctx = new AC();
+      if (!AC){syncAudio();return;}
+      try{
+        if(musicSource){stopMusic();musicSource.disconnect();musicSource=null;bgm.remove();bgm=null;}
+        ctx = new AC();noiseBuffer=null;
+        effectsBus=ctx.createGain();effectsBus.connect(ctx.destination);
+        musicBus=ctx.createGain();musicBus.connect(ctx.destination);
+        ctx.onstatechange=syncAudio;
+      }catch{ctx=null;syncAudio();return;}
     }
-    if (ctx.state === 'suspended') ctx.resume();
+    if (ctx.state === 'suspended') ctx.resume().then(syncAudio).catch(()=>{});
+    syncAudio();
   }
 
   /* ---------- 재생 ---------- */
   // opts: { pitch, pitchRandom, volume, volumeRandom }
   function play(name, opts) {
+    if(effectLevel()===0)return;
     const rate = clamp(opts.pitch * (1 + rand(-opts.pitchRandom, opts.pitchRandom)), 0.5, 2);
     const vol = clamp(opts.volume * (1 + rand(-opts.volumeRandom, opts.volumeRandom)), 0, 1);
 
@@ -96,7 +127,7 @@ const SoundManager = (() => {
       try {
         a.pause();
         a.currentTime = 0;
-        a.volume = vol;
+        mediaVolumes.set(a,vol);a.volume = vol*effectLevel();
         // 재생 속도를 바꿀 때 피치도 같이 변하게 (자연스러운 변화용)
         a.preservesPitch = false;
         a.mozPreservesPitch = false;
@@ -154,11 +185,11 @@ const SoundManager = (() => {
   }
 
   function synth(name, rate, vol) {
-    if (!ctx) return;
+    if (!ctx||ctx.state!=='running'||!effectsBus) return;
     const t = ctx.currentTime + 0.005;
     const out = ctx.createGain();
     out.gain.value = vol;
-    out.connect(ctx.destination);
+    out.connect(effectsBus);
     const variant = parseInt((name.match(/\d+$/) || ['1'])[0], 10) || 1;
 
     if (name.indexOf('break') === 0) {

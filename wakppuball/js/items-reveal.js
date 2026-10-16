@@ -26,7 +26,7 @@
     if(!state||state.revealed||breaking)return;
     const r=ranks.findIndex(r=>r.id===defs.find(d=>d.id===state.results[state.index]).rank);
     const done=()=>{breaking=false;if(!state||owner!==account())return;state.revealed=true;persist();render();if(!document.querySelector('#shop').hidden&&!document.querySelector('#shopDraw').hidden)document.querySelector('#drawNext').focus();};
-    if(skip||matchMedia('(prefers-reduced-motion: reduce)').matches){done();return;}
+    if(skip||(window.WakppuSettings?.reduced()??matchMedia('(prefers-reduced-motion: reduce)').matches)){done();return;}
     breaking=true;host.classList.add('draw-breaking');host.querySelector('#drawWaxBall').disabled=true;
     timer=setTimeout(()=>{host.classList.remove('draw-breaking');done();},200+r*125);
   }

@@ -4,6 +4,7 @@
  let shopMode='purchase',showShop=()=>{};
  function status(message){for(const id of ['itemsStatus','shopItemsStatus']){const node=document.getElementById(id);if(node)node.textContent=message;}}
  const ranks=WakppuItemData.ranks,defs=WakppuItemData.list;
+ const stock=id=>data?.admin_content_access?'관리자 · 무제한':data.inventory[id]+'개';
  const format=n=>WakppuGold.compact(n);
  const rank=id=>ranks.find(r=>r.id===id);
  const ready=()=>{const g=window.WakppuItemGame?.read();return g?.ready&&!g.test&&!g.busy&&!g.blocked;};
@@ -33,7 +34,7 @@
   });
   const pages=Math.max(1,Math.ceil(entries.length/pageSize));page=Math.min(page,pages-1);
   const visible=entries.slice(page*pageSize,(page+1)*pageSize);
-  const markup=entries.length?visible.map(d=>'<button type="button" class="item-card" data-item="'+d.id+'" data-rank="'+d.rank+'" style="--item-color:'+rank(d.rank).color+'" aria-label="'+d.name+' · '+rank(d.rank).name+' · 보유 '+data.inventory[d.id]+'개 · 상세 보기"><span class="item-icon" aria-hidden="true">'+d.icon+'</span><span class="item-name">'+d.name+'</span><span class="item-rank">'+rank(d.rank).name+'</span><span class="item-count">×'+data.inventory[d.id]+'</span></button>').join('')+'<div class="item-empty-slot" aria-hidden="true"></div>'.repeat(pageSize-visible.length):'<p class="item-empty-message" role="status">'+(owned.length?'이 등급에 보유한 아이템이 없습니다.':'보유한 아이템이 없습니다.')+'</p>';
+  const markup=entries.length?visible.map(d=>'<button type="button" class="item-card" data-item="'+d.id+'" data-rank="'+d.rank+'" style="--item-color:'+rank(d.rank).color+'" aria-label="'+d.name+' · '+rank(d.rank).name+' · 보유 '+stock(d.id)+' · 상세 보기"><span class="item-icon" aria-hidden="true">'+d.icon+'</span><span class="item-name">'+d.name+'</span><span class="item-rank">'+rank(d.rank).name+'</span><span class="item-count">×'+(data.admin_content_access?'∞':data.inventory[d.id])+'</span></button>').join('')+'<div class="item-empty-slot" aria-hidden="true"></div>'.repeat(pageSize-visible.length):'<p class="item-empty-message" role="status">'+(owned.length?'이 등급에 보유한 아이템이 없습니다.':'보유한 아이템이 없습니다.')+'</p>';
   if(markup!==inventoryMarkup){document.querySelector('#inventoryList').innerHTML=markup;inventoryMarkup=markup;}
   document.querySelector('#inventoryPageInfo').textContent=(page+1)+' / '+pages+' 페이지 · '+entries.length+'종';
   document.querySelector('#inventoryPrevious').disabled=page===0;
@@ -44,7 +45,7 @@
   if(detailLost)selectedId=null;
   document.querySelector('#inventoryBrowse').hidden=!!selected;
   document.querySelector('#inventoryDetail').hidden=!selected;
-  const detail=selected?'<div class="item-detail-card" style="--item-color:'+rank(selected.rank).color+'"><span class="item-detail-icon" aria-hidden="true">'+selected.icon+'</span><h3 id="itemDetailName">'+selected.name+'</h3><span class="item-rank">'+rank(selected.rank).name+'</span><p>보유 수량: '+data.inventory[selected.id]+'개</p><p>'+WakppuItemData.description(selected)+'</p><button class="btn" data-use="'+selected.id+'" '+(busy||!ready()?'disabled':'')+'>사용</button></div>':'';
+  const detail=selected?'<div class="item-detail-card" style="--item-color:'+rank(selected.rank).color+'"><span class="item-detail-icon" aria-hidden="true">'+selected.icon+'</span><h3 id="itemDetailName">'+selected.name+'</h3><span class="item-rank">'+rank(selected.rank).name+'</span><p>보유 수량: '+stock(selected.id)+'</p><p>'+WakppuItemData.description(selected)+'</p><button class="btn" data-use="'+selected.id+'" '+(busy||!ready()?'disabled':'')+'>사용</button></div>':'';
   if(detail!==detailMarkup){
    const using=document.activeElement?.matches('[data-use]');
    document.querySelector('#inventoryDetailContent').innerHTML=detail;detailMarkup=detail;

@@ -34,17 +34,17 @@ try:
             page.wait_for_function('WakppuItems.data!==null')
             page.add_style_tag(content='.local-items-preview{display:none}')
             assert page.locator('#backgroundMusic').count()==0
-            # Local previews deliberately mute BGM. Simulate the production flag
-            # for this dedicated regression of the unchanged production player.
             page.evaluate('WakppuAuth.local=false')
-            if width<500:page.locator('#shopBtn').tap()
-            else:page.locator('#shopBtn').click()
+            page.locator('#settingsBtn').click()
+            assert page.locator('#backgroundMusic').count()==0
+            page.locator('#settingsMusic').check()
             try:
                 page.wait_for_function("(()=>{const a=document.querySelector('#backgroundMusic');return a&&!a.paused&&a.currentTime>0&&Number.isFinite(a.duration);})()",timeout=10000)
             except Exception:
                 print(page.evaluate("(()=>{const a=document.querySelector('#backgroundMusic');return a?{src:a.currentSrc,paused:a.paused,ready:a.readyState,network:a.networkState,error:a.error?.message,time:a.currentTime,duration:a.duration}:null})()"),flush=True)
                 raise
             page.evaluate("document.querySelector('#backgroundMusic').currentTime=5")
+            page.locator('#settingsClose').click();page.locator('#shopBtn').click()
             page.locator('#shopDrawTab').click()
             assert page.evaluate("document.querySelector('#backgroundMusic').currentTime>=5")
             assert page.locator('#backgroundMusic').count()==1
