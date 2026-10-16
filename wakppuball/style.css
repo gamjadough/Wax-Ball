@@ -299,3 +299,13 @@ body {
 .hammer-level-label select:hover:not(:disabled),.hammer-level-label select:focus{background:#30394b;color:#f5f7ff}
 .hammer-level-label select option{background:#252a38;color:#f5f7ff}
 .hammer-level-label select:disabled{opacity:1;background:#303543;color:#adb7cc;border-color:#4b5468}
+
+/* Mobile controls and safe areas also apply to landscape phones. */
+@media (pointer:coarse){
+  .stage{container-type:size}
+  .ball-wrap{width:min(72vw,52svh,360px,90cqh)}
+  .btn,.top-btn,.sheet button,.sheet select{min-height:44px;touch-action:manipulation}
+  .sheet input,.sheet select,.sheet textarea{font-size:16px}
+  .modal{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
+  #game{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+}
