@@ -9,8 +9,11 @@
   }
   function render(){
     const s=current(),banner=document.getElementById('adminBallEventBanner'),info=document.getElementById('adminBallEventInfo');
-    const text=s.phase==='active'?`👑 관리자 왁뿌볼 이벤트 · 남은 시간 ${window.WakppuEventTime.format(s.seconds)} · 도감에서 선택 가능`:s.phase==='scheduled'?`👑 관리자 왁뿌볼 이벤트 · ${window.WakppuEventTime.format(s.seconds)} 후 시작`:'현재 관리자 왁뿌볼 이벤트가 없습니다.';
-    if(banner){banner.hidden=s.phase==='idle';banner.textContent=text;banner.dataset.phase=s.phase;}
+    const weekly=snapshot?.source==='weekly',title=weekly?'📅 금요일 정기 이벤트 · 관리자 볼':'👑 관리자 특별 이벤트 · 왁뿌볼';
+    const text=s.phase==='active'?`${title} · 남은 시간 ${window.WakppuEventTime.format(s.seconds)} · 도감에서 선택 가능`:s.phase==='scheduled'?`${title} · ${window.WakppuEventTime.format(s.seconds)} 후 시작`:'현재 관리자 왁뿌볼 이벤트가 없습니다.';
+    const compact=weekly&&s.phase!=='idle'?`관리자 볼 · ${s.phase==='scheduled'?window.WakppuWeeklyNotice.startsAt(snapshot)+' 시작':window.WakppuEventTime.format(s.seconds)+' 남음'}`:'';
+    window.WakppuWeeklyNotice?.update('ball',compact);
+    if(banner){banner.hidden=s.phase==='idle'||weekly;banner.textContent=text;banner.dataset.phase=s.phase;banner.dataset.source=weekly?'weekly':'manual';}
     if(info)info.textContent=text;
     const start=document.getElementById('adminBallEventStart'),stop=document.getElementById('adminBallEventStop');
     if(start)start.disabled=s.phase!=='idle';if(stop)stop.disabled=s.phase==='idle';
