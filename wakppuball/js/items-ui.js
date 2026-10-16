@@ -7,7 +7,7 @@
  const stock=id=>data?.admin_content_access?'관리자 · 무제한':data.inventory[id]+'개';
  const format=n=>WakppuGold.compact(n);
  const rank=id=>ranks.find(r=>r.id===id);
- const ready=()=>{const g=window.WakppuItemGame?.read();return g?.ready&&!g.test&&!g.busy&&!g.blocked;};
+ const ready=()=>{const g=window.WakppuItemGame?.read();return g?.ready&&!g.test&&!g.busy&&!g.blocked&&!window.WakppuSkins?.busy;};
  function active(){return !!data&&defs.some(d=>{const e=data.effects[d.id];return e&&(d.seconds?e.expires_at>Date.now():e.remaining>0);});}
  function accept(next,syncGold=true){
   const game=window.WakppuItemGame?.read(),revision=Number(next?.revision);
@@ -82,7 +82,7 @@
   document.body.append(modal);
   const shop=document.querySelector('#shop'),purchase=document.querySelector('#shopPurchase'),draw=document.querySelector('#shopDraw'),drawPanel=document.querySelector('#drawPanel');
   draw.append(drawPanel);
-  showShop=(mode=shopMode)=>{const drawing=mode==='draw';shopMode=drawing?'draw':'purchase';modal.hidden=true;shop.hidden=false;purchase.hidden=drawing;draw.hidden=!drawing;drawPanel.hidden=!drawing;shop.querySelector('.sheet').classList.toggle('compact',!drawing);shop.querySelector('.sheet').classList.toggle('items-sheet',drawing);for(const button of document.querySelectorAll('.shop-tabs [role="tab"]')){const selected=button.id===(drawing?'shopDrawTab':'shopPurchaseTab');button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;}if(drawing)refresh();render();};
+  showShop=(mode=shopMode)=>{const drawing=mode==='draw';shopMode=drawing?'draw':'purchase';modal.hidden=true;shop.hidden=false;purchase.hidden=drawing;draw.hidden=!drawing;drawPanel.hidden=!drawing;shop.querySelector('.sheet').classList.toggle('compact',!drawing);shop.querySelector('.sheet').classList.toggle('items-sheet',drawing);for(const button of document.querySelectorAll('.shop-tabs [role="tab"]')){const selected=button.id===(drawing?'shopDrawTab':'shopPurchaseTab');button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;}if(drawing)refresh();render();window.WakppuSkins?.syncShop(drawing);};
   for(const button of document.querySelectorAll('.shop-tabs [role="tab"]'))button.onclick=()=>showShop(button.id==='shopDrawTab'?'draw':'purchase');
   document.querySelector('.shop-tabs').onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const drawing=e.key==='End'||(e.key!=='Home'&&draw.hidden);showShop(drawing?'draw':'purchase');document.querySelector(drawing?'#shopDrawTab':'#shopPurchaseTab').focus();}};
   drawPanel.addEventListener('click',e=>{const button=e.target.closest('[data-pulls]');if(button)transact('item_draw',{count:Number(button.dataset.pulls)});});
@@ -98,7 +98,7 @@
   const effectsSection=modal.querySelector('#itemEffects').closest('section');modal.querySelector('#inventoryPanel').before(effectsSection);
   const badge=document.createElement('button');badge.id='activeItemsBadge';badge.className='btn small active-items-badge';badge.hidden=true;document.querySelector('.top').append(badge);
   let opener;
-  function open(){selectedId=null;opener=document.querySelector('#inventoryBtn');shop.hidden=true;document.querySelector('#inventoryPanel').hidden=false;document.querySelector('#itemsTitle').textContent='인벤토리';modal.hidden=false;document.querySelector('#itemsClose').focus();refresh();render();}
+  function open(){selectedId=null;opener=document.querySelector('#inventoryBtn');shop.hidden=true;document.querySelector('#inventoryPanel').hidden=false;document.querySelector('#itemsTitle').textContent='인벤토리';modal.hidden=false;document.querySelector('#itemsClose').focus();refresh();render();window.WakppuSkins?.syncInventory();}
   function close(){modal.hidden=true;opener?.focus();}
   function back(){const previous=selectedId;selectedId=null;render();modal.querySelector('[data-item="'+previous+'"]')?.focus();}
   document.querySelector('#inventoryBtn').onclick=open;badge.onclick=open;

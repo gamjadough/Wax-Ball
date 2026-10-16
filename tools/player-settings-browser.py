@@ -35,6 +35,7 @@ try:
             try:page.wait_for_load_state('networkidle',timeout=1500)
             except Exception:pass
             page.wait_for_function('!!window.WakppuSettings&&!!window.WakppuItemGame')
+            page.evaluate('WakppuAuth.local=false') # Exercise production music; local previews intentionally mute it.
         admin=browser.new_page();prepare(admin)
         admin.evaluate('(password)=>WakppuAuth.signIn("dodoonglee@gmail.com",password)',password)
         admin.evaluate('WakppuGameTest.restoreAccount()')
@@ -109,6 +110,7 @@ try:
                     page.wait_for_function('!WakppuItemGame.read().busy');page.evaluate('WakppuGameTest.end()')
                     assert page.evaluate('WakppuItemGame.read().gold')==before
             page.reload();page.wait_for_function('!!window.WakppuSettings&&!!window.WakppuItemGame')
+            page.evaluate('WakppuAuth.local=false')
             assert page.evaluate('WakppuSettings.read().music') is True
             assert page.evaluate('WakppuSettings.read().sfxVolume')==35
             assert page.evaluate('__settingsContexts.length')==0 # Stored music never autoplays before a gesture.

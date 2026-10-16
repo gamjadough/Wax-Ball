@@ -7,6 +7,7 @@ import {createStore} from './admin-service.mjs';
 import {execute} from './separate-events-service.mjs';
 import {itemData,itemState,snapshot} from './items-service.mjs';
 import {limitedState,limitedSnapshot} from './limited-service.mjs';
+import {skinAction,skinState} from './skins-service.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../wakppuball');
 const store=createStore(),sessions=new Map();
 // Test clock is available only in this isolated loopback server.
@@ -64,6 +65,17 @@ const server=http.createServer(async(req,res)=>{
           actor.localAuth.passwordHash=scryptSync(body.password,passwordSalt,32);actor.localAuth.pending=false;
         }
         return send(200,{user:localUser(actor)});
+      }
+      if(req.url==='/local/skins-demo'){
+        if(!actor)return send(401,{error:'로컬 로그인 필요'});
+        actor.state.gold='100000000000000000000000';actor.state.unlocked_ball_ids.push('eternity');
+        actor.state.selected_ball_id='yellow';actor.state.current_clicks=0;
+        actor.skins=null;
+        const skins=skinState(actor);skins.pity=99;skins.shards=1000n;
+        return send(200,{ok:true});
+      }
+      if(['skins','skin_draw','skin_exchange','skin_equip'].includes(body.action)){
+        execute(store,actor,{action:'bootstrap'});return send(200,skinAction(actor,body));
       }
       return send(200,execute(store,actor,body));
     }

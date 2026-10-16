@@ -90,5 +90,13 @@ test('items SQL: atomic draw, pity, inventory, effects, stale-save rejection and
   await assert.rejects(send('item_hit',{event_id:'nonexistent'}));
   await db.exec('set role authenticated');await assert.rejects(db.exec("update wakppu_items set pity=99"));await db.exec('reset role');
   assert.equal((await db.query("select has_function_privilege('authenticated','public.wakppu_item_winners(jsonb,bigint)','execute') as allowed")).rows[0].allowed,false);
+  // New skin wrapper must preserve real item state and reject pre-purchase saves.
+  const skinMigration=await readFile(new URL('../supabase/migrations/20261016092330_eternity_skins.sql',import.meta.url),'utf8');
+  const beforeSkins=await get();await db.exec(skinMigration);await db.exec(skinMigration);assert.deepEqual(await get(),beforeSkins);
+  const emptySkins=await rpc(player,{action:'skins'});assert.equal(emptySkins.price,'220000000000000000000');assert.deepEqual(emptySkins.owned,{});
+  await db.exec("update game_states set gold=1000000000000000000000 where user_id='"+player+"';update wakppu_skins set pity=99 where user_id='"+player+"'");
+  const skinDraw=await rpc(player,{action:'skin_draw',count:1,request_id:crypto.randomUUID(),item_revision:emptySkins.revision,skin_revision:0});
+  assert.equal(skinDraw.gold,'780000000000000000000');assert.equal(skinDraw.result.skin_id,'eternity_transcendent');assert.deepEqual((await get()).inventory,beforeSkins.inventory);assert.deepEqual((await get()).effects,beforeSkins.effects);
+  await assert.rejects(rpc(player,{action:'save_progress',item_revision:emptySkins.revision,gold:'1000000000000000000000',rebirths:0}));
  }finally{await db.close();}
 });

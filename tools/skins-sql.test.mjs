@@ -1,0 +1,48 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {createRequire} from 'node:module';
+const require=createRequire(new URL('./test-results/sql-check/package.json',import.meta.url)),{PGlite}=require('@electric-sql/pglite');
+test('SQL skins: one expensive pull, pity, atomic duplicates/exchange, ownership, idempotence, revisions, RLS, maintenance and preservation',async()=>{
+ const db=new PGlite(),u='00000000-0000-0000-0000-000000000001',v='00000000-0000-0000-0000-000000000002';
+ try{
+  await db.exec(`create role anon;create role authenticated;create schema auth;
+   create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('test.uid',true),'')::uuid$$;
+   create table players(user_id uuid primary key,role text default 'player',banned boolean default false);
+   insert into players(user_id) values('${u}'),('${v}');
+   create table game_states(user_id uuid primary key references players,gold numeric default 10000000000000000000000,item_revision bigint default 0,unlocked_ball_ids jsonb default '["yellow"]',rebirths integer default 50,discovered_ball_ids jsonb default '["yellow","green"]',hammer_level integer default 30,honey_expires_at timestamptz default now());
+   insert into game_states(user_id) values('${u}'),('${v}');
+   create table test_settings(maintenance boolean);insert into test_settings values(false);
+   create function public.wakppu_api(b jsonb) returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$begin
+    if b->>'action'='status' then return '{"ok":true}'::jsonb;end if;
+    if auth.uid() is null then raise sqlstate 'PT401';end if;
+    if(select banned from players where user_id=auth.uid()) then raise sqlstate 'PT403';end if;
+    if(select maintenance from test_settings) and (select role from players where user_id=auth.uid())<>'admin' then raise sqlstate 'PT503';end if;
+    if b->>'action'='save_progress' and (b->>'item_revision')::bigint<>(select item_revision from game_states where user_id=auth.uid()) then raise sqlstate 'PT409';end if;
+    return '{}'::jsonb;end$$;`);
+  const sql=await readFile(new URL('../supabase/migrations/20261016092330_eternity_skins.sql',import.meta.url),'utf8');await db.exec(sql);await db.exec(sql);
+  async function rpc(user,b){await db.query("select set_config('test.uid',$1,false)",[user||'']);return (await db.query('select wakppu_api($1::jsonb) as data',[JSON.stringify(b)])).rows[0].data;}
+  const get=()=>rpc(u,{action:'skins'}),send=async(a,more={})=>{const s=await get();return rpc(u,{action:a,request_id:crypto.randomUUID(),item_revision:s.revision,skin_revision:s.skin_revision,...more});};
+  assert.deepEqual(await rpc(null,{action:'status'}),{ok:true});await assert.rejects(rpc(null,{action:'skins'}));
+  const initial=(await db.query('select * from game_states where user_id=$1',[u])).rows[0];
+  let s=await get();assert.equal(s.price,'220000000000000000000');assert.equal(s.pity,0);
+  const before=await get();await assert.rejects(send('skin_draw',{count:5}));assert.deepEqual(await get(),before);
+  await db.query('update wakppu_skins set pity=99 where user_id=$1',[u]);s=await get();
+  const request={action:'skin_draw',count:1,request_id:crypto.randomUUID(),item_revision:s.revision,skin_revision:s.skin_revision};
+  const draw=await rpc(u,request);assert.equal(draw.result.skin_id,'eternity_transcendent');assert.equal(draw.pity,0);assert.equal(draw.total,'1');assert.equal(draw.gold,String(BigInt(initial.gold)-220000000000000000000n));assert.deepEqual(await rpc(u,request),draw);
+  await assert.rejects(rpc(u,{...request,count:3}));await assert.rejects(rpc(u,{action:'save_progress',item_revision:0}));
+  await assert.rejects(send('skin_equip',{ball_id:'eternity',skin_id:'eternity_transcendent'}));
+  await db.query(`update game_states set unlocked_ball_ids=unlocked_ball_ids||'"eternity"'::jsonb where user_id=$1`,[u]);
+  const equipped=await send('skin_equip',{ball_id:'eternity',skin_id:'eternity_transcendent'});assert.equal(equipped.equipped.eternity,'eternity_transcendent');
+  await assert.rejects(send('skin_equip',{ball_id:'eternity',skin_id:'eternity_legendary'}));
+  await db.query('update wakppu_skins set pity=99 where user_id=$1',[u]);const duplicate=await send('skin_draw',{count:1});assert.equal(duplicate.result.duplicate,true);assert.equal(duplicate.shards,'100');assert.equal(duplicate.total,'2');
+  const exchange=await send('skin_exchange',{skin_id:'eternity_hero'});assert.equal(exchange.shards,'0');assert.ok(exchange.owned.eternity_hero);assert.equal(exchange.pity,0);assert.equal(exchange.total,'2');
+  await assert.rejects(send('skin_exchange',{skin_id:'eternity_hero'}));await assert.rejects(send('skin_exchange',{skin_id:'eternity_legendary'}));
+  assert.deepEqual((await rpc(v,{action:'skins'})).owned,{});
+  await db.exec('update test_settings set maintenance=true');await assert.rejects(get());await db.exec('update test_settings set maintenance=false');
+  await db.query('update players set banned=true where user_id=$1',[u]);await assert.rejects(get());await db.query('update players set banned=false where user_id=$1',[u]);
+  const ownedBefore=await get();await db.query('update game_states set rebirths=rebirths+1,gold=0 where user_id=$1',[u]);await db.exec(sql);
+  assert.deepEqual((await get()).owned,ownedBefore.owned);assert.deepEqual((await get()).equipped,ownedBefore.equipped);assert.equal((await get()).total,'2');
+  const final=(await db.query('select * from game_states where user_id=$1',[u])).rows[0];for(const k of ['hammer_level','discovered_ball_ids','honey_expires_at'])assert.deepEqual(final[k],initial[k]);
+  const rollback=await get();await assert.rejects(send('skin_draw',{count:1}));assert.deepEqual(await get(),rollback);
+  const guards=(await db.query("select has_table_privilege('authenticated','wakppu_skins','select') as read,has_table_privilege('authenticated','wakppu_skins','update') as write,has_function_privilege('authenticated','wakppu_api_before_skins(jsonb)','execute') as internal,has_function_privilege('anon','wakppu_api(jsonb)','execute') as status")).rows[0];assert.deepEqual(guards,{read:false,write:false,internal:false,status:true});
+  assert.equal((await db.query("select count(*)::int as n from pg_class where relname in ('wakppu_skins','wakppu_skin_defs','wakppu_skin_requests') and relrowsecurity")).rows[0].n,3);
+ }finally{await db.close();}
+});

@@ -1,6 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync,existsSync} from 'node:fs';
 const read=f=>readFileSync(new URL('../'+f,import.meta.url),'utf8');
-function context(){const c={window:{},DEFAULT_SOUNDS:{early:['tap1'],final:['break'],pitch:1,volume:.9}};vm.createContext(c);vm.runInContext(read('wakppuball/js/skin-sounds.js'),c);vm.runInContext(read('wakppuball/js/sound.js'),c);return c;}
+function context(){const c={window:{addEventListener(){}},document:{addEventListener(){}},DEFAULT_SOUNDS:{early:['tap1'],final:['break'],pitch:1,volume:.9}};vm.createContext(c);vm.runInContext(read('wakppuball/js/skin-sounds.js'),c);vm.runInContext(read('wakppuball/js/sound.js'),c);return c;}
 test('five cosmetic profiles each resolve four real MP3s and do not change stats',()=>{
  const c=context(),profiles=c.window.WakppuSkinSounds.profiles;assert.equal(profiles.length,5);
  for(const p of profiles){const ball={id:'eternity',skinId:p.id,clicks:184320,reward:1000000000};c.ball=ball;

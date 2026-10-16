@@ -1,7 +1,7 @@
 (() => {
  let data=null,tab='normal',busy=false,account=null,detail=false,sequence=0;
  const $=id=>document.getElementById(id),config=WakppuLimitedData;
- const ready=()=>{const g=WakppuItemGame.read();return g.ready&&!g.busy&&!g.blocked&&!g.test&&!busy;};
+ const ready=()=>{const g=WakppuItemGame.read();return g.ready&&!g.busy&&!g.blocked&&!g.test&&!busy&&!window.WakppuSkins?.busy;};
  function renderCurrency(){const badge=$('halloweenCurrency');if(!badge)return;badge.hidden=!data?.season.active||!window.WakppuItemGame?.read().ready;const tokens=String(data?.tokens||0);$('halloweenCurrencyValue').textContent=WakppuGold.compact(tokens);badge.title='할로윈 사탕 '+tokens+'개';badge.setAttribute('aria-label','보유 할로윈 사탕 '+tokens+'개');}
  function accept(next){sequence++;data=next;renderCollection();}
  async function refresh(){const seq=++sequence,user=WakppuItemGame.read().account;if(!user){data=null;renderCollection();return;}try{const next=await WakppuAuth.invoke('limited');if(seq!==sequence||user!==WakppuItemGame.read().account)return;const previous=data?.selected??null;data=next;account=user;if(previous!==next.selected)WakppuLimitedGame.sync(!!next.selected,next.clicks);renderCollection();}catch(e){if($('limitedStatus'))$('limitedStatus').textContent=e.message;}}
