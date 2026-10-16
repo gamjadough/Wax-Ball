@@ -34,6 +34,9 @@ try:
             page.wait_for_function('WakppuItems.data!==null')
             page.add_style_tag(content='.local-items-preview{display:none}')
             assert page.locator('#backgroundMusic').count()==0
+            # Local previews deliberately mute BGM. Simulate the production flag
+            # for this dedicated regression of the unchanged production player.
+            page.evaluate('WakppuAuth.local=false')
             if width<500:page.locator('#shopBtn').tap()
             else:page.locator('#shopBtn').click()
             try:

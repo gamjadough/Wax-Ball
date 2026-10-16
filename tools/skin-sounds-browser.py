@@ -20,10 +20,16 @@ try:
             page.goto(base+'/?preview=skin-sounds')
             try:page.wait_for_load_state('networkidle',timeout=2000)
             except Exception:pass
-            expect(page.locator('#skinSoundSelect')).to_be_visible()
+            expect(page.locator('#previewOpenSkins')).to_be_visible()
             page.wait_for_function('WakppuItemGame.read().test')
             for rank in ['common','rare','hero','legendary','transcendent']:
-                page.locator('#skinSoundSelect').select_option(rank)
+                page.locator('#previewOpenSkins').click()
+                expect(page.locator('#inventorySkinsPage')).to_be_visible()
+                button=page.locator(f'[data-equip-skin="{rank}"]')
+                if button.is_enabled():button.click()
+                expect(button).to_have_text('장착 중')
+                page.locator('#itemsClose').click()
+                expect(page.locator(f'#ballSvg [data-eternity-skin="{rank}"]')).to_have_count(1)
                 for stage in ['early','mid','late','final']:
                     page.locator(f'[data-skin-stage="{stage}"]').click()
                     page.wait_for_function('(file)=>playedClips.includes(file)',arg=f'{rank}-{stage}.mp3')
@@ -35,13 +41,25 @@ try:
                 page.wait_for_function('!WakppuItemGame.read().busy',timeout=15000)
                 assert page.evaluate('WakppuItemGame.read().gold')==before
                 assert page.evaluate('WakppuItemGame.read().test')
+                expect(page.locator('#backgroundMusic')).to_have_count(0)
+            page.reload();page.wait_for_function('WakppuItemGame.read().test')
+            expect(page.locator('#ballSvg [data-eternity-skin="transcendent"]')).to_have_count(1)
+            page.locator('#inventoryBtn').click();page.locator('#inventorySkinsTab').click()
+            expect(page.locator('#skinCards article')).to_have_count(5)
+            page.locator('#inventoryItemsTab').click()
+            expect(page.locator('#inventoryItemsPage')).to_be_visible()
+            expect(page.locator('#inventorySkinsPage')).to_be_hidden()
+            page.locator('#inventorySkinsTab').click()
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
             assert not errors,errors
             out=ROOT/'tools/test-results';out.mkdir(exist_ok=True)
             page.screenshot(path=str(out/f'skin-sounds-{width}.png'),full_page=True)
+            page.locator('#skinUnequip').click();page.locator('#itemsClose').click()
+            expect(page.locator('#ballSvg [data-eternity-skin]')).to_have_count(0)
+            expect(page.locator('#backgroundMusic')).to_have_count(0)
             # Plain local URL must not inject preview controls.
             page.goto(base+'/');expect(page.locator('#skinSoundPreview')).to_have_count(0)
-            context.close();print(f'PASS {width}px: 20 real clips, 5 final hits, no reward/save, responsive, preview isolation',flush=True)
+            context.close();print(f'PASS {width}px: inventory equip/unequip/reload, 5 SVG skins, 20 clips, final hits, no BGM/reward, preview isolation',flush=True)
         browser.close()
 finally:
     server.terminate();server.wait(timeout=10)

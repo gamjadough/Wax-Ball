@@ -23,6 +23,7 @@ const SoundManager = (() => {
   // Called directly from the first pointer gesture, including on mobile Safari.
   // Keep one player; later taps must not restart or overlap the music.
   function startBgm() {
+    if (window.WakppuAuth?.local) return;
     if (!bgm) {
       bgm = new Audio('sounds/halloween-waltz.mp3');
       bgm.id = 'backgroundMusic';

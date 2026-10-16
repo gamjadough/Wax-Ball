@@ -14,3 +14,10 @@ test('unknown skins and other balls retain existing sound config',()=>{
  c.ball=ball;const cfg=vm.runInContext('getSoundConfig(ball)',c);assert.equal(cfg.early[0],'tap1');assert.equal(cfg.final[0],'break');assert.equal(cfg.pitch,ball.sound.pitch);
  }
 });
+test('five distinct SVG appearances preserve original ball stats/design',()=>{
+ const c=context();vm.runInContext(read('wakppuball/js/ball-art.js'),c);
+ const base={id:'eternity',clicks:184320,reward:1000000000,design:{art:'transcendent',motif:'eternity',shape:'circle',colors:{light:'#fff',mid:'#aaa',dark:'#000'},crack:{light:'#fff',dark:'#000'},chip:['#fff']}};
+ const original=JSON.stringify(base),art=new Set();
+ for(const p of c.window.WakppuSkinSounds.profiles){c.ball=c.window.WakppuSkinSounds.appearance({...base,skinId:p.id});assert.equal(c.ball.clicks,base.clicks);assert.equal(c.ball.reward,base.reward);assert.equal(c.ball.design.motif,'eternity');const svg=vm.runInContext("buildBallSvgInner(ball,'test')",c);assert.ok(svg.includes('data-eternity-skin="'+p.id+'"'));art.add(svg);}
+ assert.equal(art.size,5);assert.equal(JSON.stringify(base),original);assert.equal(c.window.WakppuSkinSounds.appearance(base),base);
+});
