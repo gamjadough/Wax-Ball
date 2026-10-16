@@ -21,3 +21,13 @@ test('five distinct SVG appearances preserve original ball stats/design',()=>{
  for(const p of c.window.WakppuSkinSounds.profiles){c.ball=c.window.WakppuSkinSounds.appearance({...base,skinId:p.id});assert.equal(c.ball.clicks,base.clicks);assert.equal(c.ball.reward,base.reward);assert.equal(c.ball.design.motif,'eternity');const svg=vm.runInContext("buildBallSvgInner(ball,'test')",c);assert.ok(svg.includes('data-eternity-skin="'+p.id+'"'));art.add(svg);}
  assert.equal(art.size,5);assert.equal(JSON.stringify(base),original);assert.equal(c.window.WakppuSkinSounds.appearance(base),base);
 });
+test('silver preserves original eternity idle animation and hero uses custom phoenix artwork',()=>{
+ const c=context();vm.runInContext(read('wakppuball/js/ball-art.js'),c);
+ const base={id:'eternity',design:{art:'transcendent',motif:'eternity',shape:'circle',colors:{light:'#fff',mid:'#aaa',dark:'#000'}}};
+ for(const rank of ['common','hero']){
+  c.ball=c.window.WakppuSkinSounds.appearance({...base,skinId:rank});const svg=vm.runInContext("buildBallSvgInner(ball,'unique')",c);
+  if(rank==='common')assert.ok(svg.includes('skin-common transcendent-idle eternity'));
+  else{assert.ok(svg.includes('data-skin-flame="phoenix"'));assert.ok(svg.includes('id="unique-skin-flame"'));assert.ok(svg.includes('url(#unique-skin-fire-core)'));}
+ }
+ const html=read('wakppuball/index.html');for(const f of ['ball-art','transcendent-effects'])assert.ok(html.includes('js/'+f+'.js?v=20261016-skin-art2'));
+});
