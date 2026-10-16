@@ -148,10 +148,11 @@ try:
         context=browser.new_context()
         context.add_init_script('window.AudioContext=undefined;window.webkitAudioContext=undefined;')
         page=context.new_page();page.on('pageerror',lambda e:failure_errors.append(str(e)));prepare(page)
-        page.locator('#settingsBtn').click();expect(page.locator('#settingsMusic')).to_be_disabled()
-        expect(page.locator('#settingsMusicNote')).to_contain_text('지원하지 않습니다')
+        page.locator('#settingsBtn').click();expect(page.locator('#settingsMusic')).to_be_enabled()
+        page.locator('#settingsMusic').check()
+        page.wait_for_function('document.querySelector("#backgroundMusic")?.paused===false')
         assert not failure_errors,failure_errors
-        context.close();print('PASS corrupt/blocked storage and unavailable Web Audio fallbacks',flush=True)
+        context.close();print('PASS corrupt/blocked storage and native music fallback without Web Audio',flush=True)
         browser.close()
 finally:
     server.terminate();server.wait(timeout=10)

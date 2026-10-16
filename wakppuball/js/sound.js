@@ -17,8 +17,9 @@ const SoundManager = (() => {
   const pools = {};      // 소리 이름 → { items: [Audio...], next: 0, ok: false }
   let ctx = null;        // 임시 합성음용 AudioContext
   let noiseBuffer = null;
-  let effectsBus=null,musicBus=null,activated=false,pageActive=true,musicTimer=null,nextBeat=0,beat=0;
-  const musicNodes=new Set(),mediaVolumes=new WeakMap();
+  let effectsBus=null,musicBus=null,activated=false,pageActive=true;
+  let bgm=null,bgmStarting=false,musicSource=null,musicAttempt=0;
+  const mediaVolumes=new WeakMap();
 
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const rand = (a, b) => a + Math.random() * (b - a);
@@ -26,35 +27,23 @@ const SoundManager = (() => {
   const effectLevel=()=>audible()?(window.WakppuSettings?.effectVolume()??1):0;
   const musicLevel=()=>audible()?(window.WakppuSettings?.musicVolume()??0):0;
 
-  // Original synthesized melody: no external audio files or network requests.
-  const melody=[523.25,659.25,783.99,659.25,587.33,523.25,440,0,
-    440,523.25,659.25,523.25,392,440,523.25,0,
-    523.25,440,349.23,440,523.25,659.25,587.33,0,
-    392,493.88,587.33,659.25,587.33,493.88,523.25,0];
-  const chords=[[130.81,164.81,196],[110,130.81,164.81],[87.31,110,130.81],[98,123.47,146.83]];
+  // Reuse the shared Halloween track. One player, loaded only when enabled.
   function stopMusic(){
-    if(musicTimer!==null){clearInterval(musicTimer);musicTimer=null;}
-    for(const node of musicNodes){try{node.osc.stop();node.osc.disconnect();node.gain.disconnect();}catch{}}
-    musicNodes.clear();
+    musicAttempt++;bgmStarting=false;bgm?.pause();
   }
-  function musicTone(frequency,time,duration,volume){
-    const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.value=frequency;
-    gain.gain.setValueAtTime(.0001,time);gain.gain.exponentialRampToValueAtTime(volume,time+.06);
-    gain.gain.exponentialRampToValueAtTime(.0001,time+duration);
-    osc.connect(gain);gain.connect(musicBus);
-    const node={osc,gain};musicNodes.add(node);
-    osc.onended=()=>{musicNodes.delete(node);osc.disconnect();gain.disconnect();};
-    osc.start(time);osc.stop(time+duration+.02);
-  }
-  function musicTick(){
-    if(!ctx||ctx.state!=='running'||musicLevel()===0){syncAudio();return;}
-    if(nextBeat<ctx.currentTime-.3)nextBeat=ctx.currentTime+.03;
-    while(nextBeat<ctx.currentTime+.3){
-      const index=beat%melody.length,note=melody[index];
-      if(note)musicTone(note,nextBeat,.8,.10);
-      if(index%8===0)for(const frequency of chords[Math.floor(index/8)])musicTone(frequency,nextBeat,4,.035);
-      beat++;nextBeat+=.65;
+  function startBgm(){
+    if(!bgm){
+      bgm=new Audio();bgm.id='backgroundMusic';bgm.loop=true;bgm.preload='none';bgm.hidden=true;
+      bgm.src='sounds/halloween-waltz.mp3';document.body.append(bgm);
     }
+    if(ctx&&!musicSource&&ctx.createMediaElementSource){
+      try{musicSource=ctx.createMediaElementSource(bgm);musicSource.connect(musicBus);}catch{}
+    }
+    bgm.volume=musicSource?1:musicLevel();
+    if(!bgm.paused||bgmStarting)return;
+    const attempt=++musicAttempt;bgmStarting=true;
+    try{Promise.resolve(bgm.play()).catch(()=>{}).finally(()=>{if(attempt===musicAttempt)bgmStarting=false;});}
+    catch{bgmStarting=false;}
   }
   function syncAudio(){
     const level=effectLevel();
@@ -63,8 +52,8 @@ const SoundManager = (() => {
       audio.volume=(mediaVolumes.get(audio)||0)*level;if(level===0)audio.pause();
     }
     if(musicBus)musicBus.gain.value=musicLevel();
-    if(!activated||!ctx||ctx.state!=='running'||musicLevel()===0){stopMusic();return;}
-    if(musicTimer===null){nextBeat=ctx.currentTime+.03;beat=0;musicTimer=setInterval(musicTick,200);musicTick();}
+    if(!activated||musicLevel()===0){stopMusic();return;}
+    startBgm();
   }
   window.addEventListener('wakppu-settings-changed',syncAudio);
   window.addEventListener('wakppu-access-changed',syncAudio);
@@ -109,13 +98,14 @@ const SoundManager = (() => {
     if(!audible()||(effectLevel()===0&&musicLevel()===0))return;
     if (!ctx||ctx.state==='closed') {
       const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
+      if (!AC){syncAudio();return;}
       try{
+        if(musicSource){stopMusic();musicSource.disconnect();musicSource=null;bgm.remove();bgm=null;}
         ctx = new AC();noiseBuffer=null;
         effectsBus=ctx.createGain();effectsBus.connect(ctx.destination);
         musicBus=ctx.createGain();musicBus.connect(ctx.destination);
         ctx.onstatechange=syncAudio;
-      }catch{ctx=null;return;}
+      }catch{ctx=null;syncAudio();return;}
     }
     if (ctx.state === 'suspended') ctx.resume().then(syncAudio).catch(()=>{});
     syncAudio();

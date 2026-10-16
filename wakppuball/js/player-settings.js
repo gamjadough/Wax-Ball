@@ -69,8 +69,4 @@
     SoundManager.unlock();SoundManager.play('tap1',{pitch:1,pitchRandom:0,volume:.7,volumeRandom:0});
   });
   document.querySelector('#settingsReset').addEventListener('click',()=>set(defaults));
-  if(!window.AudioContext&&!window.webkitAudioContext){
-    document.querySelector('[data-setting="music"]').disabled=true;
-    document.querySelector('#settingsMusicNote').textContent='이 브라우저는 배경음악을 지원하지 않습니다.';
-  }
 })();
