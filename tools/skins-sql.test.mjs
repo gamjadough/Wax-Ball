@@ -7,6 +7,7 @@ test('SQL skins: one expensive pull, pity, atomic duplicates/exchange, ownership
    create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('test.uid',true),'')::uuid$$;
    create table players(user_id uuid primary key,role text default 'player',banned boolean default false);
    insert into players(user_id) values('${u}'),('${v}');
+   create function public.wakppu_admin_content_access() returns boolean language sql stable as $$select exists(select 1 from players where user_id=auth.uid() and role='admin') and coalesce(current_setting('test.anonymous',true),'false')<>'true'$$;
    create table game_states(user_id uuid primary key references players,gold numeric default 10000000000000000000000,item_revision bigint default 0,unlocked_ball_ids jsonb default '["yellow"]',rebirths integer default 50,discovered_ball_ids jsonb default '["yellow","green"]',hammer_level integer default 30,honey_expires_at timestamptz default now());
    insert into game_states(user_id) values('${u}'),('${v}');
    create table test_settings(maintenance boolean);insert into test_settings values(false);
@@ -44,5 +45,16 @@ test('SQL skins: one expensive pull, pity, atomic duplicates/exchange, ownership
   const rollback=await get();await assert.rejects(send('skin_draw',{count:1}));assert.deepEqual(await get(),rollback);
   const guards=(await db.query("select has_table_privilege('authenticated','wakppu_skins','select') as read,has_table_privilege('authenticated','wakppu_skins','update') as write,has_function_privilege('authenticated','wakppu_api_before_skins(jsonb)','execute') as internal,has_function_privilege('anon','wakppu_api(jsonb)','execute') as status")).rows[0];assert.deepEqual(guards,{read:false,write:false,internal:false,status:true});
   assert.equal((await db.query("select count(*)::int as n from pg_class where relname in ('wakppu_skins','wakppu_skin_defs','wakppu_skin_requests') and relrowsecurity")).rows[0].n,3);
+  const adminSql=await readFile(new URL('../supabase/migrations/20261016110000_admin_skin_access.sql',import.meta.url),'utf8');await db.exec(adminSql);await db.exec(adminSql);
+  await db.query("update players set role='admin' where user_id=$1",[v]);
+  let admin=await rpc(v,{action:'skins'});assert.equal(Object.keys(admin.owned).length,5);assert.equal(admin.can_equip,true);
+  const req={action:'skin_equip',ball_id:'eternity',skin_id:'eternity_transcendent',request_id:crypto.randomUUID(),item_revision:admin.revision,skin_revision:admin.skin_revision};
+  const adminEquipped=await rpc(v,req);assert.equal(adminEquipped.equipped.eternity,'eternity_transcendent');assert.equal(adminEquipped.gold,admin.gold);assert.equal(adminEquipped.shards,'0');assert.deepEqual(await rpc(v,req),adminEquipped);
+  assert.deepEqual((await db.query('select owned from wakppu_skins where user_id=$1',[v])).rows[0].owned,{});
+  await db.query("insert into wakppu_skin_defs values('future_skin','eternity','rare',5,0,3,30)");assert.equal((await rpc(v,{action:'skins'})).owned.future_skin,true);
+  await db.query('update game_states set rebirths=rebirths+1 where user_id=$1',[v]);assert.equal(Object.keys((await rpc(v,{action:'skins'})).owned).length,6);
+  await db.exec("select set_config('test.anonymous','true',false)");assert.deepEqual((await rpc(v,{action:'skins'})).owned,{});
+  await assert.rejects(rpc(v,{...req,request_id:crypto.randomUUID(),item_revision:adminEquipped.revision,skin_revision:adminEquipped.skin_revision}));
+  await db.exec("select set_config('test.anonymous','false',false)");await db.query("update players set role='player' where user_id=$1",[v]);assert.deepEqual((await rpc(v,req)).owned,{});assert.deepEqual((await rpc(v,{action:'skins'})).owned,{});
  }finally{await db.close();}
 });

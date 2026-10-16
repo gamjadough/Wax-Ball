@@ -12,3 +12,10 @@ test('pity is independent, stale writes/forged equips fail and retries never cha
  const b={action:'skin_draw',count:1,request_id:crypto.randomUUID(),item_revision:0,skin_revision:0};const s=skinAction(p,b,()=>0);assert.equal(s.result.skin_id,'eternity_transcendent');assert.deepEqual(skinAction(p,b),s);assert.throws(()=>skinAction(p,{...b,count:5}));assert.throws(()=>send(p,'skin_equip',{ball_id:'eternity',skin_id:'eternity_rare'}));
  assert.equal(send(p,'skin_equip',{ball_id:'eternity',skin_id:'eternity_transcendent'}).equipped.eternity,'eternity_transcendent');assert.equal(send(p,'skin_equip',{ball_id:'eternity',skin_id:null}).equipped.eternity,undefined);
 });
+test('admin virtual skins preserve purchased ownership and disappear for revoked or anonymous roles',()=>{
+ const p=player();p.role='admin';p.state.unlocked_ball_ids=['yellow'];
+ assert.equal(Object.keys(skinAction(p,{action:'skins'}).owned).length,5);
+ const s=send(p,'skin_equip',{ball_id:'eternity',skin_id:'eternity_transcendent'});assert.equal(s.equipped.eternity,'eternity_transcendent');assert.deepEqual(skinState(p).owned,{});assert.equal(s.shards,'0');
+ p.is_anonymous=true;assert.deepEqual(skinAction(p,{action:'skins'}).owned,{});assert.throws(()=>send(p,'skin_equip',{ball_id:'eternity',skin_id:'eternity_rare'}));
+ p.is_anonymous=false;p.role='player';assert.deepEqual(skinAction(p,{action:'skins'}).owned,{});
+});
