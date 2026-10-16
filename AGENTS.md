@@ -25,3 +25,10 @@ The user has authorized automatically deploying future completed changes in this
 - Normal balls and inventory items use their server catalogs for automatic access. When adding a new content category such as skins, connect its ownership/selection API and UI to the same rule, including future catalog additions.
 - Administrator consumable use must preserve actual purchased stock. Keep effect duration, request idempotency, revisions, bans and server availability checks intact.
 - Preserve administrator access after rebirth; test ordinary users and revoked/anonymous administrator sessions separately.
+
+## Mobile support for future changes
+
+- Treat mobile usability and performance as a default requirement for future interface, game and effect changes, as requested by the user.
+- Validate affected flows with touch-enabled phone emulation, including narrow portrait and landscape layouts. Check viewport overflow, reachable controls, safe areas and scrolling; keep touch targets at least 44px where practical.
+- Avoid unnecessary concurrent image decoding and excessive effects on small screens. Preserve mute, reduced motion, gameplay rewards and lifecycle cleanup.
+- Report browser emulation accurately; do not claim physical-device testing unless performed. Scale regression checks to the change.

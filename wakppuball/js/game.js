@@ -385,6 +385,7 @@
     animationEpoch++;
     clearTimeout(state.respawnTimer);
     const data = currentBall();
+    if(data.id==='halloween-pumpkin-2026')window.WakppuHalloweenEffects?.prepare();
     const shape = SHAPES[data.design.shape] || SHAPES.circle;
     const uid = makeUid();
 
@@ -1307,6 +1308,7 @@
     const cfg = getSoundConfig(b);
     ['early', 'mid', 'late', 'final', 'sequence'].forEach((k) => (cfg[k]||[]).forEach((n) => soundNames.add(n)));
   });
+  soundNames.add('jackolantern-sting.wav');
   SoundManager.init(Array.from(soundNames));
 
   loadProgress();

@@ -26,7 +26,7 @@ try:
             assert page.evaluate('WakppuLimited.data.tokens')==0
             assert page.evaluate('WakppuLimited.data.owned[WakppuLimitedData.ball.id].reward')=='1500000000'
             expect(page.locator('[data-limited-select]')).to_be_enabled();page.locator('[data-limited-select]').click()
-            expect(page.locator('#collection')).to_be_hidden();expect(page.locator('#ballName')).to_have_text('할로윈 호박 왁뿌볼')
+            expect(page.locator('#collection')).to_be_hidden();expect(page.locator('#ballName')).to_have_text('잭오랜턴 왁뿌볼')
             expect(page.locator('#ballSvg .pumpkin-flame')).to_have_count(1)
             gold=int(page.evaluate('WakppuItemGame.read().gold'))
             page.locator('#ballSvg').click(position={'x':150,'y':150})
@@ -34,16 +34,16 @@ try:
             page.wait_for_function('(gold)=>BigInt(WakppuItemGame.read().gold)===BigInt(gold)+1500000000n',arg=str(gold))
             page.wait_for_timeout(1500)
             assert int(page.evaluate('WakppuItemGame.read().gold'))==gold+1500000000
-            expect(page.locator('#ballName')).to_have_text('할로윈 호박 왁뿌볼')
+            expect(page.locator('#ballName')).to_have_text('잭오랜턴 왁뿌볼')
             page.reload();page.wait_for_function('WakppuLimited.data?.selected===WakppuLimitedData.ball.id')
-            expect(page.locator('#ballName')).to_have_text('할로윈 호박 왁뿌볼')
+            expect(page.locator('#ballName')).to_have_text('잭오랜턴 왁뿌볼')
             page.locator('[data-demo="ended"]').click();page.wait_for_function('WakppuLimited.data?.season.active===false')
             page.locator('#collectionBtn').click();expect(page.locator('#limitedCollection')).to_be_visible();page.locator('[data-limited-detail]').click()
             expect(page.locator('#limitedPeriod')).to_contain_text('기간 종료');expect(page.locator('.limited-detail')).to_contain_text('보유 중' if not page.evaluate('WakppuLimited.data.selected') else '사용 중')
             page.locator('#normalCollectionTab').click();page.locator('[data-detail="0"]').click();page.locator('[data-action="select"]').click()
             expect(page.locator('#ballName')).to_have_text('노란색 왁뿌볼')
             page.locator('#collectionBtn').click();page.locator('#limitedCollectionTab').click();page.locator('[data-limited-detail]').click();page.locator('[data-limited-select]').click()
-            expect(page.locator('#ballName')).to_have_text('할로윈 호박 왁뿌볼')
+            expect(page.locator('#ballName')).to_have_text('잭오랜턴 왁뿌볼')
             page.locator('#rebirthBtn').click();page.locator('#rebirthConfirm').click();page.wait_for_timeout(1000);page.evaluate('WakppuLimited.refresh()')
             assert page.evaluate('!!WakppuLimited.data.owned[WakppuLimitedData.ball.id]')
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
@@ -62,12 +62,12 @@ try:
         assert page.evaluate('WakppuLimited.data.season.active')==False
         page.locator('#collectionBtn').click();page.locator('#limitedCollectionTab').click();page.locator('[data-limited-detail]').click()
         expect(page.locator('.limited-detail')).to_contain_text('관리자 상시 이용');expect(page.locator('[data-limited-select]')).to_be_enabled()
-        page.locator('[data-limited-select]').click();expect(page.locator('#ballName')).to_have_text('할로윈 호박 왁뿌볼')
+        page.locator('[data-limited-select]').click();expect(page.locator('#ballName')).to_have_text('잭오랜턴 왁뿌볼')
         with page.expect_response(lambda r:'/local/api' in r.url and r.request.post_data_json.get('action')=='limited_hit') as response:
             page.locator('#ballSvg').click(position={'x':150,'y':150})
         assert response.value.ok
         assert page.evaluate('Object.keys(WakppuLimited.data.owned).length')==0
-        page.reload();page.wait_for_function('WakppuLimited.data?.selected===WakppuLimitedData.ball.id');expect(page.locator('#ballName')).to_have_text('할로윈 호박 왁뿌볼')
+        page.reload();page.wait_for_function('WakppuLimited.data?.selected===WakppuLimitedData.ball.id');expect(page.locator('#ballName')).to_have_text('잭오랜턴 왁뿌볼')
         page.screenshot(path=str(ROOT/'tools/test-results/halloween-admin.png'))
         assert not errors,errors;ctx.close()
         browser.close();print('PASS desktop/mobile/reduced motion: collection tabs, purchase, exact reward once, custom effects, reload, event end, normal switching and rebirth ownership')
