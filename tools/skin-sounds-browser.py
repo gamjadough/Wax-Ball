@@ -33,15 +33,28 @@ try:
                 expect(button).to_have_text('장착 중')
                 page.locator('#itemsClose').click()
                 expect(page.locator(f'#ballSvg [data-eternity-skin="{rank}"]')).to_have_count(1)
-                for progress in ['0.25','0.9']:
+                for progress in ['0.25','0.6','0.9']:
                     page.locator(f'[data-skin-progress="{progress}"]').click()
                     if rank=='common':expect(page.locator('[data-skin-impact]')).to_have_count(0)
                     else:expect(page.locator(f'[data-skin-impact="{rank}"]')).to_have_count(1)
+                    if rank=='transcendent':
+                        expect(page.locator('[data-skin-seams] path')).to_have_count(20)
+                        expect(page.locator('[data-skin-impact]')).to_have_attribute('data-glow-phase','faint' if progress=='0.25' else 'pulse')
+                        expect(page.locator('.skin-seam-light')).to_have_count(5)
+                        assert page.locator('.skin-light-particle').count()<=(6 if progress!='0.25' else 0)
+                        animation=page.locator('.skin-seam-light').first.evaluate('(e)=>getComputedStyle(e).animationName')
+                        assert animation==('skin-seam-pulse' if not reduced and progress!='0.25' else 'none')
+                        page.screenshot(path=str(out/f'skin-light-{progress}-{width}-reduced{reduced}.png'))
+                    else:expect(page.locator('.skin-seam-light')).to_have_count(0)
                 if not reduced:page.screenshot(path=str(out/f'skin-hit-{rank}-{width}.png'))
                 for stage in ([] if reduced else ['early','mid','late','final']):
                     page.locator(f'[data-skin-stage="{stage}"]').click()
                     page.wait_for_function('(file)=>playedClips.includes(file)',arg=f'{rank}-{stage}.mp3')
                 page.locator('#skinSoundLast').click()
+                if rank=='transcendent':
+                    expect(page.locator('[data-skin-impact]')).to_have_attribute('data-glow-phase','inward')
+                    particle=page.locator('.skin-light-particle').first.evaluate('(e)=>getComputedStyle(e).animationName')
+                    assert particle==('none' if reduced else 'skin-seam-inward')
                 before=page.evaluate('WakppuItemGame.read().gold')
                 page.evaluate('window.playedClips=[];window.skinPhases=[]')
                 page.locator('#ballSvg').click(position={'x':150,'y':150})
@@ -57,6 +70,7 @@ try:
                 assert page.evaluate('WakppuItemGame.read().gold')==before
                 assert page.evaluate('WakppuItemGame.read().test')
                 expect(page.locator('.transcendent-fx')).to_have_count(0)
+                expect(page.locator('[data-skin-impact]')).to_have_count(0)
                 if rank=='legendary' and not reduced:
                     assert page.evaluate("skinPhases.some(e=>e.phase==='freeze')&&skinPhases.some(e=>e.phase==='rewind')")
                 if rank=='transcendent' and not reduced:assert page.evaluate("skinPhases.some(e=>e.phase==='fold')")

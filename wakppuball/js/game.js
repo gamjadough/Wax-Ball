@@ -1256,7 +1256,7 @@
     localSkinProgress(value) {
       if(!window.WakppuAuth?.local||!testSnapshot||state.busy||WAKPPU_BALLS[state.selected].id!=='eternity')return;
       const progress=Number(value);if(!Number.isFinite(progress))return;
-      state.clicks=Math.floor(currentBall().clicks*clamp(progress,0,.99));
+      state.clicks=Math.min(currentBall().clicks-1,Math.floor(currentBall().clicks*clamp(progress,0,1)));
       updateCracks(state.clicks/currentBall().clicks);
       window.WakppuSkinEffects?.hit({ball:currentBall(),svg:svgEl,progress:state.clicks/currentBall().clicks});
       updateAll();

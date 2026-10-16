@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  if(!window.WakppuAuth?.local)return;
  const storeKey='wakppu-local-eternity-skin-v1',profiles=WakppuSkinSounds.profiles;
  let equipped='common';try{const saved=localStorage.getItem(storeKey);if(saved==='none'||profiles.some(p=>p.id===saved))equipped=saved;}catch{}
+ const requested=new URLSearchParams(location.search).get('skin');if(profiles.some(p=>p.id===requested))equipped=requested;
  const panel=document.createElement('section');panel.id='skinSoundPreview';
  panel.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:9;width:calc(100% - 16px);max-width:720px;max-height:34svh;overflow:auto;padding:12px;background:#171923;color:#eef0f5;border:1px solid #ba86ff;border-radius:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center';
  panel.innerHTML='<strong>영겁 스킨 · 로컬 미리보기 (BGM 없음)</strong><button id="previewOpenSkins" class="btn small">인벤토리 · 스킨</button><p id="previewSkinName" style="width:100%;margin:0;font-size:13px"></p>';
@@ -13,7 +14,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(equipped==='none')delete ball.skinId;else ball.skinId=equipped;
   const cfg=WakppuSkinSounds.config(equipped);if(cfg)SoundManager.init(Object.values(cfg).flat());
   WakppuGameTest.run(mode,'eternity');
-  const motion={common:'기본 파괴 연출',rare:'눈꽃 균열 → 얼음 파편',hero:'내부 불꽃·불씨 → 화염 분출',legendary:'시계 회전 → 파편 정지 → 역회전',transcendent:'공간 균열 → 수축 → 별빛 소멸'};
+  if(mode==='last')WakppuGameTest.localSkinProgress(1);
+  const motion={common:'기본 파괴 연출',rare:'얼음 재질·파편 (상시 움직임 없음)',hero:'내부 불꽃·불씨 → 화염 분출',legendary:'시계 회전 → 파편 정지 → 역회전',transcendent:'균열 틈의 빛·맥동 → 빛 흡수 → 공간 수축·별빛 소멸'};
   note.textContent='장착: '+(profiles.find(p=>p.id===equipped)?.name||'기본 영겁')+' · '+(motion[equipped]||'기본 파괴 연출')+' · 속도·보상 동일';
   panel.querySelectorAll('[data-skin-stage]').forEach(b=>b.disabled=!cfg);
  }

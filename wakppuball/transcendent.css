@@ -29,7 +29,6 @@
 @keyframes transcendent-soul{50%{transform:translateY(-10px) rotate(7deg);opacity:.35}}
 @media(prefers-reduced-motion:reduce){.transcendent-idle{animation:none!important}}
 .skin-motif{transform-origin:100px 100px}
-.skin-rare{animation:skin-frost 3s ease-in-out infinite}
 .skin-hero{animation:skin-fire 1.3s ease-in-out infinite}
 .skin-legendary>path{transform-origin:100px 100px;animation:skin-clock 12s steps(12,end) infinite}
 .skin-transcendent>g:first-of-type{transform-origin:100px 100px;animation:skin-orbit 14s linear infinite}
@@ -38,3 +37,11 @@
 @keyframes skin-clock{to{transform:rotate(360deg)}}
 @keyframes skin-orbit{to{transform:rotate(-360deg)}}
 @media(prefers-reduced-motion:reduce){.skin-motif,.skin-motif *{animation:none!important}}
+[data-skin-impact="transcendent"] .skin-seam-light{opacity:var(--seam-strength,.5)}
+[data-skin-impact="transcendent"][data-glow-phase="pulse"] .skin-seam-light,[data-skin-impact="transcendent"][data-glow-phase="inward"] .skin-seam-light{animation:skin-seam-pulse var(--seam-period,1.4s) ease-in-out infinite}
+.skin-light-particle{animation:skin-seam-escape 1.4s ease-out infinite}
+[data-glow-phase="inward"] .skin-light-particle{animation-name:skin-seam-inward;animation-duration:.6s}
+@keyframes skin-seam-pulse{0%,100%{opacity:calc(var(--seam-strength)*.55)}50%{opacity:var(--seam-strength)}}
+@keyframes skin-seam-escape{0%{opacity:0;transform:translateY(1px)}25%{opacity:.85}100%{opacity:0;transform:translateY(-12px)}}
+@keyframes skin-seam-inward{0%{opacity:.9;transform:translateY(-3px)}100%{opacity:0;transform:translateY(18px)}}
+@media(prefers-reduced-motion:reduce){[data-skin-impact] *{animation:none!important}}
