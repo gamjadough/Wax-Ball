@@ -29,15 +29,21 @@ try:
             expect(page.locator('#goldEventBanner')).to_be_hidden();expect(page.locator('#adminBallEventBanner')).to_be_hidden()
             events();expect(notice).to_contain_text('Gold ×10');expect(notice).to_contain_text('관리자 볼');expect(notice).to_contain_text('남음')
             assert page.evaluate('WakppuGoldEvent.multiplier()')==10
-            box=notice.bounding_box();ballbox=page.locator('#ballWrap').bounding_box()
+            box=notice.bounding_box();namebox=page.locator('#ballName').bounding_box()
             assert box['x']>=0 and box['x']+box['width']<=width+1
-            assert box['y']+box['height']<=ballbox['y']+1,(width,height,box,ballbox)
+            assert box['x']+box['width']<=namebox['x']+1,(width,height,box,namebox)
+            assert box['y']<namebox['y']+namebox['height'] and box['y']+box['height']>namebox['y'],(width,height,box,namebox)
             for selector in ['#shopBtn','#collectionBtn','#rankingBtn']:
                 rect=page.locator(selector).bounding_box()
                 assert not (box['x']<rect['x']+rect['width'] and box['x']+box['width']>rect['x'] and box['y']<rect['y']+rect['height'] and box['y']+box['height']>rect['y']),(selector,width,height)
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
             out=ROOT/'tools/test-results';out.mkdir(parents=True,exist_ok=True)
             page.screenshot(path=str(out/f'weekly-corner-{width}.png'))
+            for name in ['화이트홀','끝없는 유니버스 왁뿌볼']:
+                page.locator('#ballName').evaluate('(e,name)=>e.textContent=name',name)
+                namebox=page.locator('#ballName').bounding_box();box=notice.bounding_box()
+                assert box['x']+box['width']<=namebox['x']+1
+                assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
             events(ball='manual');expect(notice).to_contain_text('Gold ×10');assert '관리자 볼' not in notice.inner_text()
             expect(page.locator('#adminBallEventBanner')).to_be_visible();expect(page.locator('#adminBallEventBanner')).to_contain_text('관리자 특별 이벤트')
             events(gold='manual');expect(notice).to_contain_text('관리자 볼');assert 'Gold' not in notice.inner_text()
