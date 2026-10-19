@@ -1,5 +1,5 @@
 // Local test model only. Production authority is the PostgreSQL migration.
-export const weeklyRows=s=>s.weekly_events||=(['friday-morning','friday-evening'].map((id,i)=>({id,weekday:5,local_time:i?'21:00:00':'07:00:00',ball_seconds:i?900:600,gold_seconds:600,multiplier:i?100:10,enabled:false,skip_gold:null,skip_ball:null})));
+export const weeklyRows=s=>s.weekly_events||=(['friday-morning','friday-evening'].map((id,i)=>({id,weekday:5,local_time:i?'21:30:00':'07:00:00',ball_seconds:i?900:600,gold_seconds:600,multiplier:i?100:10,enabled:false,skip_gold:null,skip_ball:null})));
 export function weeklyCandidate(rows,kind,now=Date.now()){
  const kst=new Date(now+9*3600000),monday=Date.UTC(kst.getUTCFullYear(),kst.getUTCMonth(),kst.getUTCDate())-((kst.getUTCDay()+6)%7)*86400000,events=[];
  for(const r of rows.filter(r=>r.enabled))for(let w=-1;w<=2;w++){

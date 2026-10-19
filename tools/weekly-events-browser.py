@@ -11,8 +11,8 @@ try:
     base=f'http://127.0.0.1:{port}'
     with sync_playwright() as p:
         browser=p.chromium.launch(channel='msedge',headless=True)
-        for width in [390,1200]:
-            context=browser.new_context(viewport={'width':width,'height':900},is_mobile=width<500,has_touch=True)
+        for width,height in [(320,640),(844,390),(1200,900)]:
+            context=browser.new_context(viewport={'width':width,'height':height},is_mobile=width<900,has_touch=True)
             context.route('**/*',lambda r:r.continue_() if r.request.url.startswith(base) else r.fulfill(status=200,body=''))
             page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
             page.goto(base)
@@ -30,7 +30,7 @@ try:
             # The same isolated server is shared across viewport tests.
             if page.locator('#weeklyDisable').is_enabled():page.locator('#weeklyDisable').click();expect(page.locator('#weeklyList')).to_contain_text('꺼짐')
             page.locator('#weeklyEnable').click();expect(page.locator('#weeklyStatus')).to_contain_text('켰습니다')
-            expect(page.locator('#weeklyList')).to_contain_text('07:00');expect(page.locator('#weeklyList')).to_contain_text('21:00')
+            expect(page.locator('#weeklyList')).to_contain_text('07:00');expect(page.locator('#weeklyList')).to_contain_text('21:30');expect(page.locator('#adminWeeklyEvents')).to_contain_text('오후 21:30')
             expect(page.locator('#weeklyList')).to_contain_text('Gold ×100 10분');expect(page.locator('#weeklyList')).to_contain_text('관리자 볼 15분')
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
             out=ROOT/'tools/test-results';out.mkdir(exist_ok=True)
