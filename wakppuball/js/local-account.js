@@ -15,6 +15,8 @@
     linkEmail:email=>accountUpdate('/local/email-link',{email}),
     refreshUser:()=>accountUpdate('/local/verify-email'),
     completeEmailLink:password=>accountUpdate('/local/complete-email-link',{password}),
+    // Available only when the loopback server explicitly enables mock payments.
+    mockCompleteEmailLink:()=>accountUpdate('/local/payments-demo-link'),
     signOut:async()=>{
       if(saved?.user.is_anonymous||saved?.user.user_metadata?.wakppu_email_link_pending)return {error:new Error('이메일 연결·인증·비밀번호 설정을 먼저 완료해주세요.')};
       saved=null;sessionStorage.removeItem('wakppu-local-session');return {error:null};

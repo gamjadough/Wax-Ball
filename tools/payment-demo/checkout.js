@@ -1,0 +1,6 @@
+import {payment} from './client.js';
+const id=new URLSearchParams(location.search).get('order'),status=document.getElementById('checkoutStatus'),buttons=[...document.querySelectorAll('button')];
+let busy=false;
+async function finish(outcome,defer=false){if(busy)return;busy=true;buttons.forEach(b=>b.disabled=true);try{await payment({action:'authorize',order_id:id,outcome});location.assign('/?preview=payments&order='+encodeURIComponent(id)+(defer?'&defer=1':''));}catch(e){status.textContent=e.message;busy=false;buttons.forEach(b=>b.disabled=false);}}
+document.getElementById('mockPay').onclick=()=>finish('success');document.getElementById('mockDefer').onclick=()=>finish('success',true);document.getElementById('mockCancel').onclick=()=>finish('cancel');document.getElementById('mockFail').onclick=()=>finish('fail');
+try{const {order}=await payment({action:'get',order_id:id});document.getElementById('checkoutName').textContent=order.name;document.getElementById('checkoutAmount').textContent=order.amount.toLocaleString('ko-KR')+'원 (모의 금액)';document.getElementById('checkoutOrder').textContent='주문 '+order.id;if(order.status==='created')buttons.forEach(b=>b.disabled=false);else status.textContent='이미 처리됐거나 만료된 주문입니다. 상점에서 구매 내역을 확인하세요.';}catch(e){status.textContent=e.message;}
