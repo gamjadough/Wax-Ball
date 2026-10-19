@@ -1,2 +1,4 @@
 .skin-switch{display:flex;justify-content:center;gap:10px;margin:14px 0}.skin-switch button[aria-pressed=true]{border-color:#c9a8ff;background:#433555}
 .skin-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:12px;margin:14px 0}.skin-card{display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px;text-align:center;background:#212530}.skin-thumb{width:110px;max-width:100%}.skin-thumb svg{display:block;width:100%}.skin-card small{font-size:11px;color:#bdb5cc}.skin-card button{margin-top:auto;max-width:100%;white-space:normal}.skin-card span{font-size:13px}#skinDrawPanel p{line-height:1.7}#skinDrawStatus{white-space:pre-line;color:#d5c0f2}
+
+#shopDraw>.skin-switch{margin-top:0}#shopDraw>.skin-switch button{min-height:44px}
