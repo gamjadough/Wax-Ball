@@ -372,6 +372,7 @@
       });
     });
     window.WakppuSkinEffects?.syncCracks({ball:currentBall(),svg:svgEl,cracks:state.cracks,progress:v});
+    window.WakppuOnboarding?.render();
   }
 
   /* ==========================================================================
@@ -409,6 +410,7 @@
       ], { duration: 380, easing: 'ease-out' });
     }
     state.busy = false;
+    window.WakppuOnboarding?.render();
     if (animate) saveProgress();
     setTimeout(syncBallEvent,0);
     if (!modal.hidden) renderCollection();
@@ -1080,7 +1082,8 @@
 
     const cost = nextRebirthCost();
     rebirthBtn.textContent = `환생 ${state.rebirths}회 · ×${fmt(rebirthMultiplier(state.rebirths))}`;
-    rebirthBtn.disabled = cost === null || state.gold < cost;
+    rebirthBtn.disabled = false; // The explanation stays accessible before the purchase is affordable.
+    rebirthBtn.title = cost===null?'최대 환생 달성':`다음 환생 ${fmt(cost)}G · 눌러 설명 보기`;
 
     const ni = nextLockedIndex();
     if (ni === -1) {
@@ -1095,6 +1098,7 @@
     if (!modal.hidden) renderCollection();
     if (!shopModal.hidden) renderShop();
     saveProgress();
+    window.WakppuOnboarding?.render();
   }
 
   function renderShop() {
@@ -1393,6 +1397,7 @@
     restore:restoreAccount
   };
   window.WakppuSkinGame={refresh:()=>{if(state.busy)return;const clicks=state.clicks;spawnBall(false);state.clicks=Math.min(clicks,currentBall().clicks-1);updateCracks(state.clicks/currentBall().clicks);updateAll();}};
+  window.WakppuBeginnerRead=()=>{const b=currentBall(),ni=nextLockedIndex(),advanced=state.unlocked.some((open,i)=>open&&i>=WAKPPU_BALLS.findIndex(x=>x.id==='planet'));return {gold:String(state.gold),clicks:Math.min(state.clicks,b.clicks),required:b.clicks,damage:HAMMERS[activeHammerLevel()-1]?.cracks||1,busy:state.busy,baseReward:String(b.reward),green:!!state.unlocked[1],hammer:state.hammerOwned,early:state.rebirths===0&&!advanced&&accountRole!=='admin'&&!testSnapshot,ready:state.remoteReady,next:ni<0?null:{name:WAKPPU_BALLS[ni].name,price:String(WAKPPU_BALLS[ni].price),reward:String(WAKPPU_BALLS[ni].reward),clicks:WAKPPU_BALLS[ni].clicks}};};
   window.WakppuLimitedGame={render:renderCollection,resetCollection:()=>{collectionDetailIndex=null;renderCollection();},sync:(selected,clicks=0)=>{if(eventSelected)switchEvent(false);if(selected)ordinaryClicks.set(state.selected,state.clicks);wrap.classList.remove('broken');spawnBall(true);state.clicks=selected?clicks:(ordinaryClicks.get(state.selected)||0);updateCracks(state.clicks/currentBall().clicks);updateAll();},test:()=>!!testSnapshot};
   restoreAccount();
   let coatingWasActive=coatingActive();

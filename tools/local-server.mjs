@@ -10,6 +10,8 @@ import {limitedState,limitedSnapshot} from './limited-service.mjs';
 import {skinAction,skinState} from './skins-service.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../wakppuball');
 const store=createStore(),sessions=new Map();
+// Opt-in, isolated onboarding preview. Never changes production or other previews.
+if(process.env.WAKPPU_LOCAL_BEGINNER_PREVIEW==='1')for(const actor of store.players)if(actor.role!=='admin')actor.state.gold='0';
 // Test clock is available only in this isolated loopback server.
 if(process.env.WAKPPU_LOCAL_SLEEP_TIME){const time=Date.parse(process.env.WAKPPU_LOCAL_SLEEP_TIME);if(!Number.isFinite(time))throw new Error('Invalid local sleep test time');store.sleep_now_ms=time;}
 const password=randomBytes(9).toString('base64url');

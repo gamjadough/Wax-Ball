@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="admin-selection.css?v=20261006-selection1">
   <link rel="stylesheet" href="admin-ball.css?v=20261007-admin-ball1">
   <link rel="stylesheet" href="player-settings.css?v=20261016-settings1">
+  <link rel="stylesheet" href="beginner.css?v=20261019-preview1">
 </head>
 <body>
   <div id="halloweenScenery" class="halloween-scenery" aria-hidden="true" hidden>
@@ -54,6 +55,10 @@
       <button id="adminBtn" class="btn top-btn" type="button" hidden>관리자 패널</button>
       <div id="goldEventBanner" class="gold-event-banner" hidden role="status"></div>
     </header>
+    <section id="beginnerGuide" class="beginner-guide" aria-label="초반 성장 가이드" hidden>
+      <div><strong id="beginnerGoal"></strong><p id="beginnerGoalNote"></p></div>
+      <button id="beginnerGoalAction" class="btn small" type="button">게임 방법</button>
+    </section>
 
     <!-- 중앙: 왁뿌볼 -->
     <section id="stage" class="stage">
@@ -69,6 +74,10 @@
 
     <!-- 하단: 이름 · 등급 · 버튼 -->
     <footer class="bottom">
+      <div id="ballProgress" class="ball-progress">
+        <span id="ballProgressText"></span><span id="ballRewardText"></span>
+        <progress id="ballProgressBar" max="5" value="0" aria-label="왁뿌볼 파괴 진행"></progress>
+      </div>
       <div class="info">
         <span id="ballGrade" class="grade"></span>
         <h1 id="ballName" class="name"></h1>
@@ -81,6 +90,15 @@
       </div>
     </footer>
   </main>
+  <div id="beginnerHelp" class="modal" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="beginnerHelpTitle">
+      <div class="sheet-head"><h2 id="beginnerHelpTitle">처음이라면 이렇게!</h2><button id="beginnerHelpClose" class="btn small" type="button">닫기</button></div>
+      <ol><li>공을 눌러 깨면 Gold를 받아요. 노란 볼은 5번 눌러 1G!</li><li>10G를 모아 초록 볼을 해금하세요. 기본 보상이 1G에서 10G로 늘어요.</li><li>상점에서 100G 나무 망치를 사세요. 초록 볼을 8번 대신 3번에 깰 수 있어요.</li></ol>
+      <p>망치는 자동으로 적용되고 환생해도 유지돼요. 가격·보상은 기존과 같아요.</p>
+      <p>계정 없이도 이 기기에서 연습할 수 있어요. 닉네임으로 빠른 시작하면 서버 저장·랭킹·이벤트 재화도 사용할 수 있어요. 다른 기기에서 이어 하려면 이메일을 연결하세요.</p>
+      <button id="beginnerStart" class="btn primary" type="button">닉네임으로 빠른 시작 / 계정</button>
+    </div>
+  </div>
 
   <div id="playerSettings" class="modal" hidden>
     <div class="sheet settings-sheet" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
@@ -249,7 +267,8 @@
   <script src="js/skins-ui.js?v=20261016-skins-release1"></script>
   <script src="js/admin-ball-event.js?v=20261016-separate2"></script>
   <script src="js/hammers-data.js?v=20261007-hammer30"></script>
-  <script src="js/game.js?v=20261016-skins-release2"></script>
+  <script src="js/game.js?v=20261019-beginner1"></script>
+  <script src="js/beginner-ui.js?v=20261019-preview1"></script>
   <script src="js/event-schedule.js?v=20261016-separate2"></script>
   <script src="js/weekly-events.js?v=20261016-separate2"></script>
   <script src="js/presence.js?v=20261016-ranking-presence"></script>
