@@ -9,16 +9,22 @@
  const status=text=>{$('purchaseStatus').textContent=text;};
  function cosmetics(){const active=owner===game()?.account&&data;document.documentElement.classList.toggle('purchase-starlight',!!active?.equipped);$('supporterBadge').hidden=!active?.owned?.supporter_pack;$('accountBtn').classList.toggle('supporter-name',!!active?.owned?.supporter_pack);$('renameNicknameInput').classList.toggle('supporter-name',!!active?.owned?.supporter_pack);}
  function bankInfo(bank){return node('p',(bank.bank_name||'')+' '+(bank.account_number||'')+' / 예금주 '+(bank.account_holder||'')+'\n문의: '+(bank.support_contact||''),'purchase-bank');}
+ function equipButton(id){const equip=button(data.equipped?'별빛 오라 스킨 해제':'별빛 오라 스킨 장착',()=>mutate('purchase_equip',{equipped:!data.equipped},data.equipped?'스킨을 해제했습니다.':'별빛 오라 스킨을 장착했습니다. 상점을 닫으면 볼에서 확인할 수 있습니다.'),busy);equip.id=id;equip.classList.add('primary');equip.dataset.purchaseEquip='starlight_skin';return equip;}
  function render(){
-  cosmetics();$('purchaseProducts').replaceChildren();$('purchaseHistory').replaceChildren();$('purchaseOwned').replaceChildren();
+  cosmetics();$('purchaseProducts').replaceChildren();$('purchaseHistory').replaceChildren();$('purchaseOwned').replaceChildren();$('purchaseInventoryContent').replaceChildren();
   $('purchaseNotice').textContent=!game()?.account?'계정에서 로그인한 뒤 주문할 수 있습니다.':!data?'상품 정보를 불러오고 있습니다.':!data.enabled?'판매 준비 중입니다. 현재 새 주문을 받고 있지 않습니다.':!data.eligible?'빠른 시작 계정은 이메일 연결과 인증을 마친 뒤 주문할 수 있습니다.':'계좌이체 후 관리자가 실제 입금을 확인하면 상품을 지급합니다.';
   for(const p of data?.products||[]){
    const card=node('article',undefined,'purchase-card');const icon=node('div',p.id==='starlight_skin'?'✦':'💜',p.id==='starlight_skin'?'purchase-skin-sample':'purchase-pack-sample');icon.setAttribute('aria-hidden','true');
-   const buy=button(data.owned[p.id]?'보유 중':money(p.amount)+' · 주문하기',()=>order(p.id),busy||!data.enabled||!data.eligible||!!data.owned[p.id]);buy.dataset.purchaseProduct=p.id;
-   card.append(icon,node('h3',p.name),node('p',p.description),buy);$('purchaseProducts').append(card);
+   const owned=!!data.owned[p.id],skin=p.id==='starlight_skin';
+   const buy=owned&&skin?equipButton('purchaseCardEquip'):button(owned?'적용 중':money(p.amount)+' · 주문하기',()=>order(p.id),busy||!data.enabled||!data.eligible||owned);buy.dataset.purchaseProduct=p.id;
+   card.append(icon,node('h3',p.name),node('p',p.description));
+   if(owned)card.append(node('p',skin?(data.equipped?'보유 중 · 장착 중':'보유 중 · 미장착'):'보유 중 · 후원자 외형 적용 중','purchase-owned-state'));
+   card.append(buy);$('purchaseProducts').append(card);
   }
   if(data?.owned.supporter_pack)$('purchaseOwned').append(node('p','💜 후원자 칭호와 닉네임 테두리 적용 중'));
-  if(data?.owned.starlight_skin){const equip=button(data.equipped?'별빛 오라 스킨 해제':'별빛 오라 스킨 장착',()=>mutate('purchase_equip',{equipped:!data.equipped},'스킨 장착 상태를 저장했습니다.'),busy);equip.id='purchaseEquip';$('purchaseOwned').append(equip);}
+  $('purchaseOwnedSection').hidden=!data||!Object.keys(data.owned).length;
+  if(data?.owned.starlight_skin){$('purchaseOwned').append(equipButton('purchaseEquip'));$('purchaseInventoryContent').append(node('p','별빛 오라 스킨 · 모든 왁뿌볼에 적용 · '+(data.equipped?'장착 중':'미장착')),equipButton('purchaseInventoryEquip'));}
+  else $('purchaseInventoryContent').textContent='보유한 유료 스킨이 없습니다. 상점의 유료 상점 탭에서 확인하세요.';
   if(!data||!Object.keys(data.owned).length)$('purchaseOwned').textContent='보유한 유료 상품이 없습니다.';
   for(const o of data?.orders||[]){
    const row=node('article',undefined,'purchase-order');row.dataset.purchaseOrder=o.id;
@@ -75,7 +81,8 @@
  }
  async function adminMutate(action,payload){if(adminBusy)return;adminBusy=true;try{await WakppuAuth.invoke(action,payload);if(adminOwner!==game()?.account)return;$('purchaseAdminStatus').textContent='처리했습니다. 거래 기록에 저장되었습니다.';}catch(e){$('purchaseAdminStatus').textContent=e.message;}finally{adminBusy=false;await adminLoad();await refresh();}}
  document.addEventListener('DOMContentLoaded',()=>{
-  $('shopPremium').innerHTML='<h3>💜 유료 상점</h3><p id="purchaseNotice" role="status"></p><p>외형 전용 상품 · 능력치와 Gold 보상은 바뀌지 않습니다.</p><label class="purchase-depositor">입금자명<input id="purchaseDepositor" maxlength="30" autocomplete="name" placeholder="실제 이체에 사용할 이름"></label><div id="purchaseProducts" class="purchase-products"></div><p id="purchaseStatus" role="status"></p><h3>보유 상품</h3><div id="purchaseOwned"></div><h3>최근 주문 내역 (최대 50건)</h3><button id="purchaseRefresh" class="btn small" type="button">주문·지급 상태 새로고침</button><div id="purchaseHistory"></div>';
+  $('shopPremium').innerHTML='<h3>💜 유료 상점</h3><p id="purchaseNotice" role="status"></p><p>외형 전용 상품 · 능력치와 Gold 보상은 바뀌지 않습니다.</p><section id="purchaseOwnedSection" class="purchase-owned" hidden><h3>보유 상품</h3><div id="purchaseOwned"></div></section><p id="purchaseStatus" role="status"></p><label class="purchase-depositor">입금자명<input id="purchaseDepositor" maxlength="30" autocomplete="name" placeholder="실제 이체에 사용할 이름"></label><div id="purchaseProducts" class="purchase-products"></div><h3>최근 주문 내역 (최대 50건)</h3><button id="purchaseRefresh" class="btn small" type="button">주문·지급 상태 새로고침</button><div id="purchaseHistory"></div>';
+  const inventory=node('section');inventory.id='purchaseInventory';inventory.className='purchase-owned';inventory.innerHTML='<h3>유료 스킨 · 모든 볼</h3><div id="purchaseInventoryContent"></div>';($('inventorySkinsPage')||$('itemsModal').querySelector('.sheet')).prepend(inventory);
   $('purchaseRefresh').onclick=refresh;
   const badge=node('span','💜 왁뿌볼 후원자','supporter-badge');badge.id='supporterBadge';badge.hidden=true;document.querySelector('.info').append(badge);
   const admin=node('section');admin.id='purchaseAdmin';

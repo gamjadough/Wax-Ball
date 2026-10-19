@@ -46,9 +46,18 @@ try:
    # Paid skin: admin authority, equip persistence and actual refund state.
    page.locator('[data-purchase-product="starlight_skin"]').tap();skin=rpc('purchase_catalog')['orders'][0]
    login(True);rpc('admin_purchase_approve',order_id=skin['id'],confirmed_amount=3300,deposit_reference='local-'+skin['id'])
-   login();shop();expect(page.locator('#purchaseEquip')).to_be_visible();page.locator('#purchaseEquip').tap()
+   login();shop();expect(page.locator('#purchaseEquip')).to_be_visible()
+   expect(page.locator('#purchaseCardEquip')).to_be_enabled();expect(page.locator('#purchaseCardEquip')).to_contain_text('장착')
+   page.locator('#purchaseCardEquip').tap()
    page.wait_for_function("document.documentElement.classList.contains('purchase-starlight')")
    if reduced:assert page.locator('#ballWrap').evaluate("e=>getComputedStyle(e,'::before').animationName")=='none'
+   page.locator('[data-close="shop"]').tap();page.locator('#inventoryBtn').tap();page.locator('#inventorySkinsTab').tap()
+   expect(page.locator('#purchaseInventoryEquip')).to_be_enabled();expect(page.locator('#purchaseInventoryEquip')).to_contain_text('해제')
+   page.locator('#purchaseInventoryEquip').tap();page.wait_for_function("!document.documentElement.classList.contains('purchase-starlight')")
+   page.locator('#purchaseInventoryEquip').tap();page.wait_for_function("document.documentElement.classList.contains('purchase-starlight')")
+   page.locator('#itemsClose').tap()
+   assert page.locator('#ballWrap').evaluate("e=>getComputedStyle(e,'::before').content")!='none'
+   out=ROOT/'tools/test-results';out.mkdir(parents=True,exist_ok=True);page.screenshot(path=str(out/f'paid-aura-equipped-{width}.png'))
    page.reload();page.wait_for_function('WakppuItemGame.read().ready');shop();page.wait_for_function("document.documentElement.classList.contains('purchase-starlight')")
    page.locator('#shopDrawTab').tap();expect(page.locator('#shopPremium')).to_be_hidden();expect(page.locator('#shopDraw')).to_be_visible()
    page.locator('#shopPurchaseTab').tap();expect(page.locator('#shopPurchase')).to_be_visible();expect(page.locator('#shopPremium')).to_be_hidden()
@@ -56,7 +65,7 @@ try:
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
    assert page.locator('#shop .sheet').evaluate('e=>e.scrollWidth<=e.clientWidth+1')
    out=ROOT/'tools/test-results';out.mkdir(parents=True,exist_ok=True);page.screenshot(path=str(out/f'manual-bank-{width}.png'))
-   login(True);rpc('admin_purchase_refund',order_id=skin['id'],refund_reference='local-refund-'+skin['id']);login();shop();expect(page.locator('#purchaseEquip')).to_have_count(0)
+   login(True);rpc('admin_purchase_refund',order_id=skin['id'],refund_reference='local-refund-'+skin['id']);login();shop();expect(page.locator('#purchaseEquip')).to_have_count(0);expect(page.locator('#purchaseCardEquip')).to_have_count(0);expect(page.locator('#purchaseInventoryEquip')).to_have_count(0)
    assert not page.evaluate("document.documentElement.classList.contains('purchase-starlight')")
    assert not errors,errors;ctx.close();print(f'PASS {width}x{height} reduced={reduced}: shop tabs, claim without grant, admin receipt/grant, equip/reload/refund, Gold unchanged',flush=True)
   browser.close()
