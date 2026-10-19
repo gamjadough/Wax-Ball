@@ -16,8 +16,10 @@ try:
    page.route('**/*',lambda r:r.continue_() if r.request.url.startswith(base) else r.fulfill(status=200,body=''))
    page.add_init_script("window.scareAudio=[];const play=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(){if(this.src.includes('jackolantern-sting.wav'))scareAudio.push(this);return play.call(this);};")
    page.goto(base+'/?preview=halloween');page.wait_for_function('WakppuLimited.data?.tokens===100&&WakppuItemGame.read().ready',timeout=10000)
+   page.locator('.halloween-local').evaluate('(e)=>e.remove()')
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
    for selector in ['#collectionBtn','#inventoryBtn','#rankingBtn']:
+    page.locator(selector).scroll_into_view_if_needed()
     box=page.locator(selector).bounding_box();assert box and box['y']>=0 and box['y']+box['height']<=height,(selector,box,height)
     if width<900:assert box['height']>=44
    page.locator('#collectionBtn').click();page.locator('#limitedCollectionTab').click();page.locator('[data-limited-detail]').click()

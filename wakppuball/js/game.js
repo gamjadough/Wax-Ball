@@ -1308,7 +1308,7 @@
      ========================================================================== */
   // 사용할 소리 이름을 모두 모아서 미리 불러오기
   const soundNames = new Set();
-  WAKPPU_BALLS.forEach((b) => {
+  [...WAKPPU_BALLS,...(window.WakppuLimitedData?[WakppuLimitedData.ball]:[])].forEach((b) => {
     const cfg = getSoundConfig(b);
     ['early', 'mid', 'late', 'final', 'sequence'].forEach((k) => (cfg[k]||[]).forEach((n) => soundNames.add(n)));
   });

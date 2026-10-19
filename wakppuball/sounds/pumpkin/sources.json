@@ -1,0 +1,173 @@
+{
+  "license": "CC0-1.0",
+  "author": "Kenney",
+  "pages": [
+    "https://kenney.nl/assets/impact-sounds",
+    "https://kenney.nl/assets/sci-fi-sounds"
+  ],
+  "sample_rate": 22050,
+  "sources": {
+    "wood": {
+      "file": "impact/Audio/impactWood_light_001.ogg",
+      "sha256": "4b76bf3ccc8e60d19188f3165b778a7817786faa6887c55d9049bcbeef3b425f"
+    },
+    "soft": {
+      "file": "impact/Audio/impactSoft_medium_000.ogg",
+      "sha256": "7d3ba0bb5e60a11b5d3e558c141303dcf494256675fbf753c0d252d2cf0481e3"
+    },
+    "plank": {
+      "file": "impact/Audio/impactPlank_medium_002.ogg",
+      "sha256": "f6a14da45994229676b4f29e6a35f504b5c2ec2b8166fb1a3b1aa004bc6911ef"
+    },
+    "glass": {
+      "file": "impact/Audio/impactGlass_heavy_001.ogg",
+      "sha256": "58686e0e562612cc566791844a10e269f8d1921f4766c14ba43976fd0a429f4e"
+    },
+    "field": {
+      "file": "scifi/Audio/forceField_001.ogg",
+      "sha256": "5574e69dd04e5f59322c5ddffde5978f077b09170ae5e29cec0bd9901828cd90"
+    },
+    "rumble": {
+      "file": "scifi/Audio/lowFrequency_explosion_000.ogg",
+      "sha256": "3cb48d86dab63140cfb9aaeea4d4a6846abaca5831d157d8adbec0490da26343"
+    }
+  },
+  "outputs": [
+    {
+      "file": "tap-1.mp3",
+      "duration": 0.18,
+      "peak": 0.62,
+      "layers": [
+        [
+          "wood",
+          0.78,
+          0.62,
+          0
+        ],
+        [
+          "soft",
+          0.8,
+          0.4,
+          0
+        ],
+        [
+          "field",
+          0.55,
+          0.07,
+          0.015
+        ]
+      ],
+      "sha256": "e5c5289fb2f64dcb6d0aed7f16c9b417a0c62498d1564fd6ab9e87c38c7386f9"
+    },
+    {
+      "file": "tap-2.mp3",
+      "duration": 0.21,
+      "peak": 0.62,
+      "layers": [
+        [
+          "wood",
+          0.71,
+          0.57,
+          0
+        ],
+        [
+          "soft",
+          0.72,
+          0.4,
+          0
+        ],
+        [
+          "field",
+          0.58,
+          0.07,
+          0.018
+        ]
+      ],
+      "sha256": "fd59fc99570346fa5dcfd8dfe4f07e00dbc0cd64922458e3fe6d45e4405b3455"
+    },
+    {
+      "file": "crack-mid.mp3",
+      "duration": 0.29,
+      "peak": 0.5315458467382329,
+      "layers": [
+        [
+          "wood",
+          0.74,
+          0.6,
+          0
+        ],
+        [
+          "plank",
+          0.72,
+          0.38,
+          0.016
+        ],
+        [
+          "field",
+          0.51,
+          0.1,
+          0.035
+        ]
+      ],
+      "sha256": "d9d08cc2b25e703182f306906cb623b3e8a6602dd60c58c65fca444598074f25"
+    },
+    {
+      "file": "crack-late.mp3",
+      "duration": 0.39,
+      "peak": 0.62,
+      "layers": [
+        [
+          "plank",
+          0.67,
+          0.64,
+          0
+        ],
+        [
+          "wood",
+          0.65,
+          0.35,
+          0.025
+        ],
+        [
+          "field",
+          0.5,
+          0.13,
+          0.04
+        ]
+      ],
+      "sha256": "db2dcc2c6067fc51f07f5fca922dfe9ef382502c57f85c8448a03362f5ef0210"
+    },
+    {
+      "file": "break.mp3",
+      "duration": 1.05,
+      "peak": 0.62,
+      "layers": [
+        [
+          "plank",
+          0.67,
+          0.66,
+          0
+        ],
+        [
+          "glass",
+          0.69,
+          0.2,
+          0.035
+        ],
+        [
+          "rumble",
+          0.76,
+          0.28,
+          0.025
+        ],
+        [
+          "field",
+          0.5,
+          0.15,
+          0.08
+        ]
+      ],
+      "sha256": "41b5606e3a7acfb8c8f8bcd9af7faf8412f281a0612abb068968cba6103ce965"
+    }
+  ]
+}
