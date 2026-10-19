@@ -140,7 +140,7 @@ const SoundManager = (() => {
     }
 
     // 음원 파일이 없을 때
-    if (SOUND_SETTINGS.usePlaceholderSound) synth(name, rate, vol);
+    if (SOUND_SETTINGS.usePlaceholderSound && opts.fallback !== false) synth(name, rate, vol);
   }
 
   /* ======================================================================

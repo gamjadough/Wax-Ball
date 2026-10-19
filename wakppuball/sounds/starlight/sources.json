@@ -1,12 +1,11 @@
 {
-  "author": "Kenney",
+  "author": "Wax-Ball project",
   "license": "CC0-1.0",
-  "source_url": "https://kenney.nl/assets/impact-sounds",
-  "source": "impactBell_heavy_002.ogg",
-  "source_sha256": "a4171ed1a4a17fb858a38de1c59b5b42e50d8f046c525706c0e3ac8671f189f5",
-  "output": "chime.wav",
-  "sha256": "10dd720989b13a0f03d1b4413fad142a7796eba6b1dd4a41756d0bff2e58057d",
-  "duration": 0.62,
-  "peak": 0.42,
-  "processing": "600\u20133600 Hz, soft attack, two quiet echoes, fade-out; mono 22050 Hz PCM16"
+  "source": "Original procedural synthesis; no third-party recordings",
+  "generator": "tools/build-starlight-sound.py",
+  "output": "shimmer-v2.wav",
+  "sha256": "0f0fe16229960d5514863d118d3c5da8633099549a11a800381de6d1f36eea7c",
+  "duration": 0.9,
+  "peak": 0.36,
+  "processing": "Harmonic sine tones C5/G5/C6, 45ms soft attack, quiet echoes, fade-out; mono 22050 Hz PCM16"
 }

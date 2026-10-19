@@ -1,8 +1,8 @@
 // Cosmetic only. A single reusable layer follows the ball's own shape and hits.
 (() => {
  'use strict';
- const sound='starlight/chime.wav';
- let active=false,ball=null,layer=null,pulse=null,lastSound=-Infinity;
+ const sound='starlight/shimmer-v2.wav';
+ let active=false,ball=null,layer=null,pulse=null,lastSound=-Infinity,fragments=[];
  const stopped=()=>document.hidden||window.wakppuServerBlocked;
  function ensure(){
   if(layer)return;
@@ -16,28 +16,40 @@
   const color=ball?.id==='blackhole'?'#a9cfff':ball?.id==='whitehole'?'#b6e5ff':(c?.light||(Array.isArray(c)?c[2]:null)||'#e8d5aa');
   document.getElementById('ballWrap')?.style.setProperty('--aura-tint',color);
  }
- function reset(){pulse?.cancel();pulse=null;SoundManager.stop(sound);lastSound=-Infinity;}
+ function clearMotion(){pulse?.cancel();pulse=null;fragments.forEach(a=>a.cancel());fragments=[];}
+ function reset(){clearMotion();SoundManager.stop(sound);lastSound=-Infinity;}
  function setActive(next){
   if(active===!!next)return;active=!!next;
   if(active){ensure();tint();SoundManager.init([sound]);}else reset();
  }
- function spawn(next){ball=next;reset();if(active){ensure();tint();}}
+ function spawn(next){ball=next;reset();document.getElementById('ballWrap')?.classList.remove('purchase-aura-broken');if(active){ensure();tint();}}
+ function shatter({speed=1}={}){
+  const wrap=document.getElementById('ballWrap');
+  if(!active||!wrap||wrap.classList.contains('purchase-aura-broken'))return;
+  ensure();clearMotion();wrap.classList.add('purchase-aura-broken');
+  if(stopped()||window.WakppuSettings?.reduced())return;
+  // The glow is removed immediately; its stars travel outward with the wax.
+  pulse=layer.animate([{opacity:.9},{opacity:0}],{duration:650/speed,fill:'forwards',easing:'ease-out'});
+  const size=wrap.getBoundingClientRect().width;
+  layer.querySelectorAll('.purchase-stars path').forEach((star,i)=>{
+   const angle=(-2.3+i*Math.PI/3),reach=size*.2;
+   fragments.push(star.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${Math.cos(angle)*reach}px,${Math.sin(angle)*reach+size*.08}px) rotate(${i%2?40:-40}deg) scale(.1)`,opacity:0}],{duration:650/speed,fill:'forwards',easing:'ease-out'}));
+  });
+ }
  function hit({final=false}={}){
   if(!active||stopped())return;
   ensure();
   if(layer&&!window.WakppuSettings?.reduced()){
-   pulse?.cancel();pulse=layer.animate(final?[
-    {opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(1.42)'}
-   ]:[{opacity:.7,transform:'scale(.98)'},{opacity:1,transform:'scale(1.035)',offset:.25},{opacity:.7,transform:'scale(1)'}],{duration:final?650:360,easing:'ease-out'});
+   pulse?.cancel();pulse=layer.animate([{opacity:.7,transform:'scale(.98)'},{opacity:1,transform:'scale(1.035)',offset:.25},{opacity:.7,transform:'scale(1)'}],{duration:360,easing:'ease-out'});
   }
   // One short, quiet voice: rapid taps cannot stack an increasingly loud chord.
   const now=performance.now();if(now-lastSound<280&&!final)return;
   if((window.WakppuSettings?.effectVolume()??1)===0)return;
-  lastSound=now;SoundManager.stop(sound);SoundManager.play(sound,{pitch:final?1.12:1,pitchRandom:.015,volume:final?.20:.13,volumeRandom:0});
+  lastSound=now;SoundManager.stop(sound);SoundManager.play(sound,{pitch:final?1.12:1,pitchRandom:.015,volume:final?.20:.13,volumeRandom:0,fallback:false});
  }
  window.addEventListener('pagehide',reset);
- window.addEventListener('wakppu-settings-changed',()=>{if(window.WakppuSettings?.reduced()){pulse?.cancel();pulse=null;}});
+ window.addEventListener('wakppu-settings-changed',()=>{if(window.WakppuSettings?.reduced())clearMotion();});
  document.addEventListener('visibilitychange',()=>{if(document.hidden)reset();});
  window.addEventListener('wakppu-access-changed',()=>{if(window.wakppuServerBlocked)reset();});
- window.WakppuPurchaseEffects={setActive,spawn,hit};
+ window.WakppuPurchaseEffects={setActive,spawn,hit,shatter};
 })();

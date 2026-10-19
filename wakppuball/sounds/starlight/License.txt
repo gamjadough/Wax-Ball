@@ -1,23 +1,8 @@
-	
+Original procedural star shimmer - Wax-Ball project
 
-	Impact Sounds (1.0)
+CC0 1.0 Universal
+https://creativecommons.org/publicdomain/zero/1.0/
 
-	Created/distributed by Kenney (www.kenney.nl)
-	Creation date: 19-12-2019
-
-			------------------------------
-
-	License: (Creative Commons Zero, CC0)
-	http://creativecommons.org/publicdomain/zero/1.0/
-
-	This content is free to use in personal, educational and commercial projects.
-	Support us by crediting Kenney or www.kenney.nl (this is not mandatory)
-
-			------------------------------
-
-	Donate:   http://support.kenney.nl
-	Request:  http://request.kenney.nl
-	Patreon:  http://patreon.com/kenney/
-
-	Follow on Twitter for updates:
-	http://twitter.com/KenneyNL
+Generated with tools/build-starlight-sound.py from mathematical sine tones.
+No third-party samples, metallic recordings, or additional audio licenses.
+This sound is dedicated to the public domain under CC0 1.0.

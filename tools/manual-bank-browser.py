@@ -13,7 +13,7 @@ try:
   for width,height,reduced in [(320,640,False),(844,390,False),(390,844,True),(1200,900,False)]:
    ctx=browser.new_context(viewport={'width':width,'height':height},has_touch=True,is_mobile=width<900,reduced_motion='reduce' if reduced else 'no-preference');page=ctx.new_page();errors=[]
    page.on('pageerror',lambda e:errors.append(str(e)))
-   page.add_init_script("window.auraPlays=[];const original=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(){if(this.src.includes('starlight/chime.wav'))auraPlays.push(this);return original.call(this);};")
+   page.add_init_script("window.auraPlays=[];const original=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(){if(this.src.includes('starlight/shimmer-v2.wav'))auraPlays.push(this);return original.call(this);};")
    page.route('**/*',lambda r:r.continue_() if r.request.url.startswith(base) else r.fulfill(status=200,body=''));page.on('dialog',lambda d:d.accept())
    def rpc(action,**payload):return page.evaluate('async b=>WakppuAuth.invoke(b.action,b)',dict(action=action,**payload))
    def login(admin=False):
@@ -75,6 +75,35 @@ try:
    page.evaluate('WakppuSettings.set({sfx:true});WakppuGameTest.end()')
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
    page.screenshot(path=str(out/f'paid-aura-equipped-{width}.png'))
+   # Shatter is checked across real normal, dimension and transcendent paths.
+   for ball in ['yellow','blackhole','whitehole','starlight']:
+    page.evaluate('(id)=>WakppuGameTest.run("last",id)',ball)
+    page.locator('#ballSvg').tap()
+    page.wait_for_function("document.querySelector('#ballWrap').classList.contains('purchase-aura-broken')")
+    page.screenshot(path=str(out/f'aura-shattering-{ball}-{width}.png'))
+    page.wait_for_timeout(750)
+    assert page.locator('#ballWrap').evaluate("e=>getComputedStyle(e,'::before').opacity")=='0'
+    assert page.locator('.purchase-aura').evaluate('e=>Number(getComputedStyle(e).opacity)')==0
+    assert page.locator('#ballSvg').evaluate('e=>getComputedStyle(e).filter')=='none'
+    page.screenshot(path=str(out/f'aura-gone-{ball}-{width}.png'))
+    page.wait_for_function("!document.querySelector('#ballWrap').classList.contains('purchase-aura-broken')")
+    assert page.locator('.purchase-aura').evaluate('e=>Number(getComputedStyle(e).opacity)')>.5
+    assert page.locator('.purchase-aura').count()==1
+   # Switching while particles are in flight cannot leave a stale hidden aura.
+   page.evaluate('WakppuGameTest.run("last","yellow")');page.locator('#ballSvg').tap()
+   page.wait_for_function("document.querySelector('#ballWrap').classList.contains('purchase-aura-broken')")
+   page.evaluate('WakppuGameTest.run("show","blackhole")');page.wait_for_timeout(800)
+   assert page.locator('.purchase-aura').evaluate('e=>Number(getComputedStyle(e).opacity)')>.5
+   page.evaluate('WakppuGameTest.end()')
+   page.locator('#rankingBtn').tap()
+   expect(page.locator('#rankingList li.ranking-supporter')).to_have_count(1)
+   row=page.locator('#rankingList li.ranking-supporter')
+   assert row.locator('b, .ranking-nickname, em, strong').count()==4
+   assert row.locator('.supporter-name').count()==0
+   assert row.evaluate('e=>getComputedStyle(e).borderTopStyle')=='solid'
+   assert page.locator('#ranking .sheet').evaluate('e=>e.scrollWidth<=e.clientWidth+1')
+   page.screenshot(path=str(out/f'supporter-ranking-row-{width}.png'))
+   page.locator('[data-close="ranking"]').tap()
    page.reload();page.wait_for_function('WakppuItemGame.read().ready');shop();page.wait_for_function("document.documentElement.classList.contains('purchase-starlight')")
    page.locator('#shopDrawTab').tap();expect(page.locator('#shopPremium')).to_be_hidden();expect(page.locator('#shopDraw')).to_be_visible()
    page.locator('#shopPurchaseTab').tap();expect(page.locator('#shopPurchase')).to_be_visible();expect(page.locator('#shopPremium')).to_be_hidden()

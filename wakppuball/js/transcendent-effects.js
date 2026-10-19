@@ -36,6 +36,7 @@
     if(!reduced&&profile.kind==='time'){at(duration*.36,()=>phase('freeze'));at(duration*.55,()=>phase('rewind'));}
     if(!reduced&&profile.kind==='void')at(duration*.12,()=>phase('fold'));
     at(duration*.26,()=>{
+      window.WakppuPurchaseEffects?.shatter({speed});
       phase('release');charge.cancel();svg.style.opacity='0';
       if(profile.kind==='halves'&&!reduced){
         for(let side=0;side<2;side++){

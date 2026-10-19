@@ -1,16 +1,21 @@
-"""Build a quiet, short bell shimmer from Kenney's CC0 Impact Sounds."""
-import argparse,array,hashlib,json,subprocess,sys,wave
+"""Original star shimmer: soft harmonic sine tones, without sampled metal/noise."""
+import array,hashlib,json,math,sys,wave
 from pathlib import Path
-p=argparse.ArgumentParser();p.add_argument('--source',type=Path,required=True);p.add_argument('--ffmpeg',required=True);a=p.parse_args()
 out=Path(__file__).resolve().parent.parent/'wakppuball/sounds/starlight';out.mkdir(parents=True,exist_ok=True)
-raw=subprocess.check_output([a.ffmpeg,'-v','error','-i',str(a.source),'-af','highpass=f=600,lowpass=f=3600,aecho=0.7:0.35:65|130:0.22|0.1,atrim=duration=0.62,afade=t=in:d=0.018,afade=t=out:st=0.20:d=0.42','-f','f32le','-ac','1','-ar','22050','pipe:1'])
-x=array.array('f');x.frombytes(raw)
-if sys.byteorder!='little':x.byteswap()
-peak=max(map(abs,x));gain=.42/max(peak,.001)
-pcm=array.array('h',(round(max(-1,min(1,v*gain))*32767) for v in x))
+sr=22050;duration=.9;notes=[(523.251,0,1),(783.991,.055,.55),(1046.502,.11,.25)]
+def voice(t,f):
+ if t<0:return 0
+ # Slow onset removes impact; harmonic fifth/octave and quiet echoes add air.
+ envelope=(1-math.exp(-t/.045))*math.exp(-t/.18)
+ return envelope*(math.sin(2*math.pi*f*t)+.12*math.sin(2*math.pi*f*2*t))
+x=[]
+for i in range(round(sr*duration)):
+ t=i/sr;v=sum(g*(voice(t-delay,f)+.18*voice(t-delay-.09,f)+.09*voice(t-delay-.18,f)) for f,delay,g in notes)
+ v*=min(1,max(0,(duration-t)/.2));x.append(v)
+peak=max(map(abs,x));x=[v*.36/peak for v in x];pcm=array.array('h',(round(v*32767) for v in x))
 if sys.byteorder!='little':pcm.byteswap()
-file=out/'chime.wav'
-with wave.open(str(file),'wb') as f:f.setnchannels(1);f.setsampwidth(2);f.setframerate(22050);f.writeframes(pcm.tobytes())
-manifest={'author':'Kenney','license':'CC0-1.0','source_url':'https://kenney.nl/assets/impact-sounds','source':a.source.name,'source_sha256':hashlib.sha256(a.source.read_bytes()).hexdigest(),'output':file.name,'sha256':hashlib.sha256(file.read_bytes()).hexdigest(),'duration':len(x)/22050,'peak':.42,'processing':'600–3600 Hz, soft attack, two quiet echoes, fade-out; mono 22050 Hz PCM16'}
+file=out/'shimmer-v2.wav'
+with wave.open(str(file),'wb') as f:f.setnchannels(1);f.setsampwidth(2);f.setframerate(sr);f.writeframes(pcm.tobytes())
+manifest={'author':'Wax-Ball project','license':'CC0-1.0','source':'Original procedural synthesis; no third-party recordings','generator':'tools/build-starlight-sound.py','output':file.name,'sha256':hashlib.sha256(file.read_bytes()).hexdigest(),'duration':duration,'peak':.36,'processing':'Harmonic sine tones C5/G5/C6, 45ms soft attack, quiet echoes, fade-out; mono 22050 Hz PCM16'}
 (out/'sources.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf8')
-print('Built starlight/chime.wav:',len(x)/22050,'seconds; peak <= 0.42')
+print('Built original shimmer:',duration,'seconds; peak <= 0.36')

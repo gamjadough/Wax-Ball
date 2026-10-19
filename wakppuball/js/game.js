@@ -778,9 +778,11 @@
     svgEl.classList.add('instant');
     updateCracks(1);
     if(data.id===window.WakppuLimitedData?.ball.id){
+      window.WakppuPurchaseEffects?.shatter({speed});
       transcendentEffect=WakppuHalloweenEffects.play({wrap,svg:svgEl,effects,center:ballCenter(),speed,respawnSpeed,valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,reward:()=>awardBreakReward(data),respawn:()=>{svgEl.classList.remove('instant');spawnBall(true);}});return;
     }
     if(data.id==='admin-event'){
+      window.WakppuPurchaseEffects?.shatter({speed});
       const earned=eventAward;eventAward=null;wrap.classList.add('admin-ball-breaking');
       const reduced=window.WakppuSettings?.reduced()??matchMedia('(prefers-reduced-motion: reduce)').matches;
       const fade=adminFade=svgEl.animate(reduced?[{opacity:1},{opacity:0}]:[{opacity:1,transform:'scale(1)'},{opacity:.4,transform:'scale(.96)',offset:.65},{opacity:0,transform:'scale(.8)'}],{duration:1100/speed,easing:'ease-in',fill:'forwards'});
@@ -845,6 +847,7 @@
 
   /* 왁뿌볼을 조각으로 쪼개서 날리기 */
   function makeShards(shape,speed=1) {
+    window.WakppuPurchaseEffects?.shatter({speed});
     const reduced=window.WakppuSettings?.reduced()??false;
     const uid = state.uid;
     const defs = svgEl.querySelector('#' + uid + '-defs');
@@ -1059,7 +1062,7 @@
       const rows = await window.WakppuAuth.invoke('rankings');
       if (!Array.isArray(rows)) throw new Error('invalid ranking');
       rankingStatus.hidden = true;
-      rankingList.innerHTML = rows.map((row, i) => `<li><b>${i + 1}</b><span class="ranking-nickname${row.supporter===true?' supporter-name':''}">${row.online === true ? '<i class="ranking-online" role="img" aria-label="온라인" title="온라인"></i>' : ''}${escapeHtml(row.nickname)}</span><em>${fmt(row.rebirths)}회</em><strong title="${escapeHtml(String(row.gold))}G">${fmt(row.gold)}G</strong></li>`).join('');
+      rankingList.innerHTML = rows.map((row, i) => `<li${row.supporter===true?' class="ranking-supporter" title="왁뿌볼 후원자"':''}><b>${i + 1}</b><span class="ranking-nickname">${row.online === true ? '<i class="ranking-online" role="img" aria-label="온라인" title="온라인"></i>' : ''}${escapeHtml(row.nickname)}</span><em>${fmt(row.rebirths)}회</em><strong title="${escapeHtml(String(row.gold))}G">${fmt(row.gold)}G</strong></li>`).join('');
     } catch (_) {
       rankingStatus.hidden = false;
       rankingStatus.textContent = '랭킹을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.';
