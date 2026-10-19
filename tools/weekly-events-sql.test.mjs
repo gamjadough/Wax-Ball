@@ -9,6 +9,8 @@ const {PGlite}=require('@electric-sql/pglite');
 test('PostgreSQL weekly windows: KST, exact boundaries, rollover, manual precedence, cancel, roles, idempotence and cron',async()=>{
  const db=new PGlite(),admin='00000000-0000-0000-0000-000000000001',player='00000000-0000-0000-0000-000000000002';
  try{
+  // Fresh-install order: the new patch predates legacy future-named table creation.
+  await db.exec(await readFile(new URL('../supabase/migrations/20261019081000_friday_evening_2130.sql',import.meta.url),'utf8'));
   await db.exec(`create role anon;create role authenticated;create schema auth;
    create table auth.users(id uuid primary key,is_anonymous boolean default false,email text,raw_user_meta_data jsonb default '{}',created_at timestamptz default now());
    create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb$$;
@@ -36,17 +38,17 @@ test('PostgreSQL weekly windows: KST, exact boundaries, rollover, manual precede
   const candidate=async(kind,time)=>(await db.query('select public.wakppu_weekly_candidate($1,$2::timestamptz) as e',[kind,time])).rows[0].e;
   let e=await candidate('gold','2026-10-13T00:00:00+09:00');assert.equal(Date.parse(e.starts_at),Date.parse('2026-10-16T07:00:00+09:00'));assert.equal(e.multiplier,10);
   const first=e.id;assert.equal((await candidate('gold','2026-10-16T07:00:00+09:00')).id,first);
-  e=await candidate('gold','2026-10-16T07:10:00+09:00');assert.equal(Date.parse(e.starts_at),Date.parse('2026-10-16T21:00:00+09:00'));assert.equal(e.multiplier,100);
-  e=await candidate('ball','2026-10-16T21:10:00+09:00');assert.equal(Date.parse(e.ends_at),Date.parse('2026-10-16T21:15:00+09:00'));
-  e=await candidate('gold','2026-10-16T21:10:00+09:00');assert.equal(Date.parse(e.starts_at),Date.parse('2026-10-23T07:00:00+09:00'));
-  e=await candidate('ball','2026-10-16T21:15:00+09:00');assert.equal(Date.parse(e.starts_at),Date.parse('2026-10-23T07:00:00+09:00'));
+  e=await candidate('gold','2026-10-16T07:10:00+09:00');assert.equal(Date.parse(e.starts_at),Date.parse('2026-10-16T21:30:00+09:00'));assert.equal(e.multiplier,100);
+  e=await candidate('ball','2026-10-16T21:40:00+09:00');assert.equal(Date.parse(e.ends_at),Date.parse('2026-10-16T21:45:00+09:00'));
+  e=await candidate('gold','2026-10-16T21:40:00+09:00');assert.equal(Date.parse(e.starts_at),Date.parse('2026-10-23T07:00:00+09:00'));
+  e=await candidate('ball','2026-10-16T21:45:00+09:00');assert.equal(Date.parse(e.starts_at),Date.parse('2026-10-23T07:00:00+09:00'));
   for(const time of ['2026-12-31T23:59:59+09:00','2027-01-01T07:00:00+09:00']){e=await candidate('gold',time);assert.equal(Date.parse(e.starts_at),Date.parse('2027-01-01T07:00:00+09:00'));}
   // Real settings, independent end times and repeated scheduler calls do not recreate IDs.
-  await db.query('select public.wakppu_refresh_weekly_events($1::timestamptz)',['2026-10-16T21:00:00+09:00']);
+  await db.query('select public.wakppu_refresh_weekly_events($1::timestamptz)',['2026-10-16T21:30:00+09:00']);
   let settings=(await db.query('select gold_event,admin_ball_event from server_settings')).rows[0];const eveningId=settings.admin_ball_event.id;
-  await db.query('select public.wakppu_refresh_weekly_events($1::timestamptz)',['2026-10-16T21:10:00+09:00']);
+  await db.query('select public.wakppu_refresh_weekly_events($1::timestamptz)',['2026-10-16T21:40:00+09:00']);
   settings=(await db.query('select gold_event,admin_ball_event from server_settings')).rows[0];assert.equal(settings.admin_ball_event.id,eveningId);assert.equal(settings.gold_event.multiplier,10);
-  await db.query('select public.wakppu_refresh_weekly_events($1::timestamptz)',['2026-10-16T21:10:00+09:00']);assert.deepEqual((await db.query('select gold_event,admin_ball_event from server_settings')).rows[0],settings);
+  await db.query('select public.wakppu_refresh_weekly_events($1::timestamptz)',['2026-10-16T21:40:00+09:00']);assert.deepEqual((await db.query('select gold_event,admin_ball_event from server_settings')).rows[0],settings);
   // Manual scheduled event overrides only a future weekly window and survives refresh/disable.
   await db.exec("update server_settings set gold_event=null,admin_ball_event=null");await rpc(admin,{action:'admin_weekly_events',mode:'list'});
   const start=new Date(Date.now()+86400000).toISOString();const manual=(await rpc(admin,{action:'admin_event_schedule',event_type:'gold',starts_at:start,multiplier:7,duration_seconds:600})).gold_event;

@@ -10,7 +10,7 @@ create table if not exists public.wakppu_weekly_events(
 alter table public.wakppu_weekly_events enable row level security;
 revoke all on public.wakppu_weekly_events from public,anon,authenticated;
 insert into public.wakppu_weekly_events(id,weekday,local_time,ball_seconds,gold_seconds,multiplier)
- values('friday-morning',5,'07:00',600,600,10),('friday-evening',5,'21:00',900,600,100)
+ values('friday-morning',5,'07:00',600,600,10),('friday-evening',5,'21:30',900,600,100)
  on conflict(id) do nothing;
 create or replace function public.wakppu_weekly_candidate(kind text,instant timestamptz)
 returns jsonb language sql stable set search_path=public,pg_temp as $fn$

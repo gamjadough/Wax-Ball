@@ -58,6 +58,23 @@ test('independent weekly/manual events: reservation, overlap rewards, resume, pe
   const after=await rpc(player,{action:'status'});assert.equal(after.manual_gold_event.id,id);assert.equal(after.gold_event.id,id);
   await db.exec(separation);assert.equal((await rpc(player,{action:'status'})).manual_gold_event.id,id);
   await rpc(admin,{action:'admin_event_schedule_cancel',event_type:'gold',event_id:id});assert.equal((await rpc(player,{action:'status'})).manual_gold_event,null);
+  // Upgrade a deployed 21:00 preset without resetting flags, skips or manual reservations.
+  const reservation=await rpc(admin,{action:'admin_event_schedule',event_type:'gold',starts_at:future,duration_seconds:600,multiplier:9});
+  await db.exec("update wakppu_weekly_events set weekday=5,enabled=true,local_time=case when id='friday-evening' then time '21:00' else time '07:00' end,skip_gold=date '2026-10-30',skip_ball=date '2026-10-30';");
+  const rowsBefore=(await db.query('select * from wakppu_weekly_events order by id')).rows;
+  const cronBefore=(await db.query('select * from cron.job')).rows;
+  const patch=await readFile(new URL('../supabase/migrations/20261019081000_friday_evening_2130.sql',import.meta.url),'utf8');
+  await db.exec(patch);await db.exec(patch);
+  assert.deepEqual((await db.query('select * from wakppu_weekly_events order by id')).rows,rowsBefore.map(row=>({...row,local_time:row.id==='friday-evening'?'21:30:00':row.local_time})));
+  assert.deepEqual((await db.query('select * from cron.job')).rows,cronBefore);
+  assert.equal((await rpc(player,{action:'status'})).manual_gold_event.id,reservation.manual_gold_event.id);
+  for(const [kind,end] of [['gold','21:40:00'],['ball','21:45:00']]){
+   for(const time of ['21:00:00','21:29:59','21:30:00']){
+    const event=(await db.query('select public.wakppu_weekly_candidate($1,$2::timestamptz) as e',[kind,'2026-10-23T'+time+'+09:00'])).rows[0].e;
+    assert.equal(Date.parse(event.starts_at),Date.parse('2026-10-23T21:30:00+09:00'));
+    assert.equal(Date.parse(event.ends_at),Date.parse('2026-10-23T'+end+'+09:00'));
+   }
+  }
   for(const fn of ['wakppu_separate_event(jsonb,jsonb,timestamptz)','wakppu_separate_weekly_api(jsonb)'])assert.equal((await db.query("select has_function_privilege('authenticated',$1,'execute') as allowed",['public.'+fn])).rows[0].allowed,false);
  }finally{await db.close();}
 });
