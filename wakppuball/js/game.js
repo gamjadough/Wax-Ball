@@ -394,6 +394,7 @@
     state.clicks = 0;
     state.soundStep = 0;
     svgEl.innerHTML = buildBallSvgInner(data, uid);
+    window.WakppuPurchaseEffects?.spawn(data);
     window.WakppuSkinClock?.update(svgEl);
 
     const layer = svgEl.querySelector('#' + uid + '-cracks');
@@ -628,6 +629,7 @@
 
     hintEl.classList.add('gone');
     playHitSound(data, v, isFinal);      // ① 소리
+    window.WakppuPurchaseEffects?.hit({final:isFinal});
     window.WakppuSkinEffects?.hit({ball:data,svg:svgEl,progress:v});
     squish(clientX, v, isHammer);        // ② 눌림
     if (isFinal) {

@@ -13,6 +13,7 @@ try:
   for width,height,reduced in [(320,640,False),(844,390,False),(390,844,True),(1200,900,False)]:
    ctx=browser.new_context(viewport={'width':width,'height':height},has_touch=True,is_mobile=width<900,reduced_motion='reduce' if reduced else 'no-preference');page=ctx.new_page();errors=[]
    page.on('pageerror',lambda e:errors.append(str(e)))
+   page.add_init_script("window.auraPlays=[];const original=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(){if(this.src.includes('starlight/chime.wav'))auraPlays.push(this);return original.call(this);};")
    page.route('**/*',lambda r:r.continue_() if r.request.url.startswith(base) else r.fulfill(status=200,body=''));page.on('dialog',lambda d:d.accept())
    def rpc(action,**payload):return page.evaluate('async b=>WakppuAuth.invoke(b.action,b)',dict(action=action,**payload))
    def login(admin=False):
@@ -57,7 +58,23 @@ try:
    page.locator('#purchaseInventoryEquip').tap();page.wait_for_function("document.documentElement.classList.contains('purchase-starlight')")
    page.locator('#itemsClose').tap()
    assert page.locator('#ballWrap').evaluate("e=>getComputedStyle(e,'::before').content")!='none'
-   out=ROOT/'tools/test-results';out.mkdir(parents=True,exist_ok=True);page.screenshot(path=str(out/f'paid-aura-equipped-{width}.png'))
+   out=ROOT/'tools/test-results';out.mkdir(parents=True,exist_ok=True)
+   assert page.locator('.purchase-aura').count()==1
+   for ball in ['yellow','blackhole','whitehole']:
+    page.evaluate('(id)=>WakppuGameTest.run("show",id)',ball)
+    page.screenshot(path=str(out/f'paid-aura-{ball}-{width}.png'))
+    assert page.locator('#ballWrap').evaluate('e=>getComputedStyle(e).getPropertyValue("--aura-tint").trim()')
+   page.wait_for_load_state('networkidle')
+   page.locator('#ballSvg').tap();page.wait_for_function('auraPlays.length>0')
+   page.wait_for_function('auraPlays.at(-1).currentTime>0')
+   assert 0<page.evaluate('auraPlays.at(-1).volume')<.15
+   if reduced:assert page.locator('.purchase-aura').evaluate('e=>e.getAnimations().length')==0
+   page.evaluate('WakppuSettings.set({muted:true})');assert page.evaluate('auraPlays.every(a=>a.paused)')
+   n=page.evaluate('auraPlays.length');page.locator('#ballSvg').tap();assert page.evaluate('auraPlays.length')==n
+   page.evaluate('WakppuSettings.set({muted:false,sfx:false})');page.locator('#ballSvg').tap();assert page.evaluate('auraPlays.length')==n
+   page.evaluate('WakppuSettings.set({sfx:true});WakppuGameTest.end()')
+   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+   page.screenshot(path=str(out/f'paid-aura-equipped-{width}.png'))
    page.reload();page.wait_for_function('WakppuItemGame.read().ready');shop();page.wait_for_function("document.documentElement.classList.contains('purchase-starlight')")
    page.locator('#shopDrawTab').tap();expect(page.locator('#shopPremium')).to_be_hidden();expect(page.locator('#shopDraw')).to_be_visible()
    page.locator('#shopPurchaseTab').tap();expect(page.locator('#shopPurchase')).to_be_visible();expect(page.locator('#shopPremium')).to_be_hidden()
