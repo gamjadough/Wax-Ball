@@ -16,17 +16,21 @@ try:
             context=browser.new_context(viewport={'width':width,'height':900},is_mobile=width<500,has_touch=True)
             context.route('**/*',lambda r:r.continue_() if r.request.url.startswith(base) else r.fulfill(status=200,body=''))
             page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+            def advanced():
+                if page.locator('#beginnerAdvanced').is_visible():page.locator('#beginnerAdvanced').click()
             page.goto(base+'/?preview=items')
             try:page.wait_for_load_state('networkidle',timeout=2000)
             except Exception:pass # Periodic status polling; readiness asserted explicitly.
             page.wait_for_function('WakppuItems.data?.pity===98&&WakppuLimited.data!==null')
             page.add_style_tag(content='.local-items-preview{display:none}')
             expect(page.locator('#drawBtn')).to_have_count(0)
+            # Fix the season explicitly: the real calendar may now be inside Halloween.
+            page.evaluate("""async()=>{const s=JSON.parse(sessionStorage.getItem('wakppu-local-session'));await fetch('/local/halloween-demo',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+s.token},body:JSON.stringify({mode:'ended'})});await WakppuLimited.refresh();}""")
             expect(page.locator('#halloweenCurrency')).to_be_hidden()
             page.locator('#shopBtn').click()
             expect(page.locator('#shopPurchase')).to_be_visible();expect(page.locator('#shopDraw')).to_be_hidden()
             for id in ['honeyBtn','coatingBtn','hammerBtn']:expect(page.locator('#'+id)).to_be_visible()
-            page.locator('#shopDrawTab').click()
+            page.locator('#shopDrawTab').click();advanced()
             expect(page.locator('#shopDraw')).to_be_visible();expect(page.locator('#shopPurchase')).to_be_hidden()
             expect(page.locator('#itemsModal')).to_be_hidden()
             page.locator('[data-close="shop"]').click()
@@ -38,10 +42,10 @@ try:
             page.locator('#shopBtn').click()
             expect(page.locator('#shopPurchase')).to_be_visible()
             expect(page.locator('#shopPurchaseTab')).to_have_attribute('aria-selected','true')
-            page.locator('#shopDrawTab').click()
+            page.locator('#shopDrawTab').click();advanced()
             page.locator('[data-pulls="1"]').click();page.wait_for_function('!WakppuItems.busy&&WakppuDrawReveal.pending')
             before=page.evaluate('WakppuItems.data');page.locator('#drawWaxBall').click()
-            page.locator('#shopPurchaseTab').click();page.locator('#shopDrawTab').click()
+            page.locator('#shopPurchaseTab').click();page.locator('#shopDrawTab').click();advanced()
             assert page.locator('.draw-ball-crack').count()>0
             page.locator('[data-close="shop"]').click();expect(page.locator('#shopBtn')).to_be_focused()
             page.locator('#shopBtn').click()
@@ -52,7 +56,7 @@ try:
             page.add_style_tag(content='.local-items-preview{display:none}')
             page.locator('#shopBtn').click()
             expect(page.locator('#shopPurchase')).to_be_visible() # New page session defaults to purchase.
-            page.locator('#shopDrawTab').click()
+            page.locator('#shopDrawTab').click();advanced()
             assert page.locator('.draw-ball-crack').count()>0
             assert page.evaluate('WakppuItems.data.inventory')==before['inventory']
             page.locator('#drawSkipAll').click();expect(page.locator('.draw-result')).to_have_count(1)

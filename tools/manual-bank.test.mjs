@@ -1,0 +1,55 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {bankFixture} from './manual-bank-fixture.mjs';
+const admin='00000000-0000-0000-0000-000000000001',buyer='00000000-0000-0000-0000-000000000002',other='00000000-0000-0000-0000-000000000003',guest='00000000-0000-0000-0000-000000000004';
+test('manual deposits: permissions, closed default, bank snapshots, claims, atomic grants/refunds, replay and RLS',async()=>{
+ const {db,sql,add,rpc}=await bankFixture();
+ try{
+  await add(admin,'admin');await add(buyer);await add(other);await add(guest,'player',true);
+  const before=(await db.query('select * from game_states order by user_id')).rows;
+  const request={action:'purchase_order',product_id:'supporter_pack',request_id:crypto.randomUUID(),depositor:'테스트구매자'};
+  await assert.rejects(rpc(null,{action:'purchase_catalog'}),{code:'PT401'});
+  await assert.rejects(rpc(guest,request),{code:'PT403'});
+  await assert.rejects(rpc(buyer,{action:'admin_purchase_orders',role:'admin'}),{code:'PT403'});
+  assert.equal((await rpc(buyer,{action:'purchase_catalog'})).enabled,false);
+  await assert.rejects(rpc(buyer,request),{code:'PT409'});
+  const cfg={action:'admin_purchase_config',mode:'set',revision:0,enabled:true,bank_name:'로컬테스트은행',account_number:'000-0000-0000',account_holder:'테스트전용',support_contact:'실제 입금 금지'};
+  await assert.rejects(rpc(admin,{...cfg,account_number:''}),{code:'PT400'});
+  await rpc(admin,cfg);await assert.rejects(rpc(admin,cfg),{code:'PT409'});
+  const created=await rpc(buyer,request),o=created.order;assert.equal(o.amount,1100);
+  assert.equal((await rpc(buyer,request)).order.id,o.id);
+  assert.equal((await rpc(buyer,{...request,request_id:crypto.randomUUID()})).order.id,o.id);
+  await assert.rejects(rpc(buyer,{...request,product_id:'starlight_skin'}),{code:'PT409'});
+  await assert.rejects(rpc(other,{action:'purchase_claim',order_id:o.id}),{code:'PT404'});
+  await rpc(admin,{...cfg,revision:1,account_number:'999-9999-9999'});
+  assert.equal((await rpc(buyer,{action:'purchase_catalog'})).orders[0].bank.account_number,'000-0000-0000');
+  const claimed=await rpc(buyer,{action:'purchase_claim',order_id:o.id});assert.deepEqual(claimed.owned,{});assert.equal(claimed.orders[0].status,'claimed');
+  await assert.rejects(rpc(buyer,{action:'admin_purchase_approve',order_id:o.id}),{code:'PT403'});
+  const approve={action:'admin_purchase_approve',order_id:o.id,confirmed_amount:1100,deposit_reference:'local-transaction-001'};
+  await assert.rejects(rpc(admin,{...approve,confirmed_amount:1}),{code:'PT400'});
+  await rpc(admin,approve);await rpc(admin,approve);
+  assert.equal((await rpc(buyer,{action:'purchase_catalog'})).owned.supporter_pack,o.id);
+  assert.equal((await db.query("select count(*)::int n from admin_audit_logs where action='admin_purchase_approve'")).rows[0].n,1);
+  assert.equal((await rpc(null,{action:'rankings'})).find(r=>r.nickname.endsWith('02')).supporter,true);
+  const second=(await rpc(other,{...request,request_id:crypto.randomUUID()})).order;
+  await assert.rejects(rpc(admin,{...approve,order_id:second.id}),{code:'23505'});assert.deepEqual((await rpc(other,{action:'purchase_catalog'})).owned,{});
+  const skin=(await rpc(buyer,{...request,product_id:'starlight_skin',request_id:crypto.randomUUID()})).order;
+  await rpc(admin,{...approve,order_id:skin.id,confirmed_amount:3300,deposit_reference:'local-transaction-002'});
+  assert.equal((await rpc(buyer,{action:'purchase_equip',equipped:true})).equipped,true);
+  await assert.rejects(rpc(other,{action:'purchase_equip',equipped:true}),{code:'PT403'});
+  await rpc(admin,{action:'admin_purchase_refund',order_id:skin.id,refund_reference:'local-refund-002'});
+  let state=await rpc(buyer,{action:'purchase_catalog'});assert.equal(state.equipped,false);assert.equal(state.owned.starlight_skin,undefined);
+  assert.equal(state.orders.find(row=>row.id===o.id).deposit_reference,undefined);
+  await assert.rejects(rpc(admin,{...approve,order_id:skin.id,confirmed_amount:3300}),{code:'PT409'});
+  const cancel=(await rpc(other,{...request,product_id:'starlight_skin',request_id:crypto.randomUUID()})).order;
+  await rpc(other,{action:'purchase_cancel',order_id:cancel.id});await assert.rejects(rpc(admin,{...approve,order_id:cancel.id,confirmed_amount:3300}),{code:'PT409'});
+  await db.exec(sql);state=await rpc(buyer,{action:'purchase_catalog'});assert.equal(state.owned.supporter_pack,o.id);assert.equal(state.enabled,true);
+  await db.query('update game_states set gold=0,rebirths=rebirths+1 where user_id=$1',[buyer]);assert.equal((await rpc(buyer,{action:'purchase_catalog'})).owned.supporter_pack,o.id);
+  const after=(await db.query('select * from game_states order by user_id')).rows;assert.deepEqual(after.filter(r=>r.user_id!==buyer),before.filter(r=>r.user_id!==buyer));
+  await db.exec('update test_settings set maintenance=true');await assert.rejects(rpc(buyer,{action:'purchase_catalog'}),{code:'PT503'});await db.exec('update test_settings set maintenance=false');
+  await db.query('update players set banned=true where user_id=$1',[buyer]);await assert.rejects(rpc(buyer,{action:'purchase_catalog'}),{code:'PT403'});
+  await db.query('update auth.users set is_anonymous=true where id=$1',[admin]);await assert.rejects(rpc(admin,{action:'admin_purchase_orders'}),{code:'PT403'});
+  const tables=['wakppu_purchase_config','wakppu_purchase_products','wakppu_purchase_orders','wakppu_purchase_entitlements','wakppu_purchase_cosmetics'];
+  for(const table of tables){assert.equal((await db.query("select has_table_privilege('authenticated',$1,'select') access",[table])).rows[0].access,false);assert.equal((await db.query('select relrowsecurity from pg_class where relname=$1',[table])).rows[0].relrowsecurity,true);}
+  for(const fn of ['wakppu_purchase_snapshot(uuid)','wakppu_api_before_purchases(jsonb)'])assert.equal((await db.query("select has_function_privilege('authenticated',$1,'execute') access",[fn])).rows[0].access,false);
+ }finally{await db.close();}
+});

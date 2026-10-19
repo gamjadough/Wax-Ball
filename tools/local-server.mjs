@@ -10,6 +10,7 @@ import {limitedState,limitedSnapshot} from './limited-service.mjs';
 import {skinAction,skinState} from './skins-service.mjs';
 import {createDemoPayments} from './payment-demo-service.mjs';
 const paymentsEnabled=process.env.WAKPPU_LOCAL_PAYMENTS==='1',demoPayments=createDemoPayments();
+const bankPreview=process.env.WAKPPU_LOCAL_BANK_PREVIEW==='1'?await (await import('./manual-bank-preview.mjs')).createBankPreview():null;
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../wakppuball');
 const store=createStore(),sessions=new Map();
 // Opt-in, isolated onboarding preview. Never changes production or other previews.
@@ -91,6 +92,12 @@ const server=http.createServer(async(req,res)=>{
       if(['skins','skin_draw','skin_exchange','skin_equip'].includes(body.action)){
         execute(store,actor,{action:'bootstrap'});return send(200,skinAction(actor,body));
       }
+      if(body.action?.startsWith('purchase_')||body.action?.startsWith('admin_purchase_')){
+        if(!bankPreview)return send(404,{error:'수동 계좌이체 로컬 미리보기를 실행해주세요.'});
+        execute(store,actor,{action:'bootstrap'});
+        try{return send(200,await bankPreview.execute(actor,body));}catch(error){if(/^PT\d{3}$/.test(error.code))error.status=Number(error.code.slice(2));throw error;}
+      }
+      if(body.action==='rankings'&&bankPreview){const result=execute(store,actor,body),supporters=await bankPreview.supporters();return send(200,result.map(row=>({...row,supporter:supporters.includes(row.nickname)})));}
       return send(200,execute(store,actor,body));
     }
     const url=new URL(req.url,'http://localhost');let name=decodeURIComponent(url.pathname);
@@ -105,6 +112,7 @@ const server=http.createServer(async(req,res)=>{
     let data=await readFile(file);
     if(name==='/index.html') data=Buffer.from(data.toString().replace(/<script src="js\/account.js[^\"]*"><\/script>/,'<script src="js/local-account.js"></script>'));
     if(name==='/index.html'&&paymentsEnabled&&url.searchParams.get('preview')==='payments')data=Buffer.from(data.toString().replace('</body>','<link rel="stylesheet" href="/local-payments/store.css"><script type="module" src="/local-payments/store.js"></script></body>'));
+    if(name==='/index.html'&&bankPreview&&url.searchParams.get('preview')==='bank')data=Buffer.from(data.toString().replace('</body>',`<script src="js/local-bank-preview.js"></script><script>WakppuLocalBankPreview(${JSON.stringify(password)});</script></body>`));
     if(name==='/index.html'&&url.searchParams.get('preview')==='whitehole')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-whitehole-preview.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='transcendent')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-transcendent-preview.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='skin-sounds')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-skin-inventory-preview.js"></script></body>'));
