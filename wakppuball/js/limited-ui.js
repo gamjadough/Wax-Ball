@@ -17,7 +17,7 @@
   const state=selected?'사용 중':owned?'보유 중':admin?'관리자 상시 이용':active?'획득 가능':Date.now()<Date.parse(season.starts_at)?'시작 전':'기간 종료';
   const base=WakppuGold.compact(config.ball.reward);
   $('limitedSeason').textContent=config.season.name+' · 수집 '+(owned?1:0)+' / 1';
-  $('limitedBalance').textContent='🍬 할로윈 사탕 '+(data?.tokens||0)+'개 · 일반 볼 파괴 시 10% 확률로 1개';
+  $('limitedBalance').textContent='🍬 할로윈 사탕 '+(data?.tokens||0)+'개 · 파괴 시 일반 볼 10% / 잭오랜턴 '+Math.round((season.pumpkinDropChance??config.season.pumpkinDropChance)*100)+'% 확률로 1개';
   const date=t=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(t)).replaceAll('-','.');
   $('limitedPeriod').textContent='한국 시간 '+date(season.starts_at)+' ~ '+date(Date.parse(season.ends_at)-1)+' · '+(active?'진행 중':admin?'이벤트 비활성':state==='시작 전'?'시작 전':'기간 종료');
   const card='<span class="thumb">'+buildBallThumb(config.ball)+'</span><span class="collection-name">'+config.ball.name+'</span><span class="collection-state">'+state+'</span>';
