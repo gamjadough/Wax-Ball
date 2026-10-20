@@ -2,7 +2,7 @@
  'use strict';
  const $=id=>document.getElementById(id),game=()=>window.WakppuItemGame?.read();
  let data=null,owner=null,sequence=0,busy=false,config=null,adminOffset=0,adminBusy=false,adminOwner=null;
- const states={pending:'입금 대기',claimed:'입금 알림 접수 · 관리자 확인 대기',approved:'상품 지급 완료',cancelled:'주문 취소',refunded:'환불 완료 · 상품 회수'};
+ const states={pending:'입금 대기',claimed:'입금 알림 접수 · 관리자 확인 대기',approved:'상품 지급 완료',cancelled:'주문 취소',refunded:'환불 완료 · 상품 회수',revoked:'관리자 지급 회수 완료'};
  const money=n=>Number(n).toLocaleString('ko-KR')+'원',time=t=>new Date(t).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',hour12:false});
  const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
  const button=(text,fn,disabled=false)=>{const n=node('button',text,'btn small');n.type='button';n.onclick=fn;n.disabled=disabled;return n;};
@@ -42,7 +42,8 @@
   for(const o of data?.orders||[]){
    const row=node('article',undefined,'purchase-order');row.dataset.purchaseOrder=o.id;
    row.append(node('h4',o.product_name+' · '+money(o.amount)),node('p',states[o.status]),node('small','주문번호 '+o.id+' · '+time(o.created_at)),node('p','입금자명: '+o.depositor));
-   if(['pending','claimed'].includes(o.status)){
+   if(o.source==='admin_grant')row.append(node('p','관리자 직접 지급 · 결제·입금 없음'));
+   else if(['pending','claimed'].includes(o.status)){
     row.append(bankInfo(o.bank),node('p','위 계좌에 정확한 금액을 이체하세요. ‘입금 알림’은 입금 확인이나 상품 지급이 아닙니다. 입금 후에는 주문을 취소하지 말고 문의 방법으로 연락해주세요.'));
     if(o.status==='pending'){
      const claim=button('입금 알림 보내기',()=>{if(confirm('실제 입금을 완료하셨나요? 관리자 확인을 요청하며, 즉시 지급되지는 않습니다.'))mutate('purchase_claim',{order_id:o.id},'입금 알림을 보냈습니다. 관리자 확인 후 지급됩니다.');},busy);claim.dataset.purchaseClaim=o.id;
@@ -83,7 +84,8 @@
      row.append(label,receipt,approve);
     }
     if(o.supporter_upgrade_order_id)row.append(node('p','응원팩 업그레이드 주문 · 기존 응원팩을 유지해야 지급할 수 있습니다.'));
-    if(o.status==='approved'&&!o.supporter_refund_blocked&&!(o.product_id==='first_steps_pack'&&!o.starter_refundable)){
+    if(o.source==='admin_grant')row.append(node('p','관리자 직접 지급 · 실제 결제 없음 · 플레이어 검색의 직접 지급 메뉴에서 회수할 수 있습니다.'));
+    if(o.status==='approved'&&o.source!=='admin_grant'&&!o.supporter_refund_blocked&&!(o.product_id==='first_steps_pack'&&!o.starter_refundable)){
      if(o.product_id==='first_steps_pack')row.append(node('p','현재 지급 재화 회수 가능 · 송금 전에 보유 상태를 확인하세요. 사용 후에는 회수가 제한될 수 있습니다.'));
      const label=node('label','은행에서 실제 환불을 완료한 기록');const ref=node('input');ref.maxLength=100;label.append(ref);
      const refund=button('실제 환불 완료 · 상품 회수',()=>{if(ref.value.trim().length<4){$('purchaseAdminStatus').textContent='실제 환불 완료 기록을 4자 이상 입력하세요.';return;}if(confirm('은행에서 환불을 이미 완료했나요? 이 버튼은 송금하지 않고 상품만 회수합니다.'))adminMutate('admin_purchase_refund',{order_id:o.id,refund_reference:ref.value.trim()});});refund.dataset.refundOrder=o.id;row.append(label,refund);

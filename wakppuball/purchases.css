@@ -31,6 +31,7 @@
 .ranking-list li.ranking-supporter::after{content:'✦';position:absolute;top:-6px;right:15px;font-size:10px;line-height:12px;color:#f2dfb1;pointer-events:none}
 .ranking-supporter .ranking-nickname{color:#fff1d2}
 .ranking-list li.ranking-supporter em{color:#c6d1e0}
+.admin-paid-actions{display:flex;flex-wrap:wrap;gap:8px}.admin-paid-actions .btn{min-height:44px}#adminPaidTarget,#adminPaidStatus,#adminPaidOwned{overflow-wrap:anywhere;line-height:1.6}#adminPaidHistory{font-size:12px;max-height:220px;overflow:auto}#adminPaidProduct,#adminPaidReason{min-height:44px}
 
 /* Premium lives in account/ranking chrome, leaving equipped ball skins independent. */
 .purchase-premium-card{border-color:#d9ac58;background:linear-gradient(145deg,#312819,#202533 70%)}

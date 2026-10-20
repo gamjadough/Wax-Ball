@@ -47,6 +47,7 @@ test('actual SQL: supporter final reward, fractional carry, replay, all ball pat
  // A consumable purchase shares the real item revision, protecting delivery from old saves.
  await db.exec(await sql('20261020110000_first_steps_pack.sql'));
  await db.exec(await sql('20261020100009_premium_supporter_pack.sql'));
+ await db.exec(await sql('20261020124915_admin_paid_grants.sql'));
  const premium=(await rpc({action:'purchase_order',product_id:'premium_supporter_pack',depositor:'프리미엄',request_id:crypto.randomUUID()})).order;
  assert.equal(premium.amount,10000);await rpc({action:'admin_purchase_approve',order_id:premium.id,confirmed_amount:10000,deposit_reference:'local-premium'},admin);
  await db.exec(`update game_states set supporter_gold_remainder=0,rebirths=0,honey_expires_at=null,coating_expires_at=null where user_id='${player}';update wakppu_items set effects='{}' where user_id='${player}';update server_settings set gold_event=null where id=true;`);
@@ -64,5 +65,12 @@ test('actual SQL: supporter final reward, fractional carry, replay, all ball pat
  assert.equal(delivered.inventory.rare_honey,2);assert.equal(delivered.inventory.rare_crack_booster,3);assert.equal(delivered.inventory.common_wax_feather,2);
  await assert.rejects(rpc({action:'save_progress',item_revision:stale.revision,gold:stale.gold,admin_revision:0,rebirths:0,unlocked_ball_ids:['yellow'],selected_ball_id:'yellow'}));
  assert.equal((await items()).gold,delivered.gold);
+ await db.exec(`update auth.users set is_anonymous=true,email_confirmed_at=null where id='${player}'`);
+ await rpc({action:'admin_paid_grant',user_id:player,product_id:'starlight_skin',reason:'미인증 계정 지원 검사',request_id:crypto.randomUUID()},admin);
+ assert.equal((await rpc({action:'purchase_equip',equipped:true})).equipped,true);
+ assert.equal((await items()).gold,delivered.gold);
+ await db.exec(`update auth.users set email='' where id='${player}';insert into guest_lifecycle(user_id,created_at) values('${player}',now()-interval '4 days') on conflict(user_id) do update set first_play_at=null,created_at=excluded.created_at`);
+ const protectedGuest=(await db.query('select * from wakppu_guest_accounts() where id=$1',[player])).rows[0];assert.equal(protectedGuest.eligible,false);assert.equal(protectedGuest.exemption,'관리자 지급 이력');
+ assert.equal((await db.query('select wakppu_cleanup_unplayed_guests() as removed')).rows[0].removed,0);
  }finally{await db.close();}
 });
