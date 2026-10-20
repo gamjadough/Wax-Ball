@@ -1,6 +1,17 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {createRequire} from 'node:module';
 import {createStore,execute} from './admin-service.mjs';import {limitedAction,limitedDrop,limitedData,limitedState} from './limited-service.mjs';import {itemState} from './items-service.mjs';import {ballCatalog} from './event-ball-catalog.mjs';
 const catalog=await ballCatalog(),id=limitedData.ball.id;
+test('pumpkin 30% boundary, break-only drops, replay safety and event expiry; ordinary remains 10%',()=>{
+ const store=createStore(),p=store.players[1];store.limited_preview='active';const s=limitedState(p);s.owned[id]={reward:String(limitedData.ball.reward)};s.selected=id;
+ const send=(rng)=>limitedAction(store,p,{action:'limited_hit',request_id:crypto.randomUUID(),item_revision:itemState(p).revision},catalog,rng);
+ assert.equal(send(()=>0).candy_drop,false);assert.equal(s.tokens,0);
+ s.clicks=99;assert.equal(send(()=>.3).candy_drop,false);assert.equal(s.tokens,0);
+ s.clicks=99;const req={action:'limited_hit',request_id:crypto.randomUUID(),item_revision:itemState(p).revision};
+ const result=limitedAction(store,p,req,catalog,()=>.299999);assert.equal(result.candy_drop,true);assert.equal(s.tokens,1);
+ assert.deepEqual(limitedAction(store,p,req,catalog,()=>0),result);assert.equal(s.tokens,1);
+ store.limited_preview='ended';s.clicks=99;assert.equal(send(()=>0).candy_drop,false);assert.equal(s.tokens,1);
+ assert.equal(limitedData.season.dropChance,.1);assert.equal(limitedData.season.pumpkinDropChance,.3);
+});
 test('10% drop boundaries, no repeats/events, purchase, expiry, reward and retained ownership',()=>{
  const store=createStore(),p=store.players[1];store.limited_preview='active';const s=limitedState(p);
  const result={reward:'10'},req=()=>({request_id:crypto.randomUUID()});
@@ -72,6 +83,22 @@ test('limited SQL: real item wrapper, purchase transaction, separate progress, e
  assert.deepEqual((await db.query('select ends_at from wakppu_limited_settings')).rows[0].ends_at,endBefore);
  const start=(await db.query("select starts_at='2026-10-17T00:00:00+09:00'::timestamptz as correct,'2026-10-16T23:59:59.999+09:00'::timestamptz>=starts_at as before,'2026-10-17T00:00:00+09:00'::timestamptz>=starts_at as active from wakppu_limited_settings")).rows[0];assert.deepEqual(start,{correct:true,before:false,active:true});
  assert.equal((await db.query("select pg_get_functiondef('public.wakppu_api(jsonb)'::regprocedure) as body")).rows[0].body,wrapper);
- await db.exec('set role authenticated');await assert.rejects(db.exec('update wakppu_limited_players set tokens=999'));await assert.rejects(db.exec('select * from wakppu_limited_settings'));await db.exec('reset role');
+ const dropSql=await readFile(new URL('../supabase/migrations/20261020103329_pumpkin_candy_drop_30_percent.sql',import.meta.url),'utf8');
+ const beforeDropRows=(await db.query('select * from wakppu_limited_players order by user_id')).rows;
+ await db.exec(dropSql);await db.exec(dropSql);
+ assert.deepEqual((await db.query('select * from wakppu_limited_players order by user_id')).rows,beforeDropRows);
+ assert.equal((await db.query("select pg_get_functiondef('public.wakppu_api(jsonb)'::regprocedure) as body")).rows[0].body,wrapper);
+ await db.exec(`update wakppu_limited_settings set starts_at=now()-interval '1 day',ends_at=now()+interval '1 day';update game_states set hammer_owned=false,hammer_level=0,honey_expires_at=null,coating_expires_at=null where user_id='${player}';update wakppu_limited_players set selected='${id}',clicks=99 where user_id='${player}';`);
+ const baselineTokens=(await get()).tokens;assert.equal((await get()).season.pumpkinDropChance,.3);assert.equal((await get()).season.dropChance,.1);
+ await db.exec('create or replace function public.wakppu_pumpkin_candy_roll() returns double precision language sql volatile as $$select 0.3::double precision$$');
+ assert.equal((await send('limited_hit')).candy_drop,false);assert.equal((await get()).tokens,baselineTokens);
+ await db.exec(`update wakppu_limited_players set clicks=98 where user_id='${player}';create or replace function public.wakppu_pumpkin_candy_roll() returns double precision language sql volatile as $$select 0.299999::double precision$$;`);
+ assert.equal((await send('limited_hit')).candy_drop,false);assert.equal((await get()).tokens,baselineTokens);
+ const paidRequest={action:'limited_hit',request_id:crypto.randomUUID(),item_revision:(await items()).revision};
+ const candy=await rpc(paidRequest);assert.equal(candy.candy_drop,true);assert.equal(candy.limited.tokens,baselineTokens+1);assert.equal(candy.reward,'1500000000');
+ assert.deepEqual(await rpc(paidRequest),candy);assert.equal((await get()).tokens,baselineTokens+1);
+ await db.exec(`update wakppu_limited_settings set starts_at=now()-interval '2 days',ends_at=now()-interval '1 day';update wakppu_limited_players set clicks=99 where user_id='${player}';`);
+ assert.equal((await send('limited_hit')).candy_drop,false);assert.equal((await get()).tokens,baselineTokens+1);
+ await db.exec('set role authenticated');await assert.rejects(db.exec('select public.wakppu_pumpkin_candy_roll()'));await assert.rejects(db.exec('update wakppu_limited_players set tokens=999'));await assert.rejects(db.exec('select * from wakppu_limited_settings'));await db.exec('reset role');
  }finally{await db.close();}
 });

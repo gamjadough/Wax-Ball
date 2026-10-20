@@ -16,7 +16,7 @@ export function limitedAction(store,actor,b,catalog,rng=()=>crypto.getRandomValu
  if(!/^[a-f0-9-]{36}$/.test(b.request_id||''))fail('잘못된 요청 ID');
  const cached=s.requests.get(b.request_id);if(cached){if(cached.action!==b.action)fail('요청 ID 충돌');return structuredClone(cached.result);}
  if(b.item_revision!==inv.revision)fail('상태를 다시 불러옵니다.',409);
- let hit={};
+ let hit={},dropped=false;
  if(b.action==='limited_buy'){
   if(!limitedActive(store))fail('할로윈 이벤트 기간이 아닙니다.',409);
   if(s.owned[limitedData.ball.id])fail('이미 보유한 한정 볼입니다.',409);
@@ -31,7 +31,8 @@ export function limitedAction(store,actor,b,catalog,rng=()=>crypto.getRandomValu
   const required=itemData.required(100,e,Date.parse(actor.state.coating_expires_at)>now),clicks=Math.min(required,s.clicks+itemData.damage(hammerDamage(actor.state.hammer_owned,actor.state.hammer_level,actor.state.hammer_selected_level),e));
   consumeEffects(actor,'hit',now);let reward=0n;
   if(clicks===required){const g=store.gold_event;reward=supporterReward(actor,itemData.reward(limitedData.ball.reward,actor.state.rebirths,g&&now>=Date.parse(g.starts_at)&&now<Date.parse(g.ends_at)?g.multiplier:1,e));actor.state.gold=String(BigInt(actor.state.gold)+reward);consumeEffects(actor,'break',now);}
-  s.clicks=clicks===required?0:clicks;hit={clicks,required_clicks:required,reward:String(reward)};
+  if(clicks===required&&limitedActive(store)&&rng()<limitedData.season.pumpkinDropChance){s.tokens++;dropped=true;}
+  s.clicks=clicks===required?0:clicks;hit={clicks,required_clicks:required,reward:String(reward),candy_drop:dropped};
  }else fail('잘못된 한정 볼 요청');
  inv.revision++;actor.state.item_revision=inv.revision;const result={...snapshot(actor),...hit,limited:limitedSnapshot(store,actor)};
  s.requests.set(b.request_id,{action:b.action,result:structuredClone(result)});return result;
