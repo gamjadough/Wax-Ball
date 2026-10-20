@@ -106,6 +106,12 @@ const server=http.createServer(async(req,res)=>{
       return send(200,execute(store,actor,body));
     }
     const url=new URL(req.url,'http://localhost');let name=decodeURIComponent(url.pathname);
+    if(name==='/local-pumpkin-skins'||name.startsWith('/local-pumpkin-skins/')){
+      const asset=name.replace(/^\/local-pumpkin-skins\/?/,'')||'index.html';
+      if(!['index.html','preview.css','preview.js'].includes(asset))return send(404,{error:'not found'});
+      const data=await readFile(new URL('./pumpkin-skins-preview/'+asset,import.meta.url));
+      res.writeHead(200,{'Content-Type':types[path.extname(asset)]||'application/octet-stream','Cache-Control':'no-store'});return res.end(data);
+    }
     if(name.startsWith('/local-payments/')){
       const asset=name.slice('/local-payments/'.length);
       if(!paymentsEnabled||!['store.js','store.css','checkout.html','checkout.js','client.js'].includes(asset))return send(404,{error:'not found'});

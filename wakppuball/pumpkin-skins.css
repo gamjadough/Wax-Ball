@@ -1,0 +1,10 @@
+.pumpkin-wisp-flame,.pumpkin-ghost-spirit,.pumpkin-eclipse-moon,.pumpkin-eclipse-seal{transform-origin:100px 105px}
+.pumpkin-wisp-flame{animation:pumpkin-wisp-breathe 2.3s ease-in-out infinite}.pumpkin-wisp-orbit{animation:pumpkin-wisp-breathe 3s ease-in-out infinite}
+.pumpkin-ghost-spirit{animation:pumpkin-spirit-float 3.2s ease-in-out infinite}.pumpkin-eclipse-moon{animation:pumpkin-moon-breathe 4.5s ease-in-out infinite}.pumpkin-eclipse-seal{animation:pumpkin-seal-turn 28s linear infinite}
+@keyframes pumpkin-wisp-breathe{50%{transform:translateY(-3px) scaleY(1.035);opacity:.55}}
+@keyframes pumpkin-spirit-float{50%{transform:translateY(-7px);opacity:.88}}
+@keyframes pumpkin-moon-breathe{50%{opacity:.4}}
+@keyframes pumpkin-seal-turn{to{transform:rotate(360deg)}}
+.pumpkin-skin-fx{position:absolute;pointer-events:none;transform:translate(-50%,-50%)}.pumpkin-skin-fx svg{width:100%;height:100%;overflow:visible}
+.preview-reduced [data-pumpkin-skin] *{animation:none!important}
+@media(prefers-reduced-motion:reduce){[data-pumpkin-skin] *{animation:none!important}}

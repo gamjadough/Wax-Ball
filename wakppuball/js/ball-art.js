@@ -307,6 +307,9 @@ const ART = {
     return { defs: `<radialGradient id="${uid}-void"><stop stop-color="#040008" offset="0"/><stop stop-color="#12001f" offset=".48"/><stop stop-color="#5b157f" offset=".78"/><stop stop-color="#d49cff" offset="1"/></radialGradient>`,
       art: `<rect width="200" height="200" fill="#080014"/><circle cx="100" cy="100" r="83" fill="url(#${uid}-void)"/>${ring(85,'#f1c6ff','.58',-22)}${ring(66,'#7e3cc5','.7',34)}${ring(49,'#e7abff','.32',-8)}<circle cx="100" cy="100" r="32" fill="#010003"/><path d="M24 112 C54 50 144 155 178 74" fill="none" stroke="#bd82ff" stroke-width="6" opacity=".5" filter="url(#${uid}-b4)"/>` };
   },
+  pumpkinSkin(uid,ball) {
+    return window.WakppuPumpkinSkins?.art(uid,ball)||ART.plain(uid,ball);
+  },
   eternitySkin(uid,ball) {
     const d=ball.design,c=d.colors,s=d.skin;
     const clock=window.WakppuSkinClock?.angles()||{hour:0,minute:0};
