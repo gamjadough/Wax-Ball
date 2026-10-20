@@ -18,8 +18,9 @@ window.WakppuLocalAdminBallPreview=async password=>{
       if(boost)await WakppuAuth.invoke('admin_gold_event',{mode:'start',multiplier:10,duration_seconds:300,delay_seconds:0});
       await WakppuGameTest.restoreAccount();
       await WakppuAuth.invoke('admin_ball_event',{mode:'start',duration_seconds:300,delay_seconds:0});
-      const status=await WakppuAuth.invoke('status');WakppuGoldEvent.update(status);WakppuAdminBallEvent.update(status);
-      note.textContent=boost?'배율 테스트 · 풀업 망치 5번 · 보상 12,000,000,000G':'로컬 이벤트 · '+(mode==='manual'?'맨손 600회':'풀업 망치 5번')+' · 보상 150,000,000G';
+      const status=await WakppuAuth.invoke('status');WakppuGoldEvent.update(status);WakppuAdminBallEvent.update(status);WakppuGameTest.selectLocalAdminBall();
+      const reward=WAKPPU_BALLS.reduce((best,b)=>BigInt(b.reward)>best?BigInt(b.reward):best,1n)*10n;
+      note.textContent=boost?'배율 테스트 · 풀업 망치 5번 · 기존 배율 적용':'로컬 전용 · '+(mode==='manual'?'맨손 600회':'망치 5번')+' · 기본 보상 '+reward.toLocaleString()+'G · 공을 눌러 사운드 확인';
     }catch(error){note.textContent=error.message;}
     finally{preparing=false;}
   }

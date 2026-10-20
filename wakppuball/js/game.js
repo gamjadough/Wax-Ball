@@ -1314,7 +1314,7 @@
      ========================================================================== */
   // 사용할 소리 이름을 모두 모아서 미리 불러오기
   const soundNames = new Set();
-  [...WAKPPU_BALLS,...(window.WakppuLimitedData?[WakppuLimitedData.ball]:[])].forEach((b) => {
+  [...WAKPPU_BALLS,...(typeof ADMIN_EVENT_BALL!=="undefined"?[ADMIN_EVENT_BALL]:[]),...(window.WakppuLimitedData?[WakppuLimitedData.ball]:[])].forEach((b) => {
     const cfg = getSoundConfig(b);
     ['early', 'mid', 'late', 'final', 'sequence'].forEach((k) => (cfg[k]||[]).forEach((n) => soundNames.add(n)));
   });
@@ -1323,6 +1323,7 @@
 
   loadProgress();
   window.WakppuGameTest = {
+    selectLocalAdminBall(){if(window.WakppuAuth?.local)switchEvent(true);},
     localSkinProgress(value) {
       if(!window.WakppuAuth?.local||!testSnapshot||state.busy||WAKPPU_BALLS[state.selected].id!=='eternity')return;
       const progress=Number(value);if(!Number.isFinite(progress))return;
