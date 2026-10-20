@@ -26,7 +26,7 @@ with sync_playwright() as p:
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), (width,height,'overflow')
         for skin in ['wisp','ghost','eclipse']:
             page.locator('.skin-choice[data-skin="'+skin+'"]').click()
-            page.evaluate('''async skin => {for(const name of WakppuPumpkinSkins.profile(skin).sounds){const a=new Audio();a.preload='auto';await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Audio timeout: '+name)),6000);a.oncanplay=()=>{clearTimeout(timer);resolve();};a.onerror=()=>{clearTimeout(timer);reject(new Error('Audio error: '+name));};a.src='/sounds/'+name+'.mp3';a.load();});}}''',skin)
+            page.evaluate('''async skin => {for(const name of WakppuPumpkinSkins.profile(skin).sounds){const a=new Audio();a.preload='auto';await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Audio timeout: '+name)),6000);a.oncanplay=()=>{clearTimeout(timer);resolve();};a.onerror=()=>{clearTimeout(timer);reject(new Error('Audio error: '+name));};a.src='/sounds/'+name;a.load();});}}''',skin)
             assert page.locator('#ballSvg [data-pumpkin-skin="'+skin+'"]').count()==1
             assert page.locator('#ballSvg [data-wax-material="polished"]').count()==1
             assert page.evaluate('''() => [...document.querySelectorAll('button')].every(b=>b.getBoundingClientRect().height>=44)''')
@@ -53,10 +53,18 @@ with sync_playwright() as p:
             page.wait_for_timeout(120)
             count=page.locator('.pumpkin-skin-fx').count()
             compact=width<=600 or height<=500
-            assert count==(0 if reduced else {'wisp':6 if compact else 10,'ghost':9 if compact else 15,'eclipse':12 if compact else 20}[skin]),count
+            assert count==(0 if reduced else {'wisp':6 if compact else 10,'ghost':9 if compact else 15,'eclipse':9 if compact else 13}[skin]),count
             if not reduced and skin=='ghost':assert page.locator('.escaping-spirit').count()==1
-            if not reduced and skin=='eclipse':assert page.locator('.eclipse-ring').count()==1
-            if not reduced and skin=='eclipse':assert page.locator('.eclipsed-moon').count()==1
+            if not reduced and skin=='eclipse':
+                assert page.locator('.eclipse-umbra').count()==1
+                assert page.locator('.eclipse-corona').count()==1
+                assert page.locator('.eclipse-shell-sector').count()==(6 if compact else 10)
+                assert page.evaluate('''() => {const ids=[...document.querySelectorAll('[id]')].map(n=>n.id);return new Set(ids).size===ids.length;}''')
+                if width==1200:
+                    page.wait_for_timeout(180)
+                    page.screenshot(path=str(out/'eclipse-umbra-phase.png'),full_page=True)
+                    page.wait_for_timeout(220)
+                    page.screenshot(path=str(out/'eclipse-shell-release.png'),full_page=True)
             page.wait_for_function('!WakppuPumpkinSkinPreview.read().busy')
             assert page.locator('.pumpkin-skin-fx').count()==0
             assert page.evaluate('WakppuPumpkinSkinPreview.read().clicks')==0
@@ -79,7 +87,7 @@ with sync_playwright() as p:
         assert page.evaluate('window.__audioPlays.length')==0
         page.locator('#muted').uncheck()
         page.locator('#hear').click()
-        page.wait_for_function('window.__audioPlays.some(a=>a.src.includes("/sounds/pumpkin/tap-1.mp3")&&a.volume>0)')
+        page.wait_for_function('window.__audioPlays.some(a=>a.src.includes("/sounds/pumpkin-skins/ghost-early.wav")&&a.volume>0)')
         assert page.locator('#backgroundMusic').count()==0
         page.reload(wait_until='networkidle')
         assert page.evaluate('WakppuPumpkinSkinPreview.read().selected')=='ghost'

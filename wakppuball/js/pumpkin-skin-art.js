@@ -1,6 +1,7 @@
 /* Hand-drawn SVG, using the same round wax silhouette and specular overlay as live skins. */
 window.WakppuPumpkinSkinArt={render(uid,ball,p){
  if(!p)return {defs:'',art:''};
+ if(p.id==='eclipse')return window.WakppuEclipsePumpkin.art(uid);
  const id=p.id,c=ball.design.colors,accent=p.accent;
  const palettes={wisp:{rim:'#a6c9a0',shade:'#092f37',inner:'#073a44',eye:'#baffdf',core:'#dffff2'},ghost:{rim:'#e3d6c8',shade:'#45405e',inner:'#484064',eye:'#e4d8ff',core:'#fff5e6'},eclipse:{rim:'#e6b66b',shade:'#2e1322',inner:'#441123',eye:'#ffb160',core:'#ffe3a7'}};
  const t=palettes[id];

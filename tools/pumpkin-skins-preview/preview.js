@@ -17,6 +17,7 @@
   const layer=svg.querySelector('[id$="-cracks"]');
   cracks=WakppuPreviewCracks.design(SHAPES[ball.design.shape]||SHAPES.circle,ball.clicks,Math.random);
   WakppuPreviewCracks.draw(layer,cracks,ball.design);
+  if(ball.design.pumpkinSkin==='eclipse')WakppuEclipsePumpkin.decorate({svg,reduced:reduced()});
   update();
  }
  function update(){

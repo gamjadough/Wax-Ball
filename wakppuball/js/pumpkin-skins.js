@@ -2,15 +2,15 @@
 (() => {
  const ballId='halloween-pumpkin-2026';
  const profiles=[
-  {id:'wisp',name:'푸른 도깨비불',rank:'희귀',price:50,colors:['#b5eee0','#257d83','#092d43'],accent:'#a2faff',description:'차가운 도깨비불 · 푸른 불씨가 퍼지며 소멸',sounds:['pumpkin/tap-2','eternity/rare-mid','eternity/rare-late','eternity/rare-final']},
-  {id:'ghost',name:'유령의 잭오랜턴',rank:'영웅',price:100,colors:['#fff3e1','#b0a6be','#48415f'],accent:'#e2e1ff',description:'호박 안에 숨어 있는 유령 · 형체가 빠져나오는 파괴',sounds:['pumpkin/tap-1','eternity/transcendent-early','eternity/legendary-mid','eternity/transcendent-final']},
-  {id:'eclipse',name:'월식의 잭오랜턴',rank:'전설',price:200,colors:['#c47b86','#54233e','#141323'],accent:'#f1bc85',description:'흑자주 왁스와 금빛 월식 문양 · 수축 후 달의 고리로 파열',sounds:['eternity/hero-early','eternity/legendary-mid','eternity/transcendent-late','eternity/legendary-final']}
+  {id:'wisp',name:'푸른 도깨비불',rank:'희귀',price:50,colors:['#b5eee0','#257d83','#092d43'],accent:'#a2faff',description:'차가운 도깨비불 · 푸른 불씨가 퍼지며 소멸',sounds:['pumpkin-skins/wisp-early.wav','pumpkin-skins/wisp-mid.wav','pumpkin-skins/wisp-late.wav','pumpkin-skins/wisp-final.wav']},
+  {id:'ghost',name:'유령의 잭오랜턴',rank:'영웅',price:100,colors:['#fff3e1','#b0a6be','#48415f'],accent:'#e2e1ff',description:'호박 안에 숨어 있는 유령 · 형체가 빠져나오는 파괴',sounds:['pumpkin-skins/ghost-early.wav','pumpkin-skins/ghost-mid.wav','pumpkin-skins/ghost-late.wav','pumpkin-skins/ghost-final.wav']},
+  {id:'eclipse',name:'월식의 잭오랜턴',rank:'전설',price:200,colors:['#c47b86','#54233e','#141323'],accent:'#f1bc85',description:'그을린 흑월의 호박 · 개기월식 뒤 붉은 광륜과 표면 파열',sounds:['pumpkin-skins/eclipse-early.wav','pumpkin-skins/eclipse-mid.wav','pumpkin-skins/eclipse-late.wav','pumpkin-skins/eclipse-final.wav']}
  ];
  const profile=id=>profiles.find(p=>p.id===id),ghostPath='M72 131V91C72 54 128 54 128 91V137L115 124L102 139L89 125L72 139Z';
  const flame='M100 35C111 63 137 76 131 107C127 128 111 144 100 162C89 144 72 127 69 108C64 88 76 74 84 64C80 82 91 89 94 75C100 62 101 48 100 35Z';
  const hits=new WeakMap(),seams=new WeakMap();
- const tiers={wisp:{compact:6,full:10,tips:2},ghost:{compact:8,full:14,tips:3},eclipse:{compact:10,full:18,tips:4}};
- function appearance(ball,id){const p=profile(id);if(ball.id!==ballId||!p)return ball;const [light,mid,dark]=p.colors;return {...ball,skinId:'pumpkin_'+id,sound:{...ball.sound,early:[p.sounds[0]],mid:[p.sounds[1]],late:[p.sounds[2]],final:[p.sounds[3]],pitch:id==='ghost'?.86:1,pitchRandom:.015,volume:.62,volumeRandom:.02},design:{...ball.design,art:'pumpkinSkin',pumpkinSkin:id,gloss:true,colors:{light,mid,dark},crack:{dark:'#0b111f',light:p.accent},chip:p.colors}};}
+ const tiers={wisp:{compact:6,full:10,tips:2},ghost:{compact:8,full:14,tips:3},eclipse:{compact:6,full:10,tips:4}};
+ function appearance(ball,id){const p=profile(id);if(ball.id!==ballId||!p)return ball;const [light,mid,dark]=p.colors;return {...ball,skinId:'pumpkin_'+id,sound:{...ball.sound,early:[p.sounds[0]],mid:[p.sounds[1]],late:[p.sounds[2]],final:[p.sounds[3]],pitch:id==='ghost'?.86:1,pitchRandom:.015,volume:.62,volumeRandom:.02},design:{...ball.design,art:'pumpkinSkin',pumpkinSkin:id,gloss:id!=='eclipse',colors:{light,mid,dark},crack:{dark:'#0b111f',light:p.accent},chip:p.colors}};}
  function art(uid,ball){return window.WakppuPumpkinSkinArt.render(uid,ball,profile(ball.design.pumpkinSkin));}
  function syncCracks({ball,svg,cracks,progress,reduced=false}){
   const p=profile(ball.design.pumpkinSkin);if(!p||p.id==='wisp')return;
@@ -50,6 +50,7 @@
  }
  function visual({ball,svg,effects,center,radius=130,speed=1,reduced=false}){
   const p=profile(ball.design.pumpkinSkin);if(!p)return null;reset(svg);
+  if(p.id==='eclipse')return window.WakppuEclipsePumpkin.visual({ball,svg,effects,center,radius,speed,reduced});
   const nodes=[],animations=[];const animate=(el,frames,duration,delay=0)=>{animations.push(el.animate(frames,{duration:duration/speed,delay:delay/speed,easing:'ease-out',fill:'both'}));};
   const spawn=(kind,size,markup)=>{const n=document.createElement('div');n.className='pumpkin-skin-fx '+kind;n.dataset.pumpkinEffect=p.id;n.setAttribute('aria-hidden','true');n.innerHTML=markup;Object.assign(n.style,{left:center.x+'px',top:center.y+'px',width:size+'px',height:size+'px'});effects.append(n);nodes.push(n);return n;};
   animate(svg,reduced?[{opacity:1},{opacity:0}]:p.id==='eclipse'?[{transform:'scale(1)',opacity:1},{transform:'scale(.55) rotate(-14deg)',opacity:.8,offset:.35},{transform:'scale(1.08)',opacity:0}]:[{transform:'scale(1)',opacity:1},{transform:p.id==='ghost'?'scale(.96)':'scale(1.12)',opacity:0}],reduced?250:p.id==='eclipse'?650:400);
@@ -63,10 +64,6 @@
   }
   if(!reduced&&p.id==='ghost'){
    const n=spawn('escaping-spirit',radius,`<svg viewBox="0 0 200 200"><path d="${ghostPath}" fill="#ececff"/><ellipse cx="89" cy="88" rx="5" ry="8" fill="#525d86"/><ellipse cx="111" cy="88" rx="5" ry="8" fill="#525d86"/><ellipse cx="100" cy="110" rx="5" ry="8" fill="#6973a1"/></svg>`);animate(n,[{opacity:0,transform:'translate(-50%,-30%) scale(.4)'},{opacity:.9,offset:.25,transform:'translate(-50%,-65%) scale(1)'},{opacity:0,transform:`translate(-50%,calc(-50% - ${radius}px)) scale(1.1)`}],1200);
-  }
-  if(!reduced&&p.id==='eclipse'){
-   const moon=spawn('eclipsed-moon',radius*1.3,'<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="70" fill="#1c1028"/><path d="M112 32A70 70 0 1 0 157 142A65 65 0 0 1 112 32Z" fill="#d8a767" opacity=".8"/></svg>');animate(moon,[{opacity:0,transform:'translate(-50%,-50%) scale(.35)'},{opacity:.8,offset:.4,transform:'translate(-50%,-50%) scale(1)'},{opacity:0,transform:'translate(-50%,-50%) scale(1.1)'}],1000,100);
-   const n=spawn('eclipse-ring',radius*1.8,'<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="74" fill="#1a0e26" fill-opacity=".35" stroke="#e78a77" stroke-width="2"/><circle cx="100" cy="100" r="65" fill="none" stroke="#d75058" stroke-width="4" stroke-dasharray="2 9"/></svg>');animate(n,[{opacity:0,transform:'translate(-50%,-50%) scale(.3) rotate(20deg)'},{opacity:.75,offset:.35,transform:'translate(-50%,-50%) scale(1) rotate(-20deg)'},{opacity:0,transform:'translate(-50%,-50%) scale(1.35) rotate(-55deg)'}],1100,100);
   }
   let stopped=false;return {cancel(){if(stopped)return;stopped=true;animations.forEach(a=>a.cancel());nodes.forEach(n=>n.remove());svg.style.opacity='';}};
  }

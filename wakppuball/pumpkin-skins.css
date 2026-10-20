@@ -6,6 +6,11 @@
 @keyframes pumpkin-moon-breathe{50%{opacity:.4}}
 @keyframes pumpkin-seal-turn{to{transform:rotate(360deg)}}
 .pumpkin-skin-fx{position:absolute;pointer-events:none;transform:translate(-50%,-50%)}.pumpkin-skin-fx svg{width:100%;height:100%;overflow:visible}
+.eclipse-surface-shadow{animation:eclipse-shadow-drift 11s ease-in-out infinite;transform-origin:100px 100px}.eclipse-furnace{animation:eclipse-furnace-pulse 4.3s ease-in-out infinite}.eclipse-corona-idle{animation:eclipse-corona-breathe 6s ease-in-out infinite}
+@keyframes eclipse-shadow-drift{50%{transform:translateX(-12px)}}@keyframes eclipse-furnace-pulse{50%{opacity:.4}}@keyframes eclipse-corona-breathe{50%{opacity:.4}}
+.eclipse-shell-sector *{animation:none!important;transition:none!important}.eclipse-shell-sector{will-change:transform,opacity}.eclipse-umbra svg{overflow:hidden}
+.preview-reduced .eclipse-corona-idle{animation:none!important}
+@media(prefers-reduced-motion:reduce){.eclipse-corona-idle{animation:none!important}}
 .pumpkin-seams-ghost{animation:pumpkin-seam-breathe 3.2s ease-in-out infinite}.pumpkin-seams-eclipse{animation:pumpkin-seam-breathe 2.4s ease-in-out infinite}
 @keyframes pumpkin-seam-breathe{50%{stroke-opacity:.65}}
 .preview-reduced .pumpkin-seams{animation:none!important}
