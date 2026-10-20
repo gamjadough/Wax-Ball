@@ -19,6 +19,7 @@
     for(const button of $('adminResults').querySelectorAll('button')){
       button.setAttribute('aria-pressed',String(button.dataset.playerId===target));button.disabled=pending;
     }
+    window.dispatchEvent(new CustomEvent('wakppu-admin-target',{detail:{target:selectedPlayer?{id:target,nickname:selectedPlayer.nickname}:null,pending}}));
   }
   function clearSelection(){
     target=null;selectedPlayer=null;selectionVersion++;

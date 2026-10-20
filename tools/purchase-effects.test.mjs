@@ -26,5 +26,5 @@ test('free chime includes provenance, a short bounded waveform and cache version
  const root=new URL('../wakppuball/sounds/starlight/',import.meta.url),meta=JSON.parse(fs.readFileSync(new URL('sources.json',root),'utf8')),bytes=fs.readFileSync(new URL(meta.output,root));
  assert.equal(meta.license,'CC0-1.0');assert.equal(meta.generator,'tools/build-starlight-sound.py');assert.ok(meta.source.includes('Original procedural'));assert.equal(createHash('sha256').update(bytes).digest('hex'),meta.sha256);
  assert.equal(bytes.toString('ascii',0,4),'RIFF');assert.ok(meta.duration<=.9&&meta.peak<=.36);assert.ok(bytes.length<42000);
- const html=read('wakppuball/index.html');for(const f of ['purchase-effects','purchase-ui','game'])assert.ok(html.includes('js/'+f+'.js?v='+(f==='purchase-effects'?'20261019-shatter4':f==='purchase-ui'?'20261020-premium1':'20261020-premium1')));
+ const html=read('wakppuball/index.html');for(const f of ['purchase-effects','purchase-ui','game'])assert.ok(html.includes('js/'+f+'.js?v='+(f==='purchase-effects'?'20261019-shatter4':f==='purchase-ui'?'20261020-admingrant1':'20261020-premium1')));
 });

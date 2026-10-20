@@ -8,8 +8,9 @@ export async function createBankPreview(){
  const idFor=actor=>{const h=createHash('sha256').update(actor.id).digest('hex');return [h.slice(0,8),h.slice(8,12),h.slice(12,16),h.slice(16,20),h.slice(20,32)].join('-');};
  async function mirror(actor){const id=idFor(actor),inv=itemState(actor);await add(id,actor.role,actor.role!=='admin'&&!actor.localAuth?.verified);await db.query('update game_states set gold=$2,item_revision=$3 where user_id=$1',[id,String(actor.state.gold),inv.revision]);await db.query('insert into wakppu_items(user_id,inventory) values($1,$2) on conflict(user_id) do update set inventory=$2',[id,JSON.stringify(inv.inventory)]);}
  async function deliver(actor){const id=idFor(actor),g=(await db.query('select gold::text,item_revision from game_states where user_id=$1',[id])).rows[0],i=(await db.query('select inventory from wakppu_items where user_id=$1',[id])).rows[0];actor.state.gold=g.gold;actor.state.item_revision=Number(g.item_revision);const inv=itemState(actor);inv.revision=Number(g.item_revision);inv.inventory=i.inventory;}
- return {execute(actor,body){queue=queue.catch(()=>{}).then(async()=>{
+ return {execute(actor,body,players=[]){queue=queue.catch(()=>{}).then(async()=>{
   const id=idFor(actor);actors.set(id,actor);await mirror(actor);let target=actor;
+  if(body.action?.startsWith('admin_paid_')){target=players.find(p=>p.id===body.user_id);if(!target)throw Object.assign(new Error('대상 계정이 없습니다.'),{code:'PT404'});actors.set(idFor(target),target);await mirror(target);await db.query('update players set nickname=$2 where user_id=$1',[idFor(target),target.nickname]);body={...body,user_id:idFor(target)};}
   if(body.order_id){const row=(await db.query('select user_id from wakppu_purchase_orders where id=$1',[body.order_id])).rows[0];target=actors.get(row?.user_id)||actor;if(target!==actor)await mirror(target);}
   await db.query('update players set nickname=$2,banned=$3 where user_id=$1',[id,actor.nickname,actor.moderation?.status==='banned']);
   const result=await rpc(id,body);await deliver(target);return result;
