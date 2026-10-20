@@ -9,5 +9,5 @@ export async function createBankPreview(){
   const id=idFor(actor);await add(id,actor.role,actor.role!=='admin'&&!actor.localAuth?.verified);
   await db.query('update players set nickname=$2,banned=$3 where user_id=$1',[id,actor.nickname,actor.moderation?.status==='banned']);
   return rpc(id,body);
- });return queue;},async supporters(){await queue.catch(()=>{});return (await db.query("select p.nickname from players p join wakppu_purchase_entitlements e on e.user_id=p.user_id where e.product_id='supporter_pack'")).rows.map(r=>r.nickname);}};
+ });return queue;},async ownsSupporter(actor){await queue.catch(()=>{});return (await db.query("select exists(select 1 from wakppu_purchase_entitlements where user_id=$1 and product_id='supporter_pack') as owned",[idFor(actor)])).rows[0].owned;},async supporters(){await queue.catch(()=>{});return (await db.query("select p.nickname from players p join wakppu_purchase_entitlements e on e.user_id=p.user_id where e.product_id='supporter_pack'")).rows.map(r=>r.nickname);}};
 }

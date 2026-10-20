@@ -19,6 +19,7 @@ try:
    def login(admin=False):
     page.evaluate("async p=>{const r=await WakppuAuth.signIn(p.admin?'dodoonglee@gmail.com':'guest',p.admin?p.password:'');if(r.error)throw r.error;await WakppuItemGame.restore();}",{'admin':admin,'password':password})
     page.wait_for_function('WakppuItemGame.read().ready')
+    if not admin:expect(page.locator('#admin')).to_be_hidden()
    def shop():
     if page.locator('#admin').is_visible():page.locator('[data-close="admin"]').click()
     if page.locator('#shop').is_hidden():page.locator('#shopBtn').tap()
@@ -60,6 +61,11 @@ try:
    assert page.locator('#ballWrap').evaluate("e=>getComputedStyle(e,'::before').content")!='none'
    out=ROOT/'tools/test-results';out.mkdir(parents=True,exist_ok=True)
    assert page.locator('.purchase-aura').count()==1
+   assert page.evaluate('WakppuPurchases.serverHits()')
+   revision=page.evaluate('WakppuItemGame.read().revision')
+   page.locator('#ballSvg').tap()
+   page.wait_for_function('(r)=>WakppuItemGame.read().revision>r',arg=revision)
+   assert page.evaluate('WakppuItemGame.read().gold')==gold
    for ball in ['yellow','blackhole','whitehole']:
     page.evaluate('(id)=>WakppuGameTest.run("show",id)',ball)
     page.screenshot(path=str(out/f'paid-aura-{ball}-{width}.png'))
@@ -80,11 +86,7 @@ try:
     page.evaluate('(id)=>WakppuGameTest.run("last",id)',ball)
     page.locator('#ballSvg').tap()
     page.wait_for_function("document.querySelector('#ballWrap').classList.contains('purchase-aura-broken')")
-    page.screenshot(path=str(out/f'aura-shattering-{ball}-{width}.png'))
-    page.wait_for_timeout(750)
-    assert page.locator('#ballWrap').evaluate("e=>getComputedStyle(e,'::before').opacity")=='0'
-    assert page.locator('.purchase-aura').evaluate('e=>Number(getComputedStyle(e).opacity)')==0
-    assert page.locator('#ballSvg').evaluate('e=>getComputedStyle(e).filter')=='none'
+    page.wait_for_function("()=>{const w=document.querySelector('#ballWrap'),a=document.querySelector('.purchase-aura');return w.classList.contains('purchase-aura-broken')&&getComputedStyle(w,'::before').opacity==='0'&&Number(getComputedStyle(a).opacity)===0&&getComputedStyle(document.querySelector('#ballSvg')).filter==='none'}")
     page.screenshot(path=str(out/f'aura-gone-{ball}-{width}.png'))
     page.wait_for_function("!document.querySelector('#ballWrap').classList.contains('purchase-aura-broken')")
     assert page.locator('.purchase-aura').evaluate('e=>Number(getComputedStyle(e).opacity)')>.5
@@ -100,7 +102,7 @@ try:
    row=page.locator('#rankingList li.ranking-supporter')
    assert row.locator('b, .ranking-nickname, em, strong').count()==4
    assert row.locator('.supporter-name').count()==0
-   assert row.evaluate('e=>getComputedStyle(e).borderTopStyle')=='solid'
+   expect(row).to_have_css('border-top-style','solid')
    assert page.locator('#ranking .sheet').evaluate('e=>e.scrollWidth<=e.clientWidth+1')
    page.screenshot(path=str(out/f'supporter-ranking-row-{width}.png'))
    page.locator('[data-close="ranking"]').tap()

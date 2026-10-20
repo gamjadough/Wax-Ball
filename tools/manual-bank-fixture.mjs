@@ -21,7 +21,7 @@ export async function bankFixture(){
   if (select banned from players where user_id=auth.uid()) then raise sqlstate 'PT403';end if;
   if (select maintenance from test_settings) and (select role from players where user_id=auth.uid())<>'admin' then raise sqlstate 'PT503';end if;
   return '{}'::jsonb;end$$;`);
- const sql=await readFile(bankMigration,'utf8');await db.exec(sql);
+ const sql=await readFile(bankMigration,'utf8');await db.exec(sql);await db.exec(await readFile(new URL('../supabase/migrations/20261020010000_supporter_gold_bonus.sql',import.meta.url),'utf8'));
  async function add(id,role='player',anonymous=false){
   await db.query('insert into auth.users values($1,$2,$3,case when $2 then null else now() end) on conflict(id) do update set is_anonymous=$2,email=$3,email_confirmed_at=excluded.email_confirmed_at',[id,anonymous,id+'@local.test']);
   await db.query('insert into players values($1,$2,$3,false) on conflict(user_id) do update set role=$3',[id,'유저'+id.slice(-2),role]);

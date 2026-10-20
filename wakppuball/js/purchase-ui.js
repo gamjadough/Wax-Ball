@@ -18,10 +18,10 @@
    const owned=!!data.owned[p.id],skin=p.id==='starlight_skin';
    const buy=owned&&skin?equipButton('purchaseCardEquip'):button(owned?'적용 중':money(p.amount)+' · 주문하기',()=>order(p.id),busy||!data.enabled||!data.eligible||owned);buy.dataset.purchaseProduct=p.id;
    card.append(icon,node('h3',p.name),node('p',p.description));
-   if(owned)card.append(node('p',skin?(data.equipped?'보유 중 · 장착 중':'보유 중 · 미장착'):'보유 중 · 후원자 외형 적용 중','purchase-owned-state'));
+   if(owned)card.append(node('p',skin?(data.equipped?'보유 중 · 장착 중':'보유 중 · 미장착'):'보유 중 · 외형·파괴 골드 +5% 적용 중','purchase-owned-state'));
    card.append(buy);$('purchaseProducts').append(card);
   }
-  if(data?.owned.supporter_pack)$('purchaseOwned').append(node('p','💜 후원자 칭호와 닉네임 테두리 적용 중'));
+  if(data?.owned.supporter_pack)$('purchaseOwned').append(node('p','✦ 후원자 외형 · 파괴 골드 +5% 적용 중'));
   $('purchaseOwnedSection').hidden=!data||!Object.keys(data.owned).length;
   if(data?.owned.starlight_skin){$('purchaseOwned').append(equipButton('purchaseEquip'));$('purchaseInventoryContent').append(node('p','별빛 오라 스킨 · 모든 왁뿌볼에 적용 · '+(data.equipped?'장착 중':'미장착')),equipButton('purchaseInventoryEquip'));}
   else $('purchaseInventoryContent').textContent='보유한 유료 스킨이 없습니다. 상점의 유료 상점 탭에서 확인하세요.';
@@ -81,10 +81,10 @@
  }
  async function adminMutate(action,payload){if(adminBusy)return;adminBusy=true;try{await WakppuAuth.invoke(action,payload);if(adminOwner!==game()?.account)return;$('purchaseAdminStatus').textContent='처리했습니다. 거래 기록에 저장되었습니다.';}catch(e){$('purchaseAdminStatus').textContent=e.message;}finally{adminBusy=false;await adminLoad();await refresh();}}
  document.addEventListener('DOMContentLoaded',()=>{
-  $('shopPremium').innerHTML='<h3>💜 유료 상점</h3><p id="purchaseNotice" role="status"></p><p>외형 전용 상품 · 능력치와 Gold 보상은 바뀌지 않습니다.</p><section id="purchaseOwnedSection" class="purchase-owned" hidden><h3>보유 상품</h3><div id="purchaseOwned"></div></section><p id="purchaseStatus" role="status"></p><label class="purchase-depositor">입금자명<input id="purchaseDepositor" maxlength="30" autocomplete="name" placeholder="실제 이체에 사용할 이름"></label><div id="purchaseProducts" class="purchase-products"></div><h3>최근 주문 내역 (최대 50건)</h3><button id="purchaseRefresh" class="btn small" type="button">주문·지급 상태 새로고침</button><div id="purchaseHistory"></div>';
+  $('shopPremium').innerHTML='<h3>💜 유료 상점</h3><p id="purchaseNotice" role="status"></p><p>응원팩: 후원자 외형 + 영구 파괴 골드 5% 보너스 · 별빛 오라 스킨: 외형 전용</p><p>골드 보너스는 환생·꿀·코팅·아이템·이벤트 계산 후 파괴 보상에만 적용됩니다. 1G 미만은 누적되며 중복 구매로 늘어나지 않습니다.</p><section id="purchaseOwnedSection" class="purchase-owned" hidden><h3>보유 상품</h3><div id="purchaseOwned"></div></section><p id="purchaseStatus" role="status"></p><label class="purchase-depositor">입금자명<input id="purchaseDepositor" maxlength="30" autocomplete="name" placeholder="실제 이체에 사용할 이름"></label><div id="purchaseProducts" class="purchase-products"></div><h3>최근 주문 내역 (최대 50건)</h3><button id="purchaseRefresh" class="btn small" type="button">주문·지급 상태 새로고침</button><div id="purchaseHistory"></div>';
   const inventory=node('section');inventory.id='purchaseInventory';inventory.className='purchase-owned';inventory.innerHTML='<h3>유료 스킨 · 모든 볼</h3><div id="purchaseInventoryContent"></div>';($('inventorySkinsPage')||$('itemsModal').querySelector('.sheet')).prepend(inventory);
   $('purchaseRefresh').onclick=refresh;
-  const badge=node('span','✦ 왁뿌볼 후원자','supporter-badge');badge.id='supporterBadge';badge.hidden=true;document.querySelector('.info').append(badge);
+  const badge=node('span','✦ 왁뿌볼 후원자 · 골드 +5%','supporter-badge');badge.id='supporterBadge';badge.hidden=true;document.querySelector('.info').append(badge);
   const admin=node('section');admin.id='purchaseAdmin';
   admin.innerHTML='<h3>💰 유료 상점 · 계좌이체 주문</h3><p>실제 은행 거래내역을 직접 확인한 뒤 지급하세요. 입금 알림·송금 화면만으로 지급하지 마세요. 환불은 은행에서 먼저 완료한 뒤 아래에서 상품을 회수합니다.</p><form id="purchaseConfigForm"><label>은행명<input name="bank_name" maxlength="50" required></label><label>받을 계좌번호<input name="account_number" maxlength="50" inputmode="numeric" required></label><label>예금주<input name="account_holder" maxlength="50" required></label><label>문의 방법 (이메일 등)<input name="support_contact" maxlength="200" required></label><label class="purchase-check"><input name="enabled" type="checkbox">새 계좌이체 주문 받기</label><button class="btn" type="submit">계좌·판매 상태 저장</button></form><p>계좌 변경 전 생성된 주문은 당시 계좌 정보를 유지합니다. 변경 후에도 기존 계좌의 입금을 확인하세요.</p><p id="purchaseAdminStatus" role="status"></p><label>주문 상태<select id="purchaseAdminFilter"><option value="all">전체</option><option value="pending">입금 대기</option><option value="claimed">입금 알림 접수</option><option value="approved">지급 완료</option><option value="cancelled">취소</option><option value="refunded">환불 완료</option></select></label><button id="purchaseAdminRefresh" class="btn">주문·설정 새로고침</button><div id="purchaseAdminOrders"></div><div class="purchase-pages"><button id="purchaseAdminPrev" class="btn">이전 50건</button><button id="purchaseAdminNext" class="btn">다음 50건</button></div>';
   $('admin').querySelector('.sheet').append(admin);
@@ -97,5 +97,5 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
   setInterval(()=>{if(!document.hidden&&!$('shopPremium').hidden&&!$('shop').hidden)refresh();},15000);refresh();render();
  });
- window.WakppuPurchases={refresh};
+ window.WakppuPurchases={refresh,serverHits:()=>!!game()?.account&&(owner!==game()?.account||!data||!!data.owned?.supporter_pack)};
 })();
