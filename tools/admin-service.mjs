@@ -1,3 +1,4 @@
+import {supporterReward} from './supporter-service.mjs';
 import {unlockAdminBalls} from './admin-content.mjs';
 import {hammerDamage} from './hammer-catalog.mjs';
 import {weeklyRows,refreshWeekly,skipWeekly} from './weekly-service.mjs';
@@ -112,7 +113,7 @@ export function execute(store, actor, body) {
     const coated=Date.parse(actor.state.coating_expires_at)>now,e=itemData.effective(inv.effects,Date.parse(actor.state.honey_expires_at),Date.parse(actor.state.coating_expires_at),now);
     const total=itemData.required(ball.clicks,e,coated),clicks=Math.min(total,(progress?progress.clicks:(actor.state.current_clicks||0))+itemData.damage(hammerDamage(actor.state.hammer_owned,actor.state.hammer_level,actor.state.hammer_selected_level),e));
     consumeEffects(actor,'hit',now);let reward=0n;
-    if(clicks===total){const g=store.gold_event;reward=itemData.reward(ball.reward,actor.state.rebirths,g&&now>=Date.parse(g.starts_at)&&now<Date.parse(g.ends_at)?g.multiplier:1,e);actor.state.gold=(BigInt(actor.state.gold)+reward).toString();consumeEffects(actor,'break',now);}
+    if(clicks===total){const g=store.gold_event;reward=supporterReward(actor,itemData.reward(ball.reward,actor.state.rebirths,g&&now>=Date.parse(g.starts_at)&&now<Date.parse(g.ends_at)?g.multiplier:1,e));actor.state.gold=(BigInt(actor.state.gold)+reward).toString();consumeEffects(actor,'break',now);}
     if(progress)progress.clicks=clicks===total?0:clicks;else actor.state.current_clicks=clicks===total?0:clicks;
     inv.revision++;actor.state.item_revision=inv.revision;
     const result=limitedDrop(store,actor,body,{...snapshot(actor),clicks,required_clicks:total,reward:String(reward)});inv.requests.set(body.request_id,{action,result:structuredClone(result)});return result;
@@ -130,7 +131,7 @@ export function execute(store, actor, body) {
     if(clicks===total){
       const best=catalog.reduce((n,b)=>actor.state.unlocked_ball_ids.includes(b.id)&&BigInt(b.reward)>n?BigInt(b.reward):n,1n),g=store.gold_event;
       reward=best*10n*(1n<<BigInt(actor.state.rebirths))*(Date.parse(actor.state.honey_expires_at)>now?2n:1n)*BigInt(coated?3:1)*BigInt(g&&now>=Date.parse(g.starts_at)&&now<Date.parse(g.ends_at)?g.multiplier:1);
-      actor.state.gold=(BigInt(actor.state.gold)+reward).toString();
+      reward=supporterReward(actor,reward);actor.state.gold=(BigInt(actor.state.gold)+reward).toString();
     }
     if(actor.lifecycle)actor.lifecycle.first_play_at||=new Date().toISOString();
     const result={clicks,required_clicks:total,reward:reward.toString(),gold:String(actor.state.gold)};

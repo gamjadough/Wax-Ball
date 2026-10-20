@@ -1,3 +1,4 @@
+import {supporterReward} from './supporter-service.mjs';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {hammerDamage} from './hammer-catalog.mjs';
@@ -29,7 +30,7 @@ export function limitedAction(store,actor,b,catalog,rng=()=>crypto.getRandomValu
   const now=Date.now(),e=itemData.effective(inv.effects,Date.parse(actor.state.honey_expires_at),Date.parse(actor.state.coating_expires_at),now);
   const required=itemData.required(100,e,Date.parse(actor.state.coating_expires_at)>now),clicks=Math.min(required,s.clicks+itemData.damage(hammerDamage(actor.state.hammer_owned,actor.state.hammer_level,actor.state.hammer_selected_level),e));
   consumeEffects(actor,'hit',now);let reward=0n;
-  if(clicks===required){const g=store.gold_event;reward=itemData.reward(limitedData.ball.reward,actor.state.rebirths,g&&now>=Date.parse(g.starts_at)&&now<Date.parse(g.ends_at)?g.multiplier:1,e);actor.state.gold=String(BigInt(actor.state.gold)+reward);consumeEffects(actor,'break',now);}
+  if(clicks===required){const g=store.gold_event;reward=supporterReward(actor,itemData.reward(limitedData.ball.reward,actor.state.rebirths,g&&now>=Date.parse(g.starts_at)&&now<Date.parse(g.ends_at)?g.multiplier:1,e));actor.state.gold=String(BigInt(actor.state.gold)+reward);consumeEffects(actor,'break',now);}
   s.clicks=clicks===required?0:clicks;hit={clicks,required_clicks:required,reward:String(reward)};
  }else fail('잘못된 한정 볼 요청');
  inv.revision++;actor.state.item_revision=inv.revision;const result={...snapshot(actor),...hit,limited:limitedSnapshot(store,actor)};

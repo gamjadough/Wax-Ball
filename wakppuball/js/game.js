@@ -615,7 +615,7 @@
   function onHit(clientX, clientY, damage = null, isHammer = activeHammerLevel()>0, authorizedEvent=false,requiredTotal=null) {
     if(window.WakppuSkins?.busy)return;
     if (hammerSelectionBusy || state.busy || window.wakppuServerBlocked || window.WakppuItems?.busy || window.WakppuLimited?.busy) return;
-    if(!authorizedEvent&&!testSnapshot&&(window.WakppuItems?.active()||limitedSelected()||window.WakppuLimited?.data?.season.active)&&state.remoteReady){hitItem(clientX,clientY);return;}
+    if(!authorizedEvent&&!testSnapshot&&(window.WakppuItems?.active()||window.WakppuPurchases?.serverHits()||limitedSelected()||window.WakppuLimited?.data?.season.active)&&state.remoteReady){hitItem(clientX,clientY);return;}
     if(eventSelected&&!authorizedEvent){hitEvent(clientX,clientY);return;}
     if (!testSnapshot) window.dispatchEvent(new Event('wakppu-real-play'));
     const data = requiredTotal?{...currentBall(),clicks:requiredTotal}:currentBall();
