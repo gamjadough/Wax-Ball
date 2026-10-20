@@ -4,7 +4,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
 import {createStore} from './admin-service.mjs';
-import {execute} from './separate-events-service.mjs';
+import {execute} from './input-guard-service.mjs';
 import {itemData,itemState,snapshot} from './items-service.mjs';
 import {limitedState,limitedSnapshot} from './limited-service.mjs';
 import {skinAction,skinState} from './skins-service.mjs';
@@ -46,6 +46,10 @@ const server=http.createServer(async(req,res)=>{
           return send(200,{ok:true,user:localUser(actor)});
         }
         return send(200,demoPayments.execute(actor,body));
+      }
+      if(req.url==='/local/input-guard-demo'&&process.env.WAKPPU_LOCAL_INPUT_GUARD_PREVIEW==='1'){
+        if(!actor)return send(401,{error:'로컬 샘플 로그인이 필요합니다.'});
+        const {scenario}=await import('./input-guard-preview.mjs');return send(200,scenario(store,body.mode));
       }
       if(req.url==='/local/sleep-clock'&&process.env.WAKPPU_LOCAL_SLEEP_TIME){
         if(actor?.role!=='admin')return send(403,{error:'로컬 관리자 로그인 필요'});
@@ -113,6 +117,7 @@ const server=http.createServer(async(req,res)=>{
     if(name==='/index.html') data=Buffer.from(data.toString().replace(/<script src="js\/account.js[^\"]*"><\/script>/,'<script src="js/local-account.js"></script>'));
     if(name==='/index.html'&&paymentsEnabled&&url.searchParams.get('preview')==='payments')data=Buffer.from(data.toString().replace('</body>','<link rel="stylesheet" href="/local-payments/store.css"><script type="module" src="/local-payments/store.js"></script></body>'));
     if(name==='/index.html'&&bankPreview&&url.searchParams.get('preview')==='bank')data=Buffer.from(data.toString().replace('</body>',`<script src="js/local-bank-preview.js"></script><script>WakppuLocalBankPreview(${JSON.stringify(password)});</script></body>`));
+    if(name==='/index.html'&&url.searchParams.get('preview')==='inputguard'&&process.env.WAKPPU_LOCAL_INPUT_GUARD_PREVIEW==='1')data=Buffer.from(data.toString().replace('</body>',`<script src="js/local-input-guard-preview.js"></script><script>WakppuLocalInputGuardPreview(${JSON.stringify(password)});</script></body>`));
     if(name==='/index.html'&&url.searchParams.get('preview')==='whitehole')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-whitehole-preview.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='transcendent')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-transcendent-preview.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='skin-sounds')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-skin-inventory-preview.js"></script></body>'));

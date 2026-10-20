@@ -615,7 +615,7 @@
   function onHit(clientX, clientY, damage = null, isHammer = activeHammerLevel()>0, authorizedEvent=false,requiredTotal=null) {
     if(window.WakppuSkins?.busy)return;
     if (hammerSelectionBusy || state.busy || window.wakppuServerBlocked || window.WakppuItems?.busy || window.WakppuLimited?.busy) return;
-    if(!authorizedEvent&&!testSnapshot&&(window.WakppuItems?.active()||limitedSelected()||window.WakppuLimited?.data?.season.active)&&state.remoteReady){hitItem(clientX,clientY);return;}
+    if(!authorizedEvent&&!testSnapshot&&state.remoteReady){hitItem(clientX,clientY);return;}
     if(eventSelected&&!authorizedEvent){hitEvent(clientX,clientY);return;}
     if (!testSnapshot) window.dispatchEvent(new Event('wakppu-real-play'));
     const data = requiredTotal?{...currentBall(),clicks:requiredTotal}:currentBall();
@@ -674,7 +674,7 @@
       if(!eventSelected&&BigInt(result.reward)>0n)itemAward=BigInt(result.reward);
       if(eventSelected){eventAward=BigInt(result.reward);displayEventReward=eventAward;}
       onHit(x,y,result.clicks-state.clicks,activeHammerLevel()>0,true,result.required_clicks);
-    }catch(error){await restoreAccount();hintEl.textContent=error.message;hintEl.classList.remove('gone');}
+    }catch(error){if(error.status===429){pendingItemHits=[];hintEl.textContent=error.message;hintEl.classList.remove('gone');return;}await restoreAccount();hintEl.textContent=error.message;hintEl.classList.remove('gone');}
     finally{eventRequest=false;if(!state.busy){updateAll();const next=pendingItemHits.shift();if(next)queueMicrotask(()=>hitItem(...next));}else pendingItemHits=[];}
   }
 
@@ -1228,6 +1228,7 @@
   svgEl.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
+    window.WakppuInputGuard?.record(e);
     onHit(e.clientX, e.clientY);
   });
   stage.addEventListener('contextmenu', (e) => e.preventDefault());

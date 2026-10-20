@@ -309,3 +309,5 @@ body {
   .modal{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
   #game{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
 }
+
+.input-guard-controls{display:flex;gap:8px;flex-wrap:wrap}.input-guard-controls button{min-height:44px}.input-guard-record{border:1px solid var(--line);border-radius:10px;margin:8px 0;padding:10px;overflow-wrap:anywhere}.input-guard-record p{white-space:pre-line;line-height:1.6}
