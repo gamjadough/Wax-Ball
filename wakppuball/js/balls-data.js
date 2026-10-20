@@ -51,4 +51,4 @@ const WAKPPU_BALLS = [
 ];
 
 // 이벤트 볼은 일반 해금·환생·관리자 해금 목록에 포함하지 않습니다.
-const ADMIN_EVENT_BALL={id:'admin-event',name:'관리자 왁뿌볼',grade:'관리자',gradeColor:'#dc5267',clicks:600,reward:0,design:{art:'adminEvent',shape:'circle',gloss:false,crack:{dark:'#390713',light:'#a82c46'},chip:['#120912','#541329','#8a2941']},sound:{pitch:.5,volume:.65}};
+const ADMIN_EVENT_BALL={id:'admin-event',name:'관리자 왁뿌볼',grade:'관리자',gradeColor:'#dc5267',clicks:600,reward:0,design:{art:'adminEvent',shape:'circle',gloss:false,crack:{dark:'#390713',light:'#a82c46'},chip:['#120912','#541329','#8a2941']},sound:{early:["admin/pulse.wav"],mid:["admin/chime.wav"],late:["admin/fracture.wav"],final:["admin/collapse.wav"],pitch:1,pitchRandom:.025,volume:.6,volumeRandom:.035}};
