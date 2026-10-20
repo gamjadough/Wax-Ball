@@ -13,7 +13,8 @@ export async function bankFixture(){
  create table auth.users(id uuid primary key,is_anonymous boolean default false,email text,email_confirmed_at timestamptz);
  create table players(user_id uuid primary key,nickname text unique,role text default 'player',banned boolean default false);
  create table test_settings(maintenance boolean);insert into test_settings values(false);
- create table game_states(user_id uuid primary key,gold numeric default 12345,rebirths integer default 7);
+ create table game_states(user_id uuid primary key,gold numeric default 12345,rebirths integer default 7,item_revision bigint default 0);
+ create table wakppu_items(user_id uuid primary key references players,inventory jsonb default '{}',effects jsonb default '{}',pity integer default 0,total bigint default 0);
  create table admin_audit_logs(id bigint generated always as identity primary key,admin_user_id uuid,target_user_id uuid,action text,reason text,details jsonb,created_at timestamptz default now());
  create function public.wakppu_api(b jsonb) returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$begin
   if b->>'action'='rankings' then return (select jsonb_agg(jsonb_build_object('nickname',nickname,'gold','12345','rebirths',7)) from players);end if;
@@ -22,6 +23,7 @@ export async function bankFixture(){
   if (select maintenance from test_settings) and (select role from players where user_id=auth.uid())<>'admin' then raise sqlstate 'PT503';end if;
   return '{}'::jsonb;end$$;`);
  const sql=await readFile(bankMigration,'utf8');await db.exec(sql);await db.exec(await readFile(new URL('../supabase/migrations/20261020010000_supporter_gold_bonus.sql',import.meta.url),'utf8'));
+ await db.exec(await readFile(new URL('../supabase/migrations/20261020110000_first_steps_pack.sql',import.meta.url),'utf8'));
  async function add(id,role='player',anonymous=false){
   await db.query('insert into auth.users values($1,$2,$3,case when $2 then null else now() end) on conflict(id) do update set is_anonymous=$2,email=$3,email_confirmed_at=excluded.email_confirmed_at',[id,anonymous,id+'@local.test']);
   await db.query('insert into players values($1,$2,$3,false) on conflict(user_id) do update set role=$3',[id,'유저'+id.slice(-2),role]);

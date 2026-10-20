@@ -14,18 +14,20 @@
   cosmetics();$('purchaseProducts').replaceChildren();$('purchaseHistory').replaceChildren();$('purchaseOwned').replaceChildren();$('purchaseInventoryContent').replaceChildren();
   $('purchaseNotice').textContent=!game()?.account?'계정에서 로그인한 뒤 주문할 수 있습니다.':!data?'상품 정보를 불러오고 있습니다.':!data.enabled?'판매 준비 중입니다. 현재 새 주문을 받고 있지 않습니다.':!data.eligible?'빠른 시작 계정은 이메일 연결과 인증을 마친 뒤 주문할 수 있습니다.':'계좌이체 후 관리자가 실제 입금을 확인하면 상품을 지급합니다.';
   for(const p of data?.products||[]){
-   const card=node('article',undefined,'purchase-card');const icon=node('div',p.id==='starlight_skin'?'✦':'💜',p.id==='starlight_skin'?'purchase-skin-sample':'purchase-pack-sample');icon.setAttribute('aria-hidden','true');
-   const owned=!!data.owned[p.id],skin=p.id==='starlight_skin';
-   const buy=owned&&skin?equipButton('purchaseCardEquip'):button(owned?'적용 중':money(p.amount)+' · 주문하기',()=>order(p.id),busy||!data.enabled||!data.eligible||owned);buy.dataset.purchaseProduct=p.id;
+   const card=node('article',undefined,'purchase-card');const icon=node('div',p.id==='starlight_skin'?'✦':p.id==='first_steps_pack'?'🎁':'💜',p.id==='starlight_skin'?'purchase-skin-sample':'purchase-pack-sample');icon.setAttribute('aria-hidden','true');
+   const starter=p.id==='first_steps_pack',owned=!!data.owned[p.id]||(starter&&!!data.starter_grant),skin=p.id==='starlight_skin';
+   const buy=owned&&skin?equipButton('purchaseCardEquip'):button(owned?(starter?'구매 완료 · 재구매 불가':'적용 중'):money(p.amount)+' · 주문하기',()=>order(p.id),busy||!data.enabled||!data.eligible||owned);buy.dataset.purchaseProduct=p.id;
    card.append(icon,node('h3',p.name),node('p',p.description));
-   if(owned)card.append(node('p',skin?(data.equipped?'보유 중 · 장착 중':'보유 중 · 미장착'):'보유 중 · 외형·파괴 골드 +5% 적용 중','purchase-owned-state'));
+   if(owned)card.append(node('p',skin?(data.equipped?'보유 중 · 장착 중':'보유 중 · 미장착'):starter?(data.starter_grant?.reclaimed_at?'환불 처리 완료 · 재구매 불가':'지급 완료 · 아이템은 인벤토리에서 사용'):'보유 중 · 외형·파괴 골드 +5% 적용 중','purchase-owned-state'));
    card.append(buy);$('purchaseProducts').append(card);
   }
+  if(data?.starter_grant)$('purchaseOwned').append(node('p',data.starter_grant.reclaimed_at?'🎁 첫걸음 성장팩 · 환불 처리 완료':'🎁 첫걸음 성장팩 · 3,000G 및 아이템 지급 완료'));
   if(data?.owned.supporter_pack)$('purchaseOwned').append(node('p','✦ 후원자 외형 · 파괴 골드 +5% 적용 중'));
-  $('purchaseOwnedSection').hidden=!data||!Object.keys(data.owned).length;
+  const hasPurchases=!!data&&(!!data.starter_grant||!!Object.keys(data.owned).length);
+  $('purchaseOwnedSection').hidden=!hasPurchases;
   if(data?.owned.starlight_skin){$('purchaseOwned').append(equipButton('purchaseEquip'));$('purchaseInventoryContent').append(node('p','별빛 오라 스킨 · 모든 왁뿌볼에 적용 · '+(data.equipped?'장착 중':'미장착')),equipButton('purchaseInventoryEquip'));}
   else $('purchaseInventoryContent').textContent='보유한 유료 스킨이 없습니다. 상점의 유료 상점 탭에서 확인하세요.';
-  if(!data||!Object.keys(data.owned).length)$('purchaseOwned').textContent='보유한 유료 상품이 없습니다.';
+  if(!hasPurchases)$('purchaseOwned').textContent='보유한 유료 상품이 없습니다.';
   for(const o of data?.orders||[]){
    const row=node('article',undefined,'purchase-order');row.dataset.purchaseOrder=o.id;
    row.append(node('h4',o.product_name+' · '+money(o.amount)),node('p',states[o.status]),node('small','주문번호 '+o.id+' · '+time(o.created_at)),node('p','입금자명: '+o.depositor));
@@ -44,7 +46,7 @@
  async function refresh(){
   if(busy)return;const version=++sequence,current=game()?.account;
   if(!current||!game()?.ready){data=null;owner=null;render();return;}
-  try{const next=await WakppuAuth.invoke('purchase_catalog');if(version!==sequence||current!==game()?.account)return;data=next;owner=current;render();}
+  try{const next=await WakppuAuth.invoke('purchase_catalog');if(version!==sequence||current!==game()?.account)return;data=next;owner=current;render();if(next.starter_grant&&Number(next.starter_grant.revision)>Number(game()?.revision||0)&&!game()?.busy){await WakppuItemGame.restore();await window.WakppuItems?.refresh();}}
   catch(e){if(version===sequence){data=null;owner=null;render();status(e.message);}}
  }
  async function mutate(action,payload,message){
@@ -69,10 +71,12 @@
      const approve=button('실제 입금 확인 · 상품 지급',()=>{if(Number(amount.value)!==o.amount||reference.value.trim().length<4){$('purchaseAdminStatus').textContent='실제 입금액과 4자 이상의 거래 식별 기록을 입력하세요.';return;}if(confirm('은행 거래내역에서 '+o.depositor+'님의 '+money(o.amount)+' 입금을 확인했나요? 이 주문에 상품을 지급합니다.'))adminMutate('admin_purchase_approve',{order_id:o.id,confirmed_amount:Number(amount.value),deposit_reference:reference.value.trim()});});approve.dataset.approveOrder=o.id;
      row.append(label,receipt,approve);
     }
-    if(o.status==='approved'){
+    if(o.status==='approved'&&!(o.product_id==='first_steps_pack'&&!o.starter_refundable)){
+     if(o.product_id==='first_steps_pack')row.append(node('p','현재 지급 재화 회수 가능 · 송금 전에 보유 상태를 확인하세요. 사용 후에는 회수가 제한될 수 있습니다.'));
      const label=node('label','은행에서 실제 환불을 완료한 기록');const ref=node('input');ref.maxLength=100;label.append(ref);
      const refund=button('실제 환불 완료 · 상품 회수',()=>{if(ref.value.trim().length<4){$('purchaseAdminStatus').textContent='실제 환불 완료 기록을 4자 이상 입력하세요.';return;}if(confirm('은행에서 환불을 이미 완료했나요? 이 버튼은 송금하지 않고 상품만 회수합니다.'))adminMutate('admin_purchase_refund',{order_id:o.id,refund_reference:ref.value.trim()});});refund.dataset.refundOrder=o.id;row.append(label,refund);
     }
+    if(o.status==='approved'&&o.product_id==='first_steps_pack'&&!o.starter_refundable)row.append(node('p','지급 재화 부족 · 자동 회수 불가. 환불 송금 전에 사용 내역과 별도 처리 방법을 확인하세요.'));
     $('purchaseAdminOrders').append(row);
    }
    if(!list.orders.length)$('purchaseAdminOrders').textContent='해당 주문이 없습니다.';
@@ -81,7 +85,7 @@
  }
  async function adminMutate(action,payload){if(adminBusy)return;adminBusy=true;try{await WakppuAuth.invoke(action,payload);if(adminOwner!==game()?.account)return;$('purchaseAdminStatus').textContent='처리했습니다. 거래 기록에 저장되었습니다.';}catch(e){$('purchaseAdminStatus').textContent=e.message;}finally{adminBusy=false;await adminLoad();await refresh();}}
  document.addEventListener('DOMContentLoaded',()=>{
-  $('shopPremium').innerHTML='<h3>💜 유료 상점</h3><p id="purchaseNotice" role="status"></p><p>응원팩: 후원자 외형 + 영구 파괴 골드 5% 보너스 · 별빛 오라 스킨: 외형 전용</p><p>골드 보너스는 환생·꿀·코팅·아이템·이벤트 계산 후 파괴 보상에만 적용됩니다. 1G 미만은 누적되며 중복 구매로 늘어나지 않습니다.</p><section id="purchaseOwnedSection" class="purchase-owned" hidden><h3>보유 상품</h3><div id="purchaseOwned"></div></section><p id="purchaseStatus" role="status"></p><label class="purchase-depositor">입금자명<input id="purchaseDepositor" maxlength="30" autocomplete="name" placeholder="실제 이체에 사용할 이름"></label><div id="purchaseProducts" class="purchase-products"></div><h3>최근 주문 내역 (최대 50건)</h3><button id="purchaseRefresh" class="btn small" type="button">주문·지급 상태 새로고침</button><div id="purchaseHistory"></div>';
+  $('shopPremium').innerHTML='<h3>💜 유료 상점</h3><p id="purchaseNotice" role="status"></p><p>응원팩: 후원자 외형 + 영구 파괴 골드 5% 보너스 · 별빛 오라 스킨: 외형 전용</p><p>응원팩 골드 보너스는 환생·꿀·코팅·아이템·이벤트 계산 후 파괴 보상에만 적용됩니다. 1G 미만은 누적되며 중복 구매로 늘어나지 않습니다.</p><section id="purchaseOwnedSection" class="purchase-owned" hidden><h3>보유 상품</h3><div id="purchaseOwned"></div></section><p id="purchaseStatus" role="status"></p><label class="purchase-depositor">입금자명<input id="purchaseDepositor" maxlength="30" autocomplete="name" placeholder="실제 이체에 사용할 이름"></label><div id="purchaseProducts" class="purchase-products"></div><h3>최근 주문 내역 (최대 50건)</h3><button id="purchaseRefresh" class="btn small" type="button">주문·지급 상태 새로고침</button><div id="purchaseHistory"></div>';
   const inventory=node('section');inventory.id='purchaseInventory';inventory.className='purchase-owned';inventory.innerHTML='<h3>유료 스킨 · 모든 볼</h3><div id="purchaseInventoryContent"></div>';($('inventorySkinsPage')||$('itemsModal').querySelector('.sheet')).prepend(inventory);
   $('purchaseRefresh').onclick=refresh;
   const badge=node('span','✦ 왁뿌볼 후원자 · 골드 +5%','supporter-badge');badge.id='supporterBadge';badge.hidden=true;document.querySelector('.info').append(badge);
@@ -97,5 +101,5 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
   setInterval(()=>{if(!document.hidden&&!$('shopPremium').hidden&&!$('shop').hidden)refresh();},15000);refresh();render();
  });
- window.WakppuPurchases={refresh,serverHits:()=>!!game()?.account&&(owner!==game()?.account||!data||!!data.owned?.supporter_pack)};
+ window.WakppuPurchases={refresh,serverHits:()=>!!game()?.account&&(owner!==game()?.account||!data||!!data.owned?.supporter_pack||data.orders?.some(o=>o.product_id==='first_steps_pack'&&['pending','claimed'].includes(o.status)))};
 })();
