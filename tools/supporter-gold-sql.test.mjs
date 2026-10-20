@@ -44,5 +44,13 @@ test('actual SQL: supporter final reward, fractional carry, replay, all ball pat
  await db.exec('set role authenticated');await assert.rejects(db.query('select wakppu_supporter_reward($1,100)',[player]),{code:'42501'});await db.exec('reset role');
  await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:admin})]);await assert.rejects(db.query('select wakppu_supporter_reward($1,100)',[player]),{code:'PT403'});
  await assert.rejects(rpc({action:'items'},null),{code:'PT401'});
+ // A consumable purchase shares the real item revision, protecting delivery from old saves.
+ await db.exec(await sql('20261020110000_first_steps_pack.sql'));
+ const stale=await items(),starter=(await rpc({action:'purchase_order',product_id:'first_steps_pack',depositor:'성장팩',request_id:crypto.randomUUID()})).order;
+ await rpc({action:'admin_purchase_approve',order_id:starter.id,confirmed_amount:1100,deposit_reference:'local-starter'},admin);
+ const delivered=await items();assert.equal(BigInt(delivered.gold),BigInt(stale.gold)+3000n);assert.equal(delivered.revision,stale.revision+1);
+ assert.equal(delivered.inventory.rare_honey,2);assert.equal(delivered.inventory.rare_crack_booster,3);assert.equal(delivered.inventory.common_wax_feather,2);
+ await assert.rejects(rpc({action:'save_progress',item_revision:stale.revision,gold:stale.gold,admin_revision:0,rebirths:0,unlocked_ball_ids:['yellow'],selected_ball_id:'yellow'}));
+ assert.equal((await items()).gold,delivered.gold);
  }finally{await db.close();}
 });
