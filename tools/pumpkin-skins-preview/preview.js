@@ -13,12 +13,15 @@
  function cancel(){++serial;clearTimeout(finalTimer);effect?.cancel();effect=null;skins.reset($('ballSvg'));stopSound();busy=false;}
  function draw(){
   const uid=makeUid(),svg=$('ballSvg');svg.innerHTML=buildBallSvgInner(ball,uid);cracks=[];
-  const paths=['M100 99L70 73L65 49L46 39','M100 99L137 77L143 48L159 42','M100 99L125 128L119 157L138 173','M100 99L74 126L68 155L47 164','M74 126L42 119L27 99','M137 77L169 100L176 127'];
-  const layer=svg.querySelector('[id$="-cracks"]');for(let i=0;i<paths.length;i++)for(const [color,width] of [[ball.design.crack.dark,3],[ball.design.crack.light,1.2]]){const n=document.createElementNS('http://www.w3.org/2000/svg','path');n.setAttribute('d',paths[i]);n.setAttribute('fill','none');n.setAttribute('stroke',color);n.setAttribute('stroke-width',width);n.setAttribute('pathLength','1');n.setAttribute('stroke-dasharray','1');n.dataset.previewCrack=String(i);layer.append(n);cracks.push({n,index:i});}
+  svg.classList.remove('instant');
+  const layer=svg.querySelector('[id$="-cracks"]');
+  cracks=WakppuPreviewCracks.design(SHAPES[ball.design.shape]||SHAPES.circle,ball.clicks,Math.random);
+  WakppuPreviewCracks.draw(layer,cracks,ball.design);
   update();
  }
  function update(){
-  const p=Math.min(1,clicks/100);for(const {n,index} of cracks){const frac=Math.max(0,Math.min(1,(p-index*.06)/.6));n.setAttribute('stroke-dashoffset',String(1-frac));n.setAttribute('opacity',frac>0?'1':'0');}
+  const p=Math.min(1,clicks/100);WakppuPreviewCracks.update(cracks,p);
+  skins.syncCracks({ball,svg:$('ballSvg'),cracks,progress:p,reduced:reduced()});
   $('progress').value=clicks;$('progressText').textContent=busy?'마지막 균열 → 파괴 연출 → 재등장':`균열 ${clicks} / 100`;
   $('hit').disabled=busy;$('destroy').disabled=busy;$('hear').disabled=busy;
   document.documentElement.classList.toggle('preview-reduced',reduced());
@@ -33,17 +36,17 @@
  }
  function sound(final=false){const cfg=getSoundConfig(ball),p=clicks/100,stage=final?'final':p<.35?'early':p<.7?'mid':'late';SoundManager.play(cfg[stage][0],{pitch:cfg.pitch,pitchRandom:cfg.pitchRandom,volume:cfg.volume,volumeRandom:cfg.volumeRandom});}
  function shatter(){
-  busy=true;clicks=100;update();const epoch=serial;finalTimer=setTimeout(()=>{
+  busy=true;clicks=100;$('ballSvg').classList.add('instant');update();const epoch=serial;finalTimer=setTimeout(()=>{
    if(epoch!==serial)return;sound(true);const stage=$('stage').getBoundingClientRect(),bounds=$('ballWrap').getBoundingClientRect();
    const options={ball,svg:$('ballSvg'),wrap:$('ballWrap'),effects:$('effects'),center:{x:bounds.x+bounds.width/2-stage.x,y:bounds.y+bounds.height/2-stage.y},radius:bounds.width*.43,reduced:reduced(),valid:()=>epoch===serial&&!document.hidden,reward:()=>{$('status').textContent='파괴 확인 · 미리보기이므로 실제 Gold·사탕은 바뀌지 않습니다.';},respawn:()=>{if(epoch===serial){busy=false;clicks=0;draw();}}};
    effect=selected==='base'?WakppuHalloweenEffects.play({...options,random:()=>1}):skins.play(options);
   },70);
  }
- function hit(){if(busy||document.hidden)return;SoundManager.unlock();clicks=Math.min(100,clicks+10);update();if(clicks===100)shatter();else{sound();skins.hit({ball,svg:$('ballSvg'),progress:clicks/100,reduced:reduced()});}}
+ function hit(){if(busy||document.hidden)return;SoundManager.unlock();clicks=Math.min(100,clicks+10);update();if(clicks===100)shatter();else{sound();skins.hit({ball,svg:$('ballSvg'),cracks,progress:clicks/100,reduced:reduced()});}}
  for(const p of skins.profiles){const card=document.createElement('article');card.className='skin-card';card.innerHTML=`<div class="skin-thumb">${buildBallThumb(skins.appearance(base,p.id))}</div><strong>${p.name}</strong><span>${p.rank}</span><small>예정 ${p.price} 사탕</small>`;const button=document.createElement('button');button.className='btn small skin-choice';button.type='button';button.dataset.skin=p.id;button.setAttribute('aria-pressed','false');button.textContent='장착해보기';button.onclick=()=>{SoundManager.unlock();choose(p.id);};card.append(button);$('skinChoices').append(card);}
  $('ballSvg').addEventListener('pointerdown',e=>{e.preventDefault();hit();});$('ballSvg').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();hit();}});$('hit').onclick=hit;
  $('baseSkin').onclick=()=>choose('base');$('destroy').onclick=()=>{if(busy)return;SoundManager.unlock();shatter();};$('reset').onclick=()=>choose(selected,false);
- document.querySelectorAll('[data-progress]').forEach(b=>b.onclick=()=>{cancel();clicks=Number(b.dataset.progress)*100;draw();skins.hit({ball,svg:$('ballSvg'),progress:clicks/100,reduced:reduced()});});
+ document.querySelectorAll('[data-progress]').forEach(b=>b.onclick=()=>{cancel();$('ballSvg').classList.remove('instant');clicks=Number(b.dataset.progress)*100;update();skins.hit({ball,svg:$('ballSvg'),cracks,progress:clicks/100,reduced:reduced()});});
  $('hear').onclick=()=>{SoundManager.unlock();sound();};
  for(const id of ['muted','volume','reduced'])$(id).addEventListener('input',()=>{if(id==='reduced')choose(selected,false);update();window.dispatchEvent(new Event('wakppu-settings-changed'));});
  osReduced.addEventListener('change',()=>choose(selected,false));document.addEventListener('visibilitychange',()=>{if(document.hidden)choose(selected,false);});window.addEventListener('pagehide',cancel);

@@ -32,18 +32,31 @@ with sync_playwright() as p:
             assert page.evaluate('''() => [...document.querySelectorAll('button')].every(b=>b.getBoundingClientRect().height>=44)''')
             if width==1200:
                 page.screenshot(path=str(out/f'{skin}-refined-clean.png'),full_page=True)
+            original_paths=page.evaluate('''() => [...document.querySelectorAll('#ballSvg [id$="-cracks"] > path.crack')].map(p=>p.getAttribute('d'))''')
+            assert 60<=len(original_paths)<=90
             page.locator('#ballSvg').tap() if width<1000 else page.locator('#ballSvg').click()
             assert page.evaluate('WakppuPumpkinSkinPreview.read().clicks')==10
+            page.locator('[data-progress=".5"]').click()
+            mid_width=page.locator('#ballSvg [id$="-cracks"] > path.crack').first.evaluate('(p)=>parseFloat(p.style.strokeWidth)')
             page.locator('[data-progress=".9"]').click()
-            assert page.evaluate('''() => {const paths=[...document.querySelectorAll('#ballSvg [id$="-cracks"] path')];return paths.length===12&&paths.every((p,i)=>i%2||p.getAttribute('d')===paths[i+1].getAttribute('d'));}''')
+            assert page.locator('#ballSvg [id$="-cracks"] > path.crack').first.evaluate('(p)=>parseFloat(p.style.strokeWidth)')>mid_width
+            assert page.evaluate('''() => [...document.querySelectorAll('#ballSvg [id$="-cracks"] > path.crack')].map(p=>p.getAttribute('d'))''')==original_paths
+            assert page.evaluate('''() => {const paths=[...document.querySelectorAll('#ballSvg [id$="-cracks"] > path.crack')];return paths.every((p,i)=>p.getAttribute('d')===paths[i-i%3].getAttribute('d'));}''')
+            transition=page.locator('#ballSvg [id$="-cracks"] > path.crack').first.evaluate('(p)=>getComputedStyle(p).transitionDuration')
+            assert transition==('0s' if reduced else '0.16s, 0.2s'),transition
+            seams=page.locator('#ballSvg [data-pumpkin-seam]').count()
+            assert seams=={'wisp':0,'ghost':10,'eclipse':20}[skin],seams
+            assert page.evaluate('''() => [...document.querySelectorAll('#ballSvg [data-pumpkin-seam]')].every(p=>[...document.querySelectorAll('#ballSvg [id$="-cracks"] > path.crack')].some(b=>b.getAttribute('d')===p.getAttribute('d')&&b.style.strokeDashoffset===p.style.strokeDashoffset))''')
             page.locator('#stage').scroll_into_view_if_needed()
             page.screenshot(path=str(out/f'{skin}-{width}x{height}-{reduced}.png'),full_page=True)
             page.locator('#destroy').click()
             page.wait_for_timeout(120)
             count=page.locator('.pumpkin-skin-fx').count()
-            assert count==(0 if reduced else (8 if width<=600 or height<=500 else 16)+(0 if skin=='wisp' else 1)),count
+            compact=width<=600 or height<=500
+            assert count==(0 if reduced else {'wisp':6 if compact else 10,'ghost':9 if compact else 15,'eclipse':12 if compact else 20}[skin]),count
             if not reduced and skin=='ghost':assert page.locator('.escaping-spirit').count()==1
             if not reduced and skin=='eclipse':assert page.locator('.eclipse-ring').count()==1
+            if not reduced and skin=='eclipse':assert page.locator('.eclipsed-moon').count()==1
             page.wait_for_function('!WakppuPumpkinSkinPreview.read().busy')
             assert page.locator('.pumpkin-skin-fx').count()==0
             assert page.evaluate('WakppuPumpkinSkinPreview.read().clicks')==0

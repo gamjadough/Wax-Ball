@@ -32,7 +32,9 @@ test('three cosmetic profiles preserve original stats and use existing audio wit
 test('all tiers preserve callback timing, respect reduced motion and clean every particle',()=>{
  for(const id of ['wisp','ghost','eclipse'])for(const speed of [1,2.5])for(const reduced of [false,true])for(const compact of [false,true]){
   const x=setup(id,{speed,respawnSpeed:4,reduced,compact});x.run();const reward=(reduced?250:450)/speed,end=(reduced?550:1300)/speed+250;
-  assert.equal(x.nodes.length,reduced?0:(compact?8:16)+(id==='wisp'?0:1));
+  const extras={wisp:0,ghost:1,eclipse:2};
+  assert.equal(x.nodes.length,reduced?0:x.skins.tiers[id][compact?'compact':'full']+extras[id]);
+  if(id==='eclipse'&&!reduced)assert.ok(x.nodes.some(n=>n.className.includes('eclipsed-moon')));
   x.until(reward-.01);assert.equal(x.paid,0);x.until(reward);assert.equal(x.paid,1);assert.equal(x.spawned,0);
   x.until(end);assert.equal(x.spawned,1);assert.equal(x.paid,1);assert.equal(x.timers.size,0);assert.ok(x.nodes.every(n=>n.removed));assert.ok(x.animations.every(a=>a.cancelled));
  }
