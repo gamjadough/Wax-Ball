@@ -1062,7 +1062,7 @@
       const rows = await window.WakppuAuth.invoke('rankings');
       if (!Array.isArray(rows)) throw new Error('invalid ranking');
       rankingStatus.hidden = true;
-      rankingList.innerHTML = rows.map((row, i) => `<li${row.supporter===true?' class="ranking-supporter" title="왁뿌볼 후원자"':''}><b>${i + 1}</b><span class="ranking-nickname">${row.online === true ? '<i class="ranking-online" role="img" aria-label="온라인" title="온라인"></i>' : ''}${escapeHtml(row.nickname)}</span><em>${fmt(row.rebirths)}회</em><strong title="${escapeHtml(String(row.gold))}G">${fmt(row.gold)}G</strong></li>`).join('');
+      rankingList.innerHTML = rows.map((row, i) => `<li${row.premium_supporter===true?' class="ranking-supporter ranking-premium" title="프리미엄 후원자"':row.supporter===true?' class="ranking-supporter" title="왁뿌볼 후원자"':''}><b>${i + 1}</b><span class="ranking-nickname">${row.online === true ? '<i class="ranking-online" role="img" aria-label="온라인" title="온라인"></i>' : ''}${escapeHtml(row.nickname)}${row.premium_supporter===true&&row.supporter_title_visible!==false?'<small class="ranking-premium-title">♛ 프리미엄 후원자</small>':''}</span><em>${fmt(row.rebirths)}회</em><strong title="${escapeHtml(String(row.gold))}G">${fmt(row.gold)}G</strong></li>`).join('');
     } catch (_) {
       rankingStatus.hidden = false;
       rankingStatus.textContent = '랭킹을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.';

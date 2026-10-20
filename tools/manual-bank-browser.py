@@ -23,8 +23,8 @@ try:
    def shop():
     if page.locator('#admin').is_visible():page.locator('[data-close="admin"]').click()
     if page.locator('#shop').is_hidden():page.locator('#shopBtn').tap()
-    page.locator('#shopPremiumTab').tap();expect(page.locator('#shopPremium')).to_be_visible();page.wait_for_function("document.querySelectorAll('[data-purchase-product]').length===3")
-   page.goto(base+'/?preview=bank');expect(page.locator('#shopPremium')).to_be_visible();page.wait_for_function("document.querySelectorAll('[data-purchase-product]').length===3")
+    page.locator('#shopPremiumTab').tap();expect(page.locator('#shopPremium')).to_be_visible();page.wait_for_function("document.querySelectorAll('[data-purchase-product]').length===4")
+   page.goto(base+'/?preview=bank');expect(page.locator('#shopPremium')).to_be_visible();page.wait_for_function("document.querySelectorAll('[data-purchase-product]').length===4")
    # Reset only the shared isolated SQL fixture's previous viewport purchases.
    login(True)
    for o in rpc('admin_purchase_orders')['orders']:
@@ -47,7 +47,7 @@ try:
    assert page.evaluate('WakppuItemGame.read().gold')==gold
    # Paid skin: admin authority, equip persistence and actual refund state.
    page.locator('[data-purchase-product="starlight_skin"]').tap();skin=rpc('purchase_catalog')['orders'][0]
-   login(True);rpc('admin_purchase_approve',order_id=skin['id'],confirmed_amount=3300,deposit_reference='local-'+skin['id'])
+   login(True);rpc('admin_purchase_approve',order_id=skin['id'],confirmed_amount=500,deposit_reference='local-'+skin['id'])
    login();shop();expect(page.locator('#purchaseEquip')).to_be_visible()
    expect(page.locator('#purchaseCardEquip')).to_be_enabled();expect(page.locator('#purchaseCardEquip')).to_contain_text('장착')
    page.locator('#purchaseCardEquip').tap()

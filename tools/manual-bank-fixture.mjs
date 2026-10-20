@@ -6,7 +6,8 @@ const pkg=new URL('./test-results/sql-check/package.json',import.meta.url);
 const require=createRequire(existsSync(pkg)?pkg:new URL('../../sql-check/package.json',import.meta.url));
 const {PGlite}=require('@electric-sql/pglite');
 export const bankMigration=new URL('../supabase/migrations/20261019084353_manual_bank_orders.sql',import.meta.url);
-export async function bankFixture(){
+export const premiumMigration=new URL('../supabase/migrations/20261020100009_premium_supporter_pack.sql',import.meta.url);
+export async function bankFixture({premium=true}={}){
  const db=new PGlite();
  await db.exec(`create role anon;create role authenticated;create schema auth;
  create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('test.uid',true),'')::uuid$$;
@@ -24,6 +25,7 @@ export async function bankFixture(){
   return '{}'::jsonb;end$$;`);
  const sql=await readFile(bankMigration,'utf8');await db.exec(sql);await db.exec(await readFile(new URL('../supabase/migrations/20261020010000_supporter_gold_bonus.sql',import.meta.url),'utf8'));
  await db.exec(await readFile(new URL('../supabase/migrations/20261020110000_first_steps_pack.sql',import.meta.url),'utf8'));
+ if(premium)await db.exec(await readFile(premiumMigration,'utf8'));
  async function add(id,role='player',anonymous=false){
   await db.query('insert into auth.users values($1,$2,$3,case when $2 then null else now() end) on conflict(id) do update set is_anonymous=$2,email=$3,email_confirmed_at=excluded.email_confirmed_at',[id,anonymous,id+'@local.test']);
   await db.query('insert into players values($1,$2,$3,false) on conflict(user_id) do update set role=$3',[id,'유저'+id.slice(-2),role]);

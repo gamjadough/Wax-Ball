@@ -46,6 +46,18 @@ test('actual SQL: supporter final reward, fractional carry, replay, all ball pat
  await assert.rejects(rpc({action:'items'},null),{code:'PT401'});
  // A consumable purchase shares the real item revision, protecting delivery from old saves.
  await db.exec(await sql('20261020110000_first_steps_pack.sql'));
+ await db.exec(await sql('20261020100009_premium_supporter_pack.sql'));
+ const premium=(await rpc({action:'purchase_order',product_id:'premium_supporter_pack',depositor:'프리미엄',request_id:crypto.randomUUID()})).order;
+ assert.equal(premium.amount,10000);await rpc({action:'admin_purchase_approve',order_id:premium.id,confirmed_amount:10000,deposit_reference:'local-premium'},admin);
+ await db.exec(`update game_states set supporter_gold_remainder=0,rebirths=0,honey_expires_at=null,coating_expires_at=null where user_id='${player}';update wakppu_items set effects='{}' where user_id='${player}';update server_settings set gold_event=null where id=true;`);
+ let premiumEarned=0n;for(let i=0;i<10;i++)premiumEarned+=BigInt((await finish('item_hit')).reward);assert.equal(premiumEarned,13n);assert.equal(await carry(),0);
+ const premiumReplay=requests.at(-1),premiumBalance=(await items()).gold;await rpc(premiumReplay);assert.equal((await items()).gold,premiumBalance);
+ // Existing entitlement and every old multiplier still yield exactly +30%, never +35%.
+ await db.exec(`insert into wakppu_purchase_entitlements(user_id,product_id,order_id) values('${player}','supporter_pack','${order.id}');update game_states set supporter_gold_remainder=0,rebirths=2,honey_expires_at=now()+interval '1 minute',coating_expires_at=now()+interval '1 minute' where user_id='${player}';update wakppu_items set effects='{"rare_wax_coating":{"remaining":5}}' where user_id='${player}';update server_settings set gold_event=jsonb_build_object('multiplier',7,'starts_at',now()-interval '1 second','ends_at',now()+interval '1 minute') where id=true;`);
+ assert.equal((await finish('item_hit')).reward,'436');assert.equal(await carry(),80);
+ await db.exec(`delete from wakppu_purchase_entitlements where user_id='${player}' and product_id='supporter_pack';update game_states set supporter_gold_remainder=0,rebirths=0,honey_expires_at=null,coating_expires_at=null where user_id='${player}';update wakppu_items set effects='{}' where user_id='${player}';update server_settings set gold_event=null where id=true;`);
+ assert.equal((await finish('event_ball_hit',{event_id:event.id})).reward,'13');assert.equal((await finish('item_hit',{event_id:event.id})).reward,'13');
+ await send('limited_select',{ball_id:'halloween-pumpkin-2026'});assert.equal((await finish('limited_hit')).reward,'1950000000');await send('limited_select',{ball_id:null});
  const stale=await items(),starter=(await rpc({action:'purchase_order',product_id:'first_steps_pack',depositor:'성장팩',request_id:crypto.randomUUID()})).order;
  await rpc({action:'admin_purchase_approve',order_id:starter.id,confirmed_amount:1100,deposit_reference:'local-starter'},admin);
  const delivered=await items();assert.equal(BigInt(delivered.gold),BigInt(stale.gold)+3000n);assert.equal(delivered.revision,stale.revision+1);

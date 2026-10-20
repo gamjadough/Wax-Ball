@@ -9,6 +9,17 @@ window.WakppuLocalBankPreview=password=>document.addEventListener('DOMContentLoa
   status.textContent=admin?'로컬 관리자 계정입니다. 관리자 패널의 유료 상점 항목에서 샘플 입금을 확인하세요.':'로컬 구매자 계정입니다. 샘플 주문을 만들 수 있습니다.';
  }
  for(const [label,admin] of [['구매자 계정',false],['관리자 계정',true]]){const b=document.createElement('button');b.className='btn small';b.textContent=label;b.onclick=()=>login(admin);panel.append(b);}
- panel.append(status);document.getElementById('shopPremium').append(panel);
+ async function sample(product,upgrade=false){
+  const controls=panel.querySelectorAll('button');controls.forEach(b=>b.disabled=true);
+  try{
+   await login(false);
+   async function grant(id){const c=await WakppuAuth.invoke('purchase_catalog');if(c.owned[id])return;const r=await WakppuAuth.invoke('purchase_order',{product_id:id,depositor:'로컬 체험',request_id:crypto.randomUUID()});await login(true);await WakppuAuth.invoke('admin_purchase_approve',{order_id:r.order.id,confirmed_amount:r.order.amount,deposit_reference:'sample-'+r.order.id});await login(false);}
+   if(upgrade)await grant('supporter_pack');await grant(product);
+   if(product==='starlight_skin')await WakppuAuth.invoke('purchase_equip',{equipped:true});
+   await WakppuPurchases.refresh();status.textContent='로컬 샘플 지급 완료 · 실제 송금·운영 계정과 무관합니다. 상점을 닫고 계정·랭킹에서 확인하세요.';
+  }catch(e){status.textContent=e.message;}finally{controls.forEach(b=>b.disabled=false);}
+ }
+ for(const [label,id,upgrade] of [['프리미엄 신규 구매 체험','premium_supporter_pack',false],['응원팩 → 프리미엄 업그레이드 체험','premium_supporter_pack',true],['별빛 오라 500원 체험','starlight_skin',false]]){const b=document.createElement('button');b.className='btn small';b.textContent=label;b.onclick=()=>sample(id,upgrade);panel.append(b);}
+ panel.append(status);document.getElementById('purchaseProducts').before(panel);
  if(!sessionStorage.getItem('wakppu-bank-preview'))login(false).then(()=>{sessionStorage.setItem('wakppu-bank-preview','1');WakppuItems.showShop('premium');});
 });

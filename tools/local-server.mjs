@@ -101,8 +101,8 @@ const server=http.createServer(async(req,res)=>{
         execute(store,actor,{action:'bootstrap'});
         try{return send(200,await bankPreview.execute(actor,body));}catch(error){if(/^PT\d{3}$/.test(error.code))error.status=Number(error.code.slice(2));throw error;}
       }
-      if(body.action==='rankings'&&bankPreview){const result=execute(store,actor,body),supporters=await bankPreview.supporters();return send(200,result.map(row=>({...row,supporter:supporters.includes(row.nickname)})));}
-      if(bankPreview)actor.supporterPack=await bankPreview.ownsSupporter(actor);
+      if(body.action==='rankings'&&bankPreview){const result=execute(store,actor,body),supporters=await bankPreview.supporters();return send(200,result.map(row=>{const s=supporters.find(s=>s.nickname===row.nickname);return {...row,supporter:!!s,premium_supporter:s?.bonus===30,supporter_title_visible:s?.title_visible!==false};}));}
+      if(bankPreview){const bonus=await bankPreview.supporterLevel(actor);actor.supporterPack=bonus>=5;actor.premiumSupporterPack=bonus===30;}
       return send(200,execute(store,actor,body));
     }
     const url=new URL(req.url,'http://localhost');let name=decodeURIComponent(url.pathname);

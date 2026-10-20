@@ -4,4 +4,6 @@ test('loopback preview: 5% carry and idempotent gameplay match SQL, no bonus for
  let last,total=0n;for(let i=0;i<20;i++){const b={action:'item_hit',request_id:crypto.randomUUID(),item_revision:itemState(p).revision};last=execute(store,p,b);total+=BigInt(last.reward);assert.deepEqual(execute(store,p,b),last);}
  assert.equal(total,21n);assert.equal(p.state.gold,'21');assert.equal(p.supporterGoldRemainder,0);
  p.supporterPack=false;const r=execute(store,p,{action:'item_hit',request_id:crypto.randomUUID(),item_revision:itemState(p).revision});assert.equal(r.reward,'1');
+ p.premiumSupporterPack=true;p.supporterPack=true;p.supporterGoldRemainder=0;
+ total=0n;for(let i=0;i<10;i++){const b={action:'item_hit',request_id:crypto.randomUUID(),item_revision:itemState(p).revision};const result=execute(store,p,b);total+=BigInt(result.reward);assert.deepEqual(execute(store,p,b),result);}assert.equal(total,13n);
 });
