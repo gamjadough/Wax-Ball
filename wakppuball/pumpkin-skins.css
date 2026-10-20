@@ -1,4 +1,5 @@
 .pumpkin-wisp-flame,.pumpkin-ghost-spirit,.pumpkin-eclipse-moon,.pumpkin-eclipse-seal{transform-origin:100px 105px}
+.pumpkin-skin-section{border-top:1px solid var(--line);margin-top:22px;padding-top:12px}.pumpkin-skin-section h3{margin:6px 0}.pumpkin-skin-note,.pumpkin-skin-status{font-size:12px;line-height:1.6;color:var(--muted)}.pumpkin-skin-balance{font-size:13px;color:var(--gold)}.pumpkin-skin-section button{min-height:44px}.pumpkin-skin-section .skin-card{min-width:0}.pumpkin-skin-section .skin-card strong{overflow-wrap:anywhere}
 .pumpkin-wisp-flame{animation:pumpkin-wisp-breathe 2.3s ease-in-out infinite}.pumpkin-wisp-orbit{animation:pumpkin-wisp-breathe 3s ease-in-out infinite}
 .pumpkin-ghost-spirit{animation:pumpkin-spirit-float 3.2s ease-in-out infinite}.pumpkin-eclipse-moon{animation:pumpkin-moon-breathe 4.5s ease-in-out infinite}.pumpkin-eclipse-seal{animation:pumpkin-seal-turn 28s linear infinite}
 @keyframes pumpkin-wisp-breathe{50%{transform:translateY(-3px) scaleY(1.035);opacity:.55}}
@@ -16,4 +17,5 @@
 .preview-reduced .pumpkin-seams{animation:none!important}
 @media(prefers-reduced-motion:reduce){.pumpkin-seams,.crack{animation:none!important;transition:none!important}}
 .preview-reduced [data-pumpkin-skin] *{animation:none!important}
+.reduced-effects [data-pumpkin-skin] *,.reduced-effects .pumpkin-seams,.reduced-effects .eclipse-corona-idle{animation:none!important;transition:none!important}
 @media(prefers-reduced-motion:reduce){[data-pumpkin-skin] *{animation:none!important}}

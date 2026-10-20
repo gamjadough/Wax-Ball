@@ -1,4 +1,4 @@
-// Cosmetic candidate assets. No ownership, inventory, price or server writes here.
+// Cosmetic assets only. Live ownership and candy exchange are verified by the server API.
 (() => {
  const ballId='halloween-pumpkin-2026';
  const profiles=[
@@ -30,7 +30,7 @@
   for(const {cr,n,scale}of run.paths){n.style.strokeDashoffset=String(1-cr.frac);n.style.strokeWidth=String((.8+progress*1.9)*scale);n.style.visibility=cr.frac>.001?'visible':'hidden';}
  }
  function reset(svg){const run=hits.get(svg);run?.animations.forEach(a=>a.cancel());run?.node.remove();hits.delete(svg);}
- function hit({ball,svg,cracks=[],progress,reduced=false}){
+ function hit({ball,svg,cracks=[],progress,reduced=false,physical=true}){
   reset(svg);const p=profile(ball.design.pumpkinSkin);if(!p)return;
   const energy=svg.querySelector('[data-pumpkin-energy]');if(energy)energy.style.opacity=String(.35+Math.min(1,Math.max(0,progress))*.65);
   const node=document.createElementNS('http://www.w3.org/2000/svg','g');node.dataset.pumpkinImpact=p.id;node.setAttribute('pointer-events','none');
@@ -44,7 +44,7 @@
   svg.querySelector('[id$="-inner"]')?.append(node);const animations=[];
   if(!reduced){
    animations.push(node.animate([{opacity:.55,transform:'translateY(0)'},{opacity:0,transform:p.id==='ghost'?'translateY(-12px)':'translateY(-5px)'}],{duration:320,fill:'forwards'}));
-   svg.style.transformOrigin='50% 50%';animations.push(svg.animate([{transform:'scale(1)'},{transform:'scale(1.018,.965)',offset:.3},{transform:'scale(1)'}],{duration:210,easing:'ease-out'}));
+   if(physical){svg.style.transformOrigin='50% 50%';animations.push(svg.animate([{transform:'scale(1)'},{transform:'scale(1.018,.965)',offset:.3},{transform:'scale(1)'}],{duration:210,easing:'ease-out'}));}
   }else node.setAttribute('opacity','.25');
   hits.set(svg,{node,animations});
  }
@@ -67,7 +67,7 @@
   }
   let stopped=false;return {cancel(){if(stopped)return;stopped=true;animations.forEach(a=>a.cancel());nodes.forEach(n=>n.remove());svg.style.opacity='';}};
  }
- // Preview scheduler mirrors the live pumpkin reward/respawn deadlines, without grants or scares.
+ // Shared live/preview scheduler keeps reward and respawn deadlines, without bonus grants or scares.
  function play(options){const {valid,reward,respawn,speed=1,respawnSpeed=1,reduced=false}=options;const effect=visual(options),timers=[];let stopped=false,paid=false;
   function cancel(){if(stopped)return;stopped=true;timers.forEach(clearTimeout);effect?.cancel();}
   function at(ms,fn){timers.push(setTimeout(()=>{if(stopped)return;if(!valid()){cancel();return;}fn();},ms));}

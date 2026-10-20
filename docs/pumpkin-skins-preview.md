@@ -1,5 +1,8 @@
 # Jack-o-lantern skin workshop (local review only)
 
+Historical workshop notes below. The approved three skins are now integrated
+into the live game; see [production integration](pumpkin-skins-release.md).
+
 Three cosmetic candidates for the existing Halloween Jack-o-lantern:
 
 | Skin | Proposed rank / candy price | Main visual difference |

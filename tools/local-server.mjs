@@ -60,6 +60,7 @@ const server=http.createServer(async(req,res)=>{
         if(!actor)return send(401,{error:'로컬 로그인 필요'});
         store.limited_preview=body.mode==='ended'?'ended':'active';const limited=limitedState(actor);
         if(body.mode!=='ended'){limited.tokens=100;limited.owned={};limited.selected=null;limited.clicks=0;limited.requests.clear();actor.state.gold='100000000';actor.state.hammer_owned=true;actor.state.hammer_level=30;actor.state.rebirths=0;actor.state.unlocked_ball_ids=['yellow','green'];actor.state.selected_ball_id='green';actor.state.current_clicks=0;const inv=itemState(actor);inv.effects={};inv.revision++;actor.state.item_revision=inv.revision;}
+        if(body.mode!=='ended'&&process.env.WAKPPU_LOCAL_PUMPKIN_SKINS_PREVIEW==='1'){limited.tokens=450;actor.skins=null;}
         return send(200,limitedSnapshot(store,actor));
       }
       if(req.url==='/local/items-demo'){

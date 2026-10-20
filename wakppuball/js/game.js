@@ -124,7 +124,7 @@
   function eventActive(){return !!adminBallAlwaysAvailable()||WakppuAdminBallEvent.current().phase==='active';}
   function eventBaseReward(){return WAKPPU_BALLS.reduce((best,b,i)=>state.unlocked[i]&&BigInt(b.reward)>best?BigInt(b.reward):best,1n)*10n;}
   function limitedSelected(){return !testSnapshot&&!eventSelected&&!!window.WakppuLimited?.data?.selected;}
-  function currentBall(){const base=eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:limitedSelected()?{...WakppuLimitedData.ball,reward:BigInt(WakppuLimitedData.ball.reward)}:WAKPPU_BALLS[state.selected];const equipped=window.WakppuSkins?.equippedRank(base.id);const ball=window.WakppuSkinSounds?.appearance(equipped?{...base,skinId:equipped}:base)||base;const e=window.WakppuItemData?.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt);return {...ball,clicks:e?WakppuItemData.required(ball.clicks,e,coatingActive()):ball.clicks*(coatingActive()?2:1)};}
+  function currentBall(){const base=eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:limitedSelected()?{...WakppuLimitedData.ball,reward:BigInt(WakppuLimitedData.ball.reward)}:WAKPPU_BALLS[state.selected];const equipped=window.WakppuSkins?.equippedRank(base.id);const ordinary=window.WakppuSkinSounds?.appearance(equipped?{...base,skinId:equipped}:base)||base;const pumpkin=window.WakppuPumpkinInventory?.equipped();const ball=pumpkin&&base.id===WakppuLimitedData.ball.id?WakppuPumpkinSkins.appearance(ordinary,pumpkin):ordinary;const e=window.WakppuItemData?.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt);return {...ball,clicks:e?WakppuItemData.required(ball.clicks,e,coatingActive()):ball.clicks*(coatingActive()?2:1)};}
   function eventPreferenceKey(){return SAVE_KEY+':event-choice:'+state.account?.id;}
   function switchEvent(use,remember=true){
     if(use&&(!eventActive()||testSnapshot||!state.remoteReady||eventRequest))return;
@@ -372,6 +372,7 @@
       });
     });
     window.WakppuSkinEffects?.syncCracks({ball:currentBall(),svg:svgEl,cracks:state.cracks,progress:v});
+    window.WakppuPumpkinSkins?.syncCracks({ball:currentBall(),svg:svgEl,cracks:state.cracks,progress:v,reduced:window.WakppuSettings?.reduced()});
     window.WakppuOnboarding?.render();
   }
 
@@ -380,6 +381,7 @@
      ========================================================================== */
   function spawnBall(animate) {
     window.WakppuSkinEffects?.reset(svgEl);
+    window.WakppuPumpkinSkins?.reset(svgEl);
     adminFade?.cancel();adminFade=null;
     whiteholeEffect?.cancel();whiteholeEffect=null;
     transcendentEffect?.cancel();transcendentEffect=null;itemAward=null;pendingItemHits=[];
@@ -394,6 +396,7 @@
     state.clicks = 0;
     state.soundStep = 0;
     svgEl.innerHTML = buildBallSvgInner(data, uid);
+    if(data.design.pumpkinSkin==='eclipse')window.WakppuEclipsePumpkin?.decorate({svg:svgEl,reduced:window.WakppuSettings?.reduced()});
     window.WakppuPurchaseEffects?.spawn(data);
     window.WakppuSkinClock?.update(svgEl);
 
@@ -636,6 +639,7 @@
       breakBall(data);                   // ③ 마지막: 깨짐
     } else {
       updateCracks(v);                   // ③ 금 늘리기
+      window.WakppuPumpkinSkins?.hit({ball:data,svg:svgEl,cracks:state.cracks,progress:v,reduced:window.WakppuSettings?.reduced(),physical:false});
       const p = toStage(clientX, clientY);
       spawnChips(p.x, p.y, v < 0.35 ? 2 : 4, 1, data);
     }
@@ -779,7 +783,8 @@
     updateCracks(1);
     if(data.id===window.WakppuLimitedData?.ball.id){
       window.WakppuPurchaseEffects?.shatter({speed});
-      transcendentEffect=WakppuHalloweenEffects.play({wrap,svg:svgEl,effects,center:ballCenter(),speed,respawnSpeed,valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,reward:()=>awardBreakReward(data),respawn:()=>{svgEl.classList.remove('instant');spawnBall(true);}});return;
+      const options={ball:data,wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,respawnSpeed,reduced:window.WakppuSettings?.reduced()??false,valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,reward:()=>awardBreakReward(data),respawn:()=>{svgEl.classList.remove('instant');spawnBall(true);}};
+      transcendentEffect=data.design.pumpkinSkin?WakppuPumpkinSkins.play(options):WakppuHalloweenEffects.play(options);return;
     }
     if(data.id==='admin-event'){
       window.WakppuPurchaseEffects?.shatter({speed});

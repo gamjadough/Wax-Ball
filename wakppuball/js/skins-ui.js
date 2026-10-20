@@ -5,7 +5,7 @@
  let data=null,owner=null,busy=false,sequence=0,shopTab='items',inventoryTab='items',cardsMarkup='',ui=null;
  const read=()=>window.WakppuItemGame?.read();
  const preview=()=>window.WakppuAuth?.local&&new URLSearchParams(location.search).get('preview')==='skin-sounds';
- const ready=()=>read()?.ready&&!read().test&&!read().busy&&!read().blocked&&!busy&&!window.WakppuItems?.busy;
+ const ready=()=>read()?.ready&&!read().test&&!read().busy&&!read().blocked&&!busy&&!window.WakppuItems?.busy&&!window.WakppuPumpkinInventory?.busy;
  const key=id=>'wakppu-skin-reveal:'+id;
  function loadSound(rank){const cfg=WakppuSkinSounds.config(rank);if(cfg)SoundManager.init(Object.values(cfg).flat());}
  const def=id=>defs.find(d=>d.skin_id===id);
@@ -85,5 +85,5 @@
   skins.addEventListener('click',e=>{const equip=e.target.closest('[data-skin-equip]'),exchange=e.target.closest('[data-skin-exchange]');if(equip)transact('skin_equip',{ball_id:'eternity',skin_id:equip.dataset.skinEquip});if(exchange&&confirm(def(exchange.dataset.skinExchange).name+'을(를) 조각으로 교환할까요?')){WakppuSkinCutscene.unlockAudio();transact('skin_exchange',{skin_id:exchange.dataset.skinExchange});}});ui.unequip.onclick=()=>transact('skin_equip',{ball_id:'eternity',skin_id:null});
   window.addEventListener('wakppu-account-restored',refresh);setInterval(render,1000);refresh();render();
  });
- window.WakppuSkins={get data(){return data;},get busy(){return busy;},equippedRank,refresh,render,syncShop:drawing=>{if(ui&&drawing)showDraw(shopTab);},syncInventory:()=>{if(ui)showInventory(inventoryTab);}};
+ window.WakppuSkins={get data(){return data;},get busy(){return busy||!!window.WakppuPumpkinInventory?.busy;},equippedRank,refresh,render,syncShop:drawing=>{if(ui&&drawing)showDraw(shopTab);},syncInventory:()=>{if(ui)showInventory(inventoryTab);}};
 })();

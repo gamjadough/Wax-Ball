@@ -1,0 +1,47 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {createRequire} from 'node:module';
+const require=createRequire(new URL('./test-results/sql-check/package.json',import.meta.url)),{PGlite}=require('@electric-sql/pglite');
+test('SQL pumpkin skins: authoritative candy costs, replay/revision guards, saved ownership, admin revocation and private tables',async()=>{
+ const db=new PGlite(),u='00000000-0000-0000-0000-000000000001',v='00000000-0000-0000-0000-000000000002';
+ const file=n=>readFile(new URL('../supabase/migrations/'+n,import.meta.url),'utf8');
+ try{
+  const fixture=await readFile(new URL('./skins-sql.test.mjs',import.meta.url),'utf8');
+  const setup=fixture.match(/await db.exec\(`([\s\S]*?)`\);/)[1].replaceAll('${u}',u).replaceAll('${v}',v);await db.exec(setup);
+  await db.exec(`create table wakppu_limited_players(user_id uuid primary key references players,tokens bigint default 350,owned jsonb default '{}');
+   create table wakppu_limited_settings(id boolean primary key default true,starts_at timestamptz,ends_at timestamptz);
+   insert into wakppu_limited_settings values(true,now()-interval '1 day',now()+interval '1 day');`);
+  await db.exec(await file('20261016092330_eternity_skins.sql'));await db.exec(await file('20261016110000_admin_skin_access.sql'));
+  const sql=await file('20261020124508_pumpkin_skin_exchange.sql');await db.exec(sql);await db.exec(sql);
+  const rpc=async(user,b)=>{await db.query("select set_config('test.uid',$1,false)",[user||'']);return (await db.query('select wakppu_api($1::jsonb) as data',[JSON.stringify(b)])).rows[0].data;};
+  const get=(user=u)=>rpc(user,{action:'pumpkin_skins'}),send=async(action,more={},user=u)=>{const s=await get(user);return rpc(user,{action,request_id:crypto.randomUUID(),item_revision:s.revision,skin_revision:s.skin_revision,...more});};
+  assert.deepEqual(await rpc(null,{action:'status'}),{ok:true});await assert.rejects(get(null));
+  const initial=(await db.query('select * from game_states where user_id=$1',[u])).rows[0];
+  let s=await get();assert.deepEqual(s.catalog.map(d=>d.cost),['50','100','200']);assert.equal(s.can_equip,false);
+  await db.query(`update wakppu_skins set owned='{"eternity_hero":true}',equipped='{"eternity":"eternity_hero"}',shards=17,pity=12 where user_id=$1`,[u]);
+  s=await get();const request={action:'pumpkin_skin_exchange',skin_id:'pumpkin_wisp',price:0,tokens:999999,request_id:crypto.randomUUID(),item_revision:s.revision,skin_revision:s.skin_revision};
+  s=await rpc(u,request);assert.equal(s.tokens,'300');assert.equal(s.owned.pumpkin_wisp,true);assert.deepEqual(await rpc(u,request),s);
+  await assert.rejects(rpc(u,{...request,skin_id:'pumpkin_ghost'}));await assert.rejects(rpc(u,{...request,request_id:crypto.randomUUID(),skin_id:'pumpkin_ghost'}));
+  await assert.rejects(send('pumpkin_skin_exchange',{skin_id:'pumpkin_wisp'}));await assert.rejects(send('pumpkin_skin_exchange',{skin_id:'made_up'}));
+  await assert.rejects(send('pumpkin_skin_equip',{ball_id:'halloween-pumpkin-2026',skin_id:'pumpkin_wisp'}));
+  await db.query(`update wakppu_limited_players set owned='{"halloween-pumpkin-2026":{"reward":"1500000000"}}' where user_id=$1`,[u]);
+  for(const [id,balance] of [['ghost','200'],['eclipse','0']])assert.equal((await send('pumpkin_skin_exchange',{skin_id:'pumpkin_'+id})).tokens,balance);
+  for(const id of ['wisp','ghost','eclipse'])assert.equal((await send('pumpkin_skin_equip',{ball_id:'halloween-pumpkin-2026',skin_id:'pumpkin_'+id})).equipped,'pumpkin_'+id);
+  const state=(await db.query('select * from game_states where user_id=$1',[u])).rows[0];delete state.item_revision;delete initial.item_revision;assert.deepEqual(state,initial);
+  const eternity=await rpc(u,{action:'skins'});assert.equal(eternity.shards,'17');assert.equal(eternity.pity,12);assert.equal(eternity.total,'0');assert.equal(eternity.equipped.eternity,'eternity_hero');assert.equal(eternity.equipped['halloween-pumpkin-2026'],'pumpkin_eclipse');
+  assert.equal((await db.query("select count(*)::int n from wakppu_skin_defs where skin_id like 'pumpkin_%'")).rows[0].n,0);
+  const owned=(await get()).owned;await db.query('update game_states set rebirths=rebirths+1,gold=0 where user_id=$1',[u]);await db.exec(sql);await db.exec("update wakppu_limited_settings set ends_at=now()-interval '1 second'");
+  assert.deepEqual((await get()).owned,owned);assert.equal((await send('pumpkin_skin_equip',{ball_id:'halloween-pumpkin-2026',skin_id:'pumpkin_wisp'})).equipped,'pumpkin_wisp');
+  await assert.rejects(send('pumpkin_skin_exchange',{skin_id:'pumpkin_wisp'}));
+  assert.equal((await rpc(u,request)).tokens,'0');assert.equal((await get()).equipped,'pumpkin_wisp');
+  await db.query("update players set role='admin' where user_id=$1",[v]);s=await get(v);assert.equal(s.can_equip,true);assert.equal(Object.keys(s.owned).length,3);assert.equal(s.active,false);
+  const adminReq={action:'pumpkin_skin_equip',ball_id:'halloween-pumpkin-2026',skin_id:'pumpkin_eclipse',request_id:crypto.randomUUID(),item_revision:s.revision,skin_revision:s.skin_revision};s=await rpc(v,adminReq);assert.equal(s.equipped,'pumpkin_eclipse');
+  assert.deepEqual((await db.query('select owned from wakppu_skins where user_id=$1',[v])).rows[0].owned,{});assert.equal(s.tokens,'350');
+  await assert.rejects(send('pumpkin_skin_exchange',{skin_id:'pumpkin_wisp'},v));
+  await db.exec("select set_config('test.anonymous','true',false)");s=await rpc(v,adminReq);assert.deepEqual(s.owned,{});assert.equal(s.equipped,null);
+  await assert.rejects(send('pumpkin_skin_equip',{ball_id:'halloween-pumpkin-2026',skin_id:'pumpkin_eclipse'},v));
+  await db.exec("select set_config('test.anonymous','false',false)");await db.query("update players set role='player' where user_id=$1",[v]);s=await rpc(v,adminReq);assert.deepEqual(s.owned,{});assert.equal(s.equipped,null);
+  await assert.rejects(send('pumpkin_skin_exchange',{skin_id:'pumpkin_wisp'},v));
+  await db.exec('update test_settings set maintenance=true');await assert.rejects(get());await db.exec('update test_settings set maintenance=false');
+  await db.query('update players set banned=true where user_id=$1',[u]);await assert.rejects(get());await db.query('update players set banned=false where user_id=$1',[u]);
+  const privileges=(await db.query("select has_table_privilege('authenticated','wakppu_pumpkin_skin_defs','select') as read,has_table_privilege('authenticated','wakppu_skins','update') as write,has_function_privilege('authenticated','wakppu_api_before_pumpkin_skins(jsonb)','execute') as internal,has_function_privilege('anon','wakppu_api(jsonb)','execute') as api")).rows[0];assert.deepEqual(privileges,{read:false,write:false,internal:false,api:true});
+ }finally{await db.close();}
+});

@@ -27,7 +27,9 @@ test('three cosmetic profiles preserve original stats and use existing audio wit
  }
  assert.equal(x.skins.appearance(x.base,'missing'),x.base);
  const other={...x.base,id:'eternity'};assert.equal(x.skins.appearance(other,'wisp'),other);
- assert.doesNotMatch(readFileSync(new URL('../wakppuball/index.html',import.meta.url),'utf8'),/pumpkin-skins|local-pumpkin-skins/);
+ const html=readFileSync(new URL('../wakppuball/index.html',import.meta.url),'utf8');
+ for(const file of ['eclipse-pumpkin.js','pumpkin-skin-art.js','pumpkin-skins.js','pumpkin-skins-ui.js'])assert.ok(html.includes('js/'+file+'?v=20261020-pumpkin-skins1'));
+ assert.ok(html.includes('pumpkin-skins.css?v=20261020-pumpkin-skins1'));assert.doesNotMatch(html,/preview-cracks|local-pumpkin-skins/);
 });
 test('all tiers preserve callback timing, respect reduced motion and clean every particle',()=>{
  for(const id of ['wisp','ghost','eclipse'])for(const speed of [1,2.5])for(const reduced of [false,true])for(const compact of [false,true]){

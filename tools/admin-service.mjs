@@ -5,6 +5,7 @@ import {weeklyRows,refreshWeekly,skipWeekly} from './weekly-service.mjs';
 import {ballCatalog} from './event-ball-catalog.mjs';
 import {itemAction,itemState,snapshot,itemData,consumeEffects} from './items-service.mjs';
 import {limitedAction,limitedDrop} from './limited-service.mjs';
+import {pumpkinSkinAction} from './pumpkin-skin-service.mjs';
 import {sleepHours} from './sleep-hours.mjs';
 const catalog=await ballCatalog();
 export const ballIds = catalog.map(b=>b.id);
@@ -70,6 +71,7 @@ export function execute(store, actor, body) {
     return {ok:true,background_mode:body.mode,server_time:new Date().toISOString()};
   }
   if(['limited','limited_buy','limited_select','limited_hit'].includes(action))return limitedAction(store,actor,body,catalog);
+  if(['pumpkin_skins','pumpkin_skin_exchange','pumpkin_skin_equip'].includes(action))return pumpkinSkinAction(store,actor,body);
   if(['admin_event_schedule','admin_event_schedule_cancel'].includes(action)){
     const kind=body.event_type,key=kind==='gold'?'gold_event':'admin_ball_event';
     if(!['gold','ball'].includes(kind))error('이벤트 종류를 선택하세요.');
