@@ -11,8 +11,12 @@ try:
     base=f'http://127.0.0.1:{port}'
     with sync_playwright() as p:
         browser=p.chromium.launch(channel='msedge',headless=True)
-        for mobile,reduced in [(False,False),(True,False),(True,True)]:
-            ctx=browser.new_context(viewport={'width':390 if mobile else 1100,'height':844},is_mobile=mobile,has_touch=mobile,reduced_motion='reduce' if reduced else 'no-preference')
+        for width,height,reduced in [(1100,844,False),(390,844,False),(844,390,False),(390,844,True)]:
+            mobile=width<1000
+            ctx=browser.new_context(viewport={'width':width,'height':height},is_mobile=mobile,has_touch=mobile,reduced_motion='reduce' if reduced else 'no-preference')
+            # The local fixture toolbar is not shipped in production and covers game controls.
+            # Hide only that toolbar; interact with all real game buttons normally.
+            ctx.add_init_script("document.addEventListener('DOMContentLoaded',()=>{const s=document.createElement('style');s.textContent='.halloween-local{display:none!important}';document.head.append(s);});")
             ctx.route('**/*',lambda r:r.continue_() if r.request.url.startswith(base) else r.fulfill(status=200,body=''))
             page=ctx.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
             page.goto(base+'/?preview=halloween');page.wait_for_load_state('domcontentloaded')
@@ -22,7 +26,7 @@ try:
             page.locator('#limitedCollectionTab').click();expect(page.locator('#limitedCollection')).to_be_visible();expect(page.locator('#collectionGrid')).to_be_hidden()
             expect(page.locator('#limitedPeriod')).to_contain_text('2026.10.17 00:00')
             expect(page.locator('#limitedPeriod')).to_contain_text('2026.11.14 23:59')
-            expect(page.locator('#limitedBalance')).to_contain_text('100개');expect(page.locator('#limitedBalance')).to_contain_text('10%')
+            expect(page.locator('#limitedBalance')).to_contain_text('100개');expect(page.locator('#limitedBalance')).to_contain_text('일반 볼 10% / 잭오랜턴 30%')
             page.locator('[data-limited-detail]').click();expect(page.locator('[data-limited-buy]')).to_be_enabled()
             page.locator('[data-limited-buy]').click();page.wait_for_function('!WakppuLimited.busy')
             assert page.evaluate('WakppuLimited.data.tokens')==0
@@ -31,7 +35,7 @@ try:
             expect(page.locator('#collection')).to_be_hidden();expect(page.locator('#ballName')).to_have_text('잭오랜턴 왁뿌볼')
             expect(page.locator('#ballSvg .pumpkin-flame')).to_have_count(1)
             gold=int(page.evaluate('WakppuItemGame.read().gold'))
-            page.locator('#ballSvg').click(position={'x':150,'y':150})
+            page.locator('#ballSvg').click()
             expect(page.locator('#ballWrap')).to_have_attribute('data-halloween-phase','shatter')
             page.wait_for_function('(gold)=>BigInt(WakppuItemGame.read().gold)===BigInt(gold)+1500000000n',arg=str(gold))
             page.wait_for_timeout(1500)
@@ -39,7 +43,7 @@ try:
             expect(page.locator('#ballName')).to_have_text('잭오랜턴 왁뿌볼')
             page.reload();page.wait_for_function('WakppuLimited.data?.selected===WakppuLimitedData.ball.id')
             expect(page.locator('#ballName')).to_have_text('잭오랜턴 왁뿌볼')
-            page.locator('[data-demo="ended"]').click();page.wait_for_function('WakppuLimited.data?.season.active===false')
+            page.evaluate('''async()=>{const s=JSON.parse(sessionStorage.getItem('wakppu-local-session'));const r=await fetch('/local/halloween-demo',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+s.token},body:JSON.stringify({mode:'ended'})});if(!r.ok)throw Error('fixture failed');await WakppuLimited.refresh();}''');page.wait_for_function('WakppuLimited.data?.season.active===false')
             page.locator('#collectionBtn').click();expect(page.locator('#limitedCollection')).to_be_visible();page.locator('[data-limited-detail]').click()
             expect(page.locator('#limitedPeriod')).to_contain_text('기간 종료');expect(page.locator('.limited-detail')).to_contain_text('보유 중' if not page.evaluate('WakppuLimited.data.selected') else '사용 중')
             page.locator('#normalCollectionTab').click();page.locator('[data-detail="0"]').click();page.locator('[data-action="select"]').click()
