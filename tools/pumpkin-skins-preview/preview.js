@@ -25,9 +25,9 @@
  }
  function choose(id,persist=true){
   cancel();selected=skins.profile(id)?id:'base';ball=selected==='base'?base:skins.appearance(base,selected);clicks=0;
-  const p=skins.profile(selected);document.documentElement.style.setProperty('--accent',p?.accent||'#ffbf6d');
+  const p=skins.profile(selected);document.documentElement.style.setProperty('--skin-accent',p?.accent||'#ffbf6d');
   $('skinRank').textContent=p?`${p.rank} · 예정 ${p.price} 사탕 · 교환 미구현`:'기본 외형 · 비교용';$('skinName').textContent=p?.name||base.name;$('skinDescription').textContent=p?.description||'현재 운영 잭오랜턴의 외형과 파괴 효과';
-  for(const b of document.querySelectorAll('[data-skin]'))b.setAttribute('aria-pressed',String(b.dataset.skin===selected));$('baseSkin').setAttribute('aria-pressed',String(selected==='base'));
+  for(const b of document.querySelectorAll('[data-skin]')){const chosen=b.dataset.skin===selected;b.setAttribute('aria-pressed',String(chosen));b.textContent=chosen?'미리보기 중':'장착해보기';b.closest('.skin-card')?.classList.toggle('is-selected',chosen);}$('baseSkin').setAttribute('aria-pressed',String(selected==='base'));
   if(persist)try{localStorage.setItem(key,selected);}catch{}
   SoundManager.init(['early','mid','late','final'].flatMap(k=>getSoundConfig(ball)[k]));draw();$('status').textContent='공을 누르거나 균열·파괴 버튼으로 비교해보세요.';
  }
@@ -40,7 +40,7 @@
   },70);
  }
  function hit(){if(busy||document.hidden)return;SoundManager.unlock();clicks=Math.min(100,clicks+10);update();if(clicks===100)shatter();else{sound();skins.hit({ball,svg:$('ballSvg'),progress:clicks/100,reduced:reduced()});}}
- for(const p of skins.profiles){const button=document.createElement('button');button.className='skin-choice';button.type='button';button.dataset.skin=p.id;button.setAttribute('aria-pressed','false');button.innerHTML=buildBallThumb(skins.appearance(base,p.id))+`<span><strong>${p.name}</strong><small>${p.rank} · 예정 ${p.price} 사탕</small></span>`;button.onclick=()=>{SoundManager.unlock();choose(p.id);};$('skinChoices').append(button);}
+ for(const p of skins.profiles){const card=document.createElement('article');card.className='skin-card';card.innerHTML=`<div class="skin-thumb">${buildBallThumb(skins.appearance(base,p.id))}</div><strong>${p.name}</strong><span>${p.rank}</span><small>예정 ${p.price} 사탕</small>`;const button=document.createElement('button');button.className='btn small skin-choice';button.type='button';button.dataset.skin=p.id;button.setAttribute('aria-pressed','false');button.textContent='장착해보기';button.onclick=()=>{SoundManager.unlock();choose(p.id);};card.append(button);$('skinChoices').append(card);}
  $('ballSvg').addEventListener('pointerdown',e=>{e.preventDefault();hit();});$('ballSvg').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();hit();}});$('hit').onclick=hit;
  $('baseSkin').onclick=()=>choose('base');$('destroy').onclick=()=>{if(busy)return;SoundManager.unlock();shatter();};$('reset').onclick=()=>choose(selected,false);
  document.querySelectorAll('[data-progress]').forEach(b=>b.onclick=()=>{cancel();clicks=Number(b.dataset.progress)*100;draw();skins.hit({ball,svg:$('ballSvg'),progress:clicks/100,reduced:reduced()});});

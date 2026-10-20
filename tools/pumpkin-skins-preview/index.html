@@ -1,8 +1,21 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>잭오랜턴 스킨 작업실 · 로컬 미리보기</title><link rel="stylesheet" href="/pumpkin-skins.css"><link rel="stylesheet" href="/local-pumpkin-skins/preview.css"></head><body>
-<header><span class="eyebrow">HALLOWEEN · SKIN WORKSHOP</span><h1>잭오랜턴 스킨 작업실</h1><p class="local-note">로컬 디자인 미리보기 · 실제 장착/사탕 차감/서버 저장 없음</p></header>
-<main><aside><h2>스킨 선택</h2><div id="skinChoices" role="group" aria-label="스킨 선택"></div><button id="baseSkin" class="button base-button" type="button">기존 잭오랜턴과 비교</button><p class="aside-note">50 · 100 · 200 사탕은 제안 가격입니다.<br>아직 교환하거나 구매할 수 없습니다.</p><div class="settings"><label><input id="muted" type="checkbox"> 음소거</label><label>효과음 <input id="volume" type="range" min="0" max="100" value="45" aria-label="효과음 볼륨"></label><label><input id="reduced" type="checkbox"> 움직임 줄이기</label></div></aside>
-<section class="showcase"><div class="scene-caption"><span id="skinRank"></span><h2 id="skinName"></h2><p id="skinDescription"></p></div><div id="stage" class="stage"><div class="scene-halo"></div><div class="scene-floor"></div><div id="ballWrap" class="ball-wrap"><svg id="ballSvg" viewBox="0 0 200 200" role="button" tabindex="0" aria-label="잭오랜턴 타격"></svg></div><div id="effects" class="effects" aria-hidden="true"></div></div>
-<div class="progress-row"><span id="progressText"></span><span>필요 균열 100 · 기본 보상 1.5B G (기존과 동일)</span><progress id="progress" max="100" value="0" aria-label="균열 진행"></progress></div>
-<div class="controls" aria-label="미리보기 조작"><button id="hit" class="button primary" type="button">타격 +10</button><button data-progress=".5" class="button" type="button">균열 50%</button><button data-progress=".9" class="button" type="button">균열 90%</button><button id="destroy" class="button" type="button">파괴 연출 보기</button><button id="reset" class="button" type="button">처음부터</button><button id="hear" class="button" type="button">타격음 듣기</button></div>
-<p id="status" class="status" role="status">스킨을 선택하고 공을 눌러보세요.</p><p class="preview-note">빠른 비교를 위해 미리보기 타격만 +10으로 설정했습니다. 실제 게임 성능·보상은 바뀌지 않습니다. BGM과 기존 30% 깜짝 연출은 이 화면에서 재생하지 않습니다.</p></section></main>
-<script>window.WakppuAuth={local:true};</script><script src="/js/balls-data.js"></script><script src="/js/limited-data.js"></script><script src="/js/pumpkin-skins.js"></script><script src="/js/ball-art.js"></script><script src="/js/sound.js"></script><script src="/js/halloween-effects.js"></script><script src="/local-pumpkin-skins/preview.js"></script></body></html>
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>잭오랜턴 스킨 · 로컬 미리보기</title>
+<link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/skins.css"><link rel="stylesheet" href="/pumpkin-skins.css"><link rel="stylesheet" href="/local-pumpkin-skins/preview.css"></head>
+<body>
+<header class="preview-header"><div><h1>왁뿌볼</h1><span class="preview-tag">로컬 미리보기</span></div><p>잭오랜턴 스킨 · 기존 게임 데이터와 연결되지 않습니다.</p><a class="btn small" href="#inventoryPreview">스킨 선택 ↓</a></header>
+<main class="preview-layout">
+<section class="showcase" aria-label="스킨 플레이 미리보기">
+ <div id="stage" class="stage"><div class="spot"></div><div class="ball-shadow"></div><div id="ballWrap" class="ball-wrap"><svg id="ballSvg" viewBox="0 0 200 200" role="button" tabindex="0" aria-label="잭오랜턴 타격"></svg></div><div id="effects" class="effects" aria-hidden="true"></div></div>
+ <div class="scene-caption"><span id="skinRank" class="rarity-label"></span><h2 id="skinName" class="name"></h2><p id="skinDescription"></p></div>
+ <div class="progress-row"><span id="progressText"></span><progress id="progress" max="100" value="0" aria-label="균열 진행"></progress></div>
+ <div class="controls" aria-label="미리보기 조작"><button id="hit" class="btn primary" type="button">타격 +10</button><button data-progress=".5" class="btn" type="button">균열 50%</button><button data-progress=".9" class="btn" type="button">균열 90%</button><button id="destroy" class="btn" type="button">파괴 연출 보기</button><button id="reset" class="btn" type="button">처음부터</button><button id="hear" class="btn" type="button">타격음 듣기</button></div>
+ <p id="status" class="status" role="status"></p>
+ <details class="preview-settings"><summary>미리보기 설정</summary><div class="settings"><label><input id="muted" type="checkbox"> 음소거</label><label>효과음 <input id="volume" type="range" min="0" max="100" value="45" aria-label="효과음 볼륨"></label><label><input id="reduced" type="checkbox"> 움직임 줄이기</label></div></details>
+ <p class="preview-note">미리보기 타격만 +10 · 필요 균열 100 / 기본 보상 1.5B G 유지<br>BGM·깜짝 화면 없음 · 실제 장착·사탕 차감·서버 저장 없음</p>
+</section>
+<aside id="inventoryPreview" class="sheet preview-inventory" aria-label="스킨 인벤토리 미리보기">
+ <div class="sheet-head"><h2>인벤토리</h2><span class="preview-tag">디자인 확인용</span></div><div class="skin-switch"><span class="btn small">아이템</span><span class="btn small selected-tab">스킨</span></div>
+ <h3>잭오랜턴 왁뿌볼 전용 스킨</h3><p class="inventory-note">기존 스킨과 동일한 카드에서 외형을 비교해보세요.</p><div id="skinChoices" class="skin-cards" role="group" aria-label="스킨 선택"></div>
+ <button id="baseSkin" class="btn" type="button">스킨 해제 · 기본 외형</button><p class="preview-note">교환 가격 50 / 100 / 200 사탕은 제안입니다.<br>구매·보유·장착 기능은 아직 운영 게임에 반영하지 않았습니다.</p>
+</aside></main>
+<script>window.WakppuAuth={local:true};</script><script src="/js/balls-data.js"></script><script src="/js/limited-data.js"></script><script src="/js/pumpkin-skin-art.js"></script><script src="/js/pumpkin-skins.js"></script><script src="/js/ball-art.js"></script><script src="/js/sound.js"></script><script src="/js/halloween-effects.js"></script><script src="/local-pumpkin-skins/preview.js"></script></body></html>

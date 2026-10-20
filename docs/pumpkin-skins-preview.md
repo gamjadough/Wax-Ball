@@ -10,6 +10,12 @@ Three cosmetic candidates for the existing Halloween Jack-o-lantern:
 
 These are proposals, not purchasable inventory entries. This patch does not load the candidate assets in the production game, grant ownership, spend candy, add server APIs or alter rewards. Existing 100 required cracks and 1.5B base Gold are retained. Workshop hits add 10 solely for faster visual review.
 
+## Visual revision
+
+The preview now imports live `style.css` and `skins.css` instead of a separate workshop theme. It uses the existing round buttons, yellow primary action, dark inventory sheet, purple selected skin tab and inventory card layout. Desktop shows play and inventory side by side; phones stack them with a reachable jump link and normal document scrolling.
+
+`pumpkin-skin-art.js` renders the same spherical wax silhouette and common specular highlights as existing skins. Layered shaded pumpkin lobes, wax flecks, inset carved edges and cavity gradients replace flat sticker-like motifs. Animated energy is clipped to the actual carved eyes/mouth. Wisp has teal wax and pale internal soul flames; ghost has pearlescent ivory/lavender wax, flowing wax veils and drifting inner mist; eclipse has dark burgundy wax, metallic lunar engraving and ember-lit carvings. Hits squash the ball briefly; reduced motion disables that feedback. The shared preview renderer is used for both inventory thumbnails and the playable ball.
+
 Start `tools/local-server.mjs` with `WAKPPU_LOCAL_PORT=4182`, then open `http://127.0.0.1:4182/local-pumpkin-skins/`. The standalone workshop requires no login or backend connection. Only the selected candidate is persisted under a separate localStorage key; no player save is read or written. BGM and random scare images are disabled here. Audio reuses existing licensed Kenney CC0 pumpkin/eternity files; see the corresponding sound-directory license files. No third-party art is used.
 
 The preview supports touch/keyboard, portrait/landscape, volume/mute, reduced motion and cancellation during resets, skin changes and page hiding. Mobile effects use at most eight fragments plus one signature effect; reduced motion creates no particles. Final cracks remain visible before destruction. Callback deadlines match the existing pumpkin but only update preview status, never player currency.

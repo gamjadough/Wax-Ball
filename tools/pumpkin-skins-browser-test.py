@@ -19,12 +19,19 @@ with sync_playwright() as p:
         page.on('pageerror',lambda error:errors.append(str(error)))
         page.on('request',lambda request:writes.append(request.url) if request.method!='GET' else None)
         page.goto(base+'/local-pumpkin-skins/',wait_until='networkidle')
+        assert page.locator('link[href="/style.css"]').count()==1
+        assert page.locator('link[href="/skins.css"]').count()==1
+        assert page.locator('.skin-card .skin-thumb svg').count()==3
         assert page.locator('.skin-choice').count()==3
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), (width,height,'overflow')
         for skin in ['wisp','ghost','eclipse']:
             page.locator('.skin-choice[data-skin="'+skin+'"]').click()
             page.evaluate('''async skin => {for(const name of WakppuPumpkinSkins.profile(skin).sounds){const a=new Audio();a.preload='auto';await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Audio timeout: '+name)),6000);a.oncanplay=()=>{clearTimeout(timer);resolve();};a.onerror=()=>{clearTimeout(timer);reject(new Error('Audio error: '+name));};a.src='/sounds/'+name+'.mp3';a.load();});}}''',skin)
             assert page.locator('#ballSvg [data-pumpkin-skin="'+skin+'"]').count()==1
+            assert page.locator('#ballSvg [data-wax-material="polished"]').count()==1
+            assert page.evaluate('''() => [...document.querySelectorAll('button')].every(b=>b.getBoundingClientRect().height>=44)''')
+            if width==1200:
+                page.screenshot(path=str(out/f'{skin}-refined-clean.png'),full_page=True)
             page.locator('#ballSvg').tap() if width<1000 else page.locator('#ballSvg').click()
             assert page.evaluate('WakppuPumpkinSkinPreview.read().clicks')==10
             page.locator('[data-progress=".9"]').click()
@@ -52,6 +59,7 @@ with sync_playwright() as p:
         page.locator('#baseSkin').click()
         assert page.locator('#ballSvg [data-pumpkin-skin]').count()==0
         page.locator('.skin-choice[data-skin="ghost"]').click()
+        page.locator('.preview-settings summary').click()
         page.locator('#muted').check()
         page.evaluate('window.__audioPlays=[]')
         page.locator('#hear').click()

@@ -7,7 +7,7 @@ function setup(id='wisp',options={}){
  const timers=new Map(),nodes=[],animations=[];let next=0,paid=0,spawned=0,valid=true;
  const element=()=>({style:{},dataset:{},setAttribute(){},querySelector(){return null;},remove(){this.removed=true;},animate(frames,opts){const a={frames,opts,cancel(){this.cancelled=true;}};animations.push(a);return a;}});
  const context={window:{},document:{createElement:element},matchMedia:()=>({matches:options.compact??true}),setTimeout:(fn,at)=>{timers.set(++next,{fn,at});return next;},clearTimeout:id=>timers.delete(id)};
- vm.createContext(context);vm.runInContext(source,context);const skins=context.window.WakppuPumpkinSkins;
+ vm.createContext(context);vm.runInContext(readFileSync(new URL('../wakppuball/js/pumpkin-skin-art.js',import.meta.url),'utf8'),context);vm.runInContext(source,context);const skins=context.window.WakppuPumpkinSkins;
  const base={id:skins.ballId,clicks:100,reward:1500000000,design:{art:'pumpkin'},sound:{volume:.5}};
  const ball=skins.appearance(base,id),svg=element();
  const run=()=>skins.play({ball,svg,effects:{append:n=>nodes.push(n)},center:{x:100,y:100},radius:100,valid:()=>valid,reward:()=>paid++,respawn:()=>spawned++,...options});
@@ -18,7 +18,9 @@ test('three cosmetic profiles preserve original stats and use existing audio wit
  const x=setup();assert.equal(x.skins.profiles.length,3);
  for(const p of x.skins.profiles){
   const b=x.skins.appearance(x.base,p.id);assert.equal(b.clicks,100);assert.equal(b.reward,1500000000);assert.equal(b.id,x.base.id);
-  assert.equal(x.base.design.art,'pumpkin');assert.equal(x.base.skinId,undefined);
+  assert.equal(x.base.design.art,'pumpkin');assert.equal(x.base.skinId,undefined);assert.equal(b.design.gloss,true);
+  assert.match(x.skins.art('quality',b).art,/data-wax-material="polished"/);
+  assert.match(x.skins.art('quality',b).defs,/carved-face/);
   assert.match(x.skins.art('unique-'+p.id,b).art,new RegExp('data-pumpkin-skin="'+p.id+'"'));
   assert.match(x.skins.art('unique-'+p.id,b).defs,new RegExp('unique-'+p.id+'-pumpkin-body'));
   for(const sound of p.sounds)assert.ok(existsSync(new URL('../wakppuball/sounds/'+sound+'.mp3',import.meta.url)),sound);
