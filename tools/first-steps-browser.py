@@ -21,7 +21,7 @@ with sync_playwright() as p:
    page.on('dialog',lambda d:d.accept());adm.on('dialog',lambda d:d.accept())
    def rpc(pg,action,**payload):return pg.evaluate('async b=>WakppuAuth.invoke(b.action,b)',dict(action=action,**payload))
    page.goto(base+'/?preview=bank');expect(page.locator('#shopPremium')).to_be_visible()
-   page.wait_for_function("document.querySelectorAll('[data-purchase-product]').length===3 && WakppuItemGame.read().ready")
+   page.wait_for_function("document.querySelectorAll('[data-purchase-product]').length===4 && WakppuItemGame.read().ready")
    before=rpc(page,'items');gold=int(before['gold'])
    product=page.locator('[data-purchase-product="first_steps_pack"]')
    expect(product).to_be_enabled();assert product.bounding_box()['height']>=44

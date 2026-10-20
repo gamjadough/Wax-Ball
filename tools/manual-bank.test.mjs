@@ -33,15 +33,15 @@ test('manual deposits: permissions, closed default, bank snapshots, claims, atom
   const second=(await rpc(other,{...request,request_id:crypto.randomUUID()})).order;
   await assert.rejects(rpc(admin,{...approve,order_id:second.id}),{code:'23505'});assert.deepEqual((await rpc(other,{action:'purchase_catalog'})).owned,{});
   const skin=(await rpc(buyer,{...request,product_id:'starlight_skin',request_id:crypto.randomUUID()})).order;
-  await rpc(admin,{...approve,order_id:skin.id,confirmed_amount:3300,deposit_reference:'local-transaction-002'});
+  await rpc(admin,{...approve,order_id:skin.id,confirmed_amount:500,deposit_reference:'local-transaction-002'});
   assert.equal((await rpc(buyer,{action:'purchase_equip',equipped:true})).equipped,true);
   await assert.rejects(rpc(other,{action:'purchase_equip',equipped:true}),{code:'PT403'});
   await rpc(admin,{action:'admin_purchase_refund',order_id:skin.id,refund_reference:'local-refund-002'});
   let state=await rpc(buyer,{action:'purchase_catalog'});assert.equal(state.equipped,false);assert.equal(state.owned.starlight_skin,undefined);
   assert.equal(state.orders.find(row=>row.id===o.id).deposit_reference,undefined);
-  await assert.rejects(rpc(admin,{...approve,order_id:skin.id,confirmed_amount:3300}),{code:'PT409'});
+  await assert.rejects(rpc(admin,{...approve,order_id:skin.id,confirmed_amount:500}),{code:'PT409'});
   const cancel=(await rpc(other,{...request,product_id:'starlight_skin',request_id:crypto.randomUUID()})).order;
-  await rpc(other,{action:'purchase_cancel',order_id:cancel.id});await assert.rejects(rpc(admin,{...approve,order_id:cancel.id,confirmed_amount:3300}),{code:'PT409'});
+  await rpc(other,{action:'purchase_cancel',order_id:cancel.id});await assert.rejects(rpc(admin,{...approve,order_id:cancel.id,confirmed_amount:500}),{code:'PT409'});
   await db.exec(sql);state=await rpc(buyer,{action:'purchase_catalog'});assert.equal(state.owned.supporter_pack,o.id);assert.equal(state.enabled,true);
   await db.query('update game_states set gold=0,rebirths=rebirths+1 where user_id=$1',[buyer]);assert.equal((await rpc(buyer,{action:'purchase_catalog'})).owned.supporter_pack,o.id);
   const after=(await db.query('select * from game_states order by user_id')).rows;assert.deepEqual(after.filter(r=>r.user_id!==buyer),before.filter(r=>r.user_id!==buyer));
