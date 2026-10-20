@@ -39,3 +39,14 @@ Twelve new mono 24kHz PCM16 WAVs cover three skins and four damage stages, under
 Checks: `node --test tools/pumpkin-skins.test.mjs tools/pumpkin-original-audio.test.mjs tools/preview-cracks.test.mjs tools/skin-motion.test.mjs`; with a server running, run `tools/pumpkin-skins-browser-test.py` using Python with Playwright and Edge available. Tests cover crack parity, unique audio/format/peaks, decode and mute, callback timing, cancellation, duplicate SVG IDs, bounded effects and desktop/touch portrait/landscape/reduced motion. Screenshots go to ignored `tools/test-results/pumpkin-skins/`.
 
 Before a future production release: confirm artwork/prices, implement server-validated candy exchange and persistent ownership/equipment (including established administrator access rules), connect inventory UI and live effects, test economy/auth/migrations, and version all changed live script/CSS references. The current small ART hook alone does not activate these skins.
+
+## Wisp/ghost audio character revision
+
+The two sets no longer vary the same low impact recipe. Wisp uses a separate
+high-passed noise synthesis path with irregular ignition pops and short sizzle.
+Ghost uses slow-onset drifting resonant breath and three short echoes, without
+a hard shell impact. Their pitch, spectrum, onset and tail envelopes differ.
+Eclipse's approved four WAVs, effects and timing are unchanged; hashes are pinned.
+Regenerate just the two revised sets using `--only wisp ghost`. The focused
+`tools/pumpkin-audio-browser-test.py` checks served file hashes, real WebAudio
+decoding, four-stage playback per skin, reset/mute and mobile portrait/landscape.
