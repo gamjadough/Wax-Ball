@@ -23,8 +23,8 @@ try:
    def shop():
     if page.locator('#admin').is_visible():page.locator('[data-close="admin"]').click()
     if page.locator('#shop').is_hidden():page.locator('#shopBtn').tap()
-    page.locator('#shopPremiumTab').tap();expect(page.locator('#shopPremium')).to_be_visible();page.wait_for_function("document.querySelectorAll('[data-purchase-product]').length===2")
-   page.goto(base+'/?preview=bank');expect(page.locator('#shopPremium')).to_be_visible();page.wait_for_function("document.querySelectorAll('[data-purchase-product]').length===2")
+    page.locator('#shopPremiumTab').tap();expect(page.locator('#shopPremium')).to_be_visible();page.wait_for_function("document.querySelectorAll('[data-purchase-product]').length===3")
+   page.goto(base+'/?preview=bank');expect(page.locator('#shopPremium')).to_be_visible();page.wait_for_function("document.querySelectorAll('[data-purchase-product]').length===3")
    # Reset only the shared isolated SQL fixture's previous viewport purchases.
    login(True)
    for o in rpc('admin_purchase_orders')['orders']:
