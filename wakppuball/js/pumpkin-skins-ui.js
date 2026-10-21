@@ -20,7 +20,7 @@
    return '<article class="skin-card"><div class="skin-thumb">'+buildBallThumb(ball)+'</div><strong>'+p.name+'</strong><span>'+p.rank+' · '+(owned?(data.admin_content_access?'관리자 상시 이용':'보유'):'미보유')+'</span><small>'+ (owned?'환생·이벤트 종료 후에도 유지':data?.active?'사탕으로 확정 교환':'이벤트 기간에 교환 가능')+'</small><button class="btn small" data-pumpkin-'+(owned?'equip':'exchange')+'="'+id+'" '+(disabled?'disabled':'')+'>'+label+'</button></article>';
   }).join('');
   for(const n of ui.cards){n.innerHTML=cards();for(const svg of n.querySelectorAll('svg'))if(svg.querySelector('[data-eclipse-art]'))WakppuEclipsePumpkin.decorate({svg,reduced:window.WakppuSettings?.reduced()});}
-  ui.unequip.disabled=!available||!data?.equipped;
+  ui.unequip.disabled=!available||!data?.equipped;ui.disable.disabled=!available||!!data?.scare_disabled||!data?.active||BigInt(data?.tokens||0)<100n;ui.disable.textContent=data?.scare_disabled?'영구 적용 중 · 구매 완료':'🍬 100캔디로 영구 해제';
  }
  async function refresh(){
   if(busy)return;const account=read()?.account,seq=++sequence;
@@ -40,20 +40,21 @@
    data=next;owner=account;WakppuItemGame.accept(next,true);sounds();
    if(prior!==equipped())window.WakppuSkinGame?.refresh();
    await window.WakppuLimited?.refresh();await window.WakppuItems?.refresh();await window.WakppuSkins?.refresh();
-   status(action==='pumpkin_skin_exchange'?'스킨을 교환했습니다. 인벤토리 → 스킨에서 장착할 수 있습니다.':skinId?'스킨을 장착했습니다. 잭오랜턴 왁뿌볼에 적용됩니다.':'잭오랜턴 스킨을 해제했습니다.');
+   status(action==='pumpkin_scare_disable_buy'?'점프스케어 영구 해제를 구매했습니다. 모든 잭오랜턴 스킨에도 적용됩니다.':action==='pumpkin_skin_exchange'?'스킨을 교환했습니다. 인벤토리 → 스킨에서 장착할 수 있습니다.':skinId?'스킨을 장착했습니다. 잭오랜턴 왁뿌볼에 적용됩니다.':'잭오랜턴 스킨을 해제했습니다.');
   }catch(e){if(account===read()?.account)status(e.message);}
   finally{busy=false;render();await refresh();}
  }
  document.addEventListener('DOMContentLoaded',()=>{
-  const shop=document.getElementById('shopPurchase'),inventory=document.getElementById('inventorySkinsPage');if(!shop||!inventory)return;
+  const shop=document.getElementById('shopHalloween'),inventory=document.getElementById('inventorySkinsPage');if(!shop||!inventory)return;
   const section=where=>{const n=document.createElement('section');n.className='pumpkin-skin-section';n.innerHTML='<h3>🎃 잭오랜턴 전용 스킨</h3><p class="pumpkin-skin-balance"></p><p class="pumpkin-skin-note">꾸미기 전용 · 보상·균열 난이도는 동일합니다.<br>교환은 할로윈 기간에만 가능하며, 장착에는 잭오랜턴 해금이 필요합니다.</p><p class="pumpkin-skin-status" role="status"></p><div class="skin-cards pumpkin-skin-cards"></div>';where.append(n);return n;};
   const a=section(shop),b=section(inventory),unequip=document.createElement('button');unequip.id='pumpkinSkinUnequip';unequip.className='btn';unequip.textContent='잭오랜턴 스킨 해제';b.append(unequip);
-  ui={balance:[a,b].map(n=>n.querySelector('.pumpkin-skin-balance')),status:[a,b].map(n=>n.querySelector('.pumpkin-skin-status')),cards:[a,b].map(n=>n.querySelector('.pumpkin-skin-cards')),unequip};
+  const optout=document.createElement('article');optout.className='purchase-card';optout.innerHTML='<h3>점프스케어 영구 해제</h3><p>100캔디 · 계정당 1회 구매 · 구매 즉시 영구 적용</p><p>기본 잭오랜턴과 모든 전용 스킨의 갑작스러운 전체화면 이미지·깜짝 소리를 해제합니다. 파괴 연출·일반 효과음·보상은 유지됩니다. 환생·스킨 변경·시즌 종료 후에도 유지되며 되돌릴 수 없습니다.</p><button id="pumpkinScareDisable" class="btn">🍬 100캔디로 영구 해제</button>';a.append(optout);optout.querySelector('button').onclick=()=>{if(confirm('100캔디로 이 계정의 잭오랜턴 점프스케어를 영구 해제할까요? 모든 전용 스킨에 적용되며 되돌릴 수 없습니다.'))transact('pumpkin_scare_disable_buy',null);};
+  ui={disable:optout.querySelector('button'),balance:[a,b].map(n=>n.querySelector('.pumpkin-skin-balance')),status:[a,b].map(n=>n.querySelector('.pumpkin-skin-status')),cards:[a,b].map(n=>n.querySelector('.pumpkin-skin-cards')),unequip};
   const onClick=e=>{const exchange=e.target.closest('[data-pumpkin-exchange]'),equip=e.target.closest('[data-pumpkin-equip]');if(equip)transact('pumpkin_skin_equip',equip.dataset.pumpkinEquip);if(exchange){const id=exchange.dataset.pumpkinExchange,p=def(id),cost=data?.catalog?.find(d=>d.skin_id===id)?.cost;if(p&&confirm(p.name+' 스킨을 사탕 '+cost+'개로 교환할까요?'))transact('pumpkin_skin_exchange',id);}};
   a.addEventListener('click',onClick);b.addEventListener('click',onClick);unequip.onclick=()=>transact('pumpkin_skin_equip',null);
-  for(const id of ['shopBtn','inventoryBtn','inventorySkinsTab','shopPurchaseTab'])document.getElementById(id)?.addEventListener('click',refresh);
+  for(const id of ['shopBtn','inventoryBtn','inventorySkinsTab','shopHalloweenTab'])document.getElementById(id)?.addEventListener('click',refresh);
   window.addEventListener('wakppu-account-restored',refresh);setInterval(()=>{render();},1000);
   setInterval(()=>{if(!document.getElementById('shop').hidden||!document.getElementById('itemsModal').hidden)refresh();},15000);refresh();render();
  });
- window.WakppuPumpkinInventory={get busy(){return busy;},get data(){return data;},equipped,refresh};
+ window.WakppuPumpkinInventory={get busy(){return busy;},get data(){return data;},equipped,refresh,scareAllowed:()=>owner===read()?.account&&!!data&&!data.scare_disabled};
 })();

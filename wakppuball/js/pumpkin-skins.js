@@ -67,11 +67,12 @@
   }
   let stopped=false;return {cancel(){if(stopped)return;stopped=true;animations.forEach(a=>a.cancel());nodes.forEach(n=>n.remove());svg.style.opacity='';}};
  }
- // Shared live/preview scheduler keeps reward and respawn deadlines, without bonus grants or scares.
+ // Keep the skin's visual scheduler and share the original account-aware scare lottery.
  function play(options){const {valid,reward,respawn,speed=1,respawnSpeed=1,reduced=false}=options;const effect=visual(options),timers=[];let stopped=false,paid=false;
-  function cancel(){if(stopped)return;stopped=true;timers.forEach(clearTimeout);effect?.cancel();}
+  const scare=window.WakppuHalloweenEffects?.startScare({...options,theme:options.ball.design.pumpkinSkin});
+  function cancel(){if(stopped)return;stopped=true;timers.forEach(clearTimeout);effect?.cancel();scare?.cancel();}
   function at(ms,fn){timers.push(setTimeout(()=>{if(stopped)return;if(!valid()){cancel();return;}fn();},ms));}
-  at((reduced?250:450)/speed,()=>{if(!paid){paid=true;reward();}});at((reduced?550:1300)/speed+1000/respawnSpeed,()=>{cancel();respawn();});return {cancel};
+  at((reduced?250:450)/speed,()=>{if(!paid){paid=true;reward();}});at((reduced?550:1300)/speed+1000/respawnSpeed,()=>{const finish=()=>{if(stopped)return;if(!valid()){cancel();return;}cancel();respawn();};if(scare)scare.done.then(finish);else finish();});return {cancel};
  }
  window.WakppuPumpkinSkins={ballId,profiles,tiers,profile,appearance,art,syncCracks,hit,reset,visual,play};
 })();

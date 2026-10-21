@@ -12,3 +12,10 @@ test('exact 30% threshold and all three uniformly selected images',()=>{
  for(const [roll,expected] of [[0,0],[.33334,1],[.66667,2],[.99999,2]]){let calls=0;assert.equal(choose(()=>calls++?roll:.29999),expected);}
  assert.equal(choose(()=>.3),null);assert.equal(choose(()=>1),null);
 });
+
+test('purchased opt-out blocks the lottery before decoding or audio',()=>{
+ context.window.WakppuPumpkinInventory={scareAllowed:()=>false};
+ assert.equal(context.window.WakppuHalloweenEffects.startScare({valid:()=>true,random:()=>{throw Error('must not roll');}}),null);
+ delete context.window.WakppuPumpkinInventory;
+ assert.equal(context.window.WakppuHalloweenEffects.startScare({valid:()=>false}),null);
+});
