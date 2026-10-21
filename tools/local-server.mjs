@@ -19,6 +19,7 @@ if(process.env.WAKPPU_LOCAL_BEGINNER_PREVIEW==='1')for(const actor of store.play
 if(process.env.WAKPPU_LOCAL_SLEEP_TIME){const time=Date.parse(process.env.WAKPPU_LOCAL_SLEEP_TIME);if(!Number.isFinite(time))throw new Error('Invalid local sleep test time');store.sleep_now_ms=time;}
 const password=randomBytes(9).toString('base64url');
 const passwordSalt=randomBytes(16);
+const deletedSessions=new Map();
 const localUser=actor=>({id:actor.id,email:actor.email||null,is_anonymous:actor.role!=='admin'&&!actor.localAuth?.verified,
   email_confirmed_at:actor.localAuth?.verified||null,user_metadata:{wakppu_email_link_pending:!!actor.localAuth?.pending}});
 const port=Number(process.env.WAKPPU_LOCAL_PORT||4173);
@@ -31,12 +32,31 @@ const server=http.createServer(async(req,res)=>{
       let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>20000)return send(413,{error:'request too large'});}const body=JSON.parse(raw);
       if(req.url==='/local/login') {
         const admin=body.email==='dodoonglee@gmail.com';if(admin&&body.password!==password)return send(401,{error:'로컬 테스트 비밀번호가 틀립니다.'});
-        const actor=admin?store.players[0]:body.email==='guest'?store.players[1]:store.players.find(p=>p.localAuth?.verified&&p.email===body.email);
+        if(body.email==='guest'&&!store.players.some(p=>p.id==='local-player')){const guest=createStore().players[1];guest.id='local-player';store.players.push(guest);}
+        const actor=admin?store.players.find(p=>p.role==='admin'):body.email==='guest'?store.players.find(p=>p.id==='local-player'):store.players.find(p=>p.localAuth?.verified&&p.email===body.email);
         if(!actor||(!admin&&body.email!=='guest'&&(!actor.localAuth?.passwordHash||!timingSafeEqual(actor.localAuth.passwordHash,scryptSync(String(body.password),passwordSalt,32)))))return send(401,{error:'이메일 또는 비밀번호가 틀립니다.'});
         if(body.email==='guest'&&!actor.lifecycle)actor.lifecycle={created_at:new Date().toISOString(),first_play_at:null};
         const token=randomBytes(24).toString('hex');sessions.set(token,actor);return send(200,{token,user:localUser(actor)});
       }
       const actor=sessions.get(req.headers.authorization?.replace(/^Bearer /,''));
+      if(req.url==='/local/guest-exit-fixture'&&process.env.WAKPPU_LOCAL_GUEST_EXIT_TEST==='1'){
+        if(!actor)return send(401,{error:'로컬 로그인 필요'});
+        const email='used@example.test',pass='local-existing-password';let target=store.players.find(p=>p.email===email);
+        if(!target){target=createStore().players[1];target.id='local-existing';target.email=email;target.nickname='기존계정';target.localAuth={verified:new Date().toISOString(),passwordHash:scryptSync(pass,passwordSalt,32)};target.state.gold='54321';target.state.rebirths=2;target.state.progress_imported_at=null;store.players.push(target);}
+        store.guestExitFail=!!body.fail;return send(200,{email,password:pass,gold:String(target.state.gold),id:target.id});
+      }
+      if(req.url==='/local/current')return actor?send(200,{user:localUser(actor)}):send(401,{error:'삭제되었거나 만료된 계정'});
+      if(req.url==='/local/api'&&body.action==='guest_discard'){
+        const token=req.headers.authorization?.replace(/^Bearer /,''),old=deletedSessions.get(token),id=actor?.id||old;
+        if(!id)return send(401,{error:'로그인 필요'});
+        if(body.confirmation!=='DELETE_GUEST'||body.expected_user_id!==id||'user_id' in body||'target_user_id' in body)return send(409,{error:'본인 계정 삭제 확인 필요'});
+        if(!actor)return send(200,{deleted:true,user_id:id});
+        if(!localUser(actor).is_anonymous||actor.role==='admin')return send(403,{error:'빠른 시작 계정만 삭제할 수 있습니다.'});
+        if(process.env.WAKPPU_LOCAL_GUEST_EXIT_TEST==='1'&&store.guestExitFail)return send(503,{error:'테스트 삭제 실패'});
+        store.players=store.players.filter(p=>p!==actor);
+        for(const [key,value] of sessions)if(value===actor){deletedSessions.set(key,id);sessions.delete(key);}
+        return send(200,{deleted:true,user_id:id});
+      }
       if(req.url==='/local/payments'||req.url==='/local/payments-demo-link'){
         if(!paymentsEnabled)return send(404,{error:'모의 결제 서버가 꺼져 있습니다.'});
         execute(store,actor,{action:'bootstrap'}); // Keep bans, maintenance and session checks.
@@ -74,7 +94,7 @@ const server=http.createServer(async(req,res)=>{
         if(req.url==='/local/email-link'){
           if(!localUser(actor).is_anonymous)return send(400,{error:'빠른 시작 계정에서 연결해주세요.'});
           if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email))return send(400,{error:'올바른 이메일 주소를 입력하세요.'});
-          if(store.players.some(p=>p.email===body.email&&p.id!==actor.id))return send(409,{error:'이미 사용 중인 이메일입니다.'});
+          if(store.players.some(p=>p.email===body.email&&p.id!==actor.id))return send(409,{error:'이미 사용 중인 이메일입니다.',code:'email_exists'});
           actor.localAuth={email:body.email,pending:true,verified:null};
         }else if(req.url==='/local/verify-email'){
           if(!actor.localAuth?.pending)return send(400,{error:'이메일 연결을 먼저 시작해주세요.'});
