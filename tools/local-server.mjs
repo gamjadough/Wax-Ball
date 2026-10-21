@@ -23,7 +23,7 @@ const deletedSessions=new Map();
 const localUser=actor=>({id:actor.id,email:actor.email||null,is_anonymous:actor.role!=='admin'&&!actor.localAuth?.verified,
   email_confirmed_at:actor.localAuth?.verified||null,user_metadata:{wakppu_email_link_pending:!!actor.localAuth?.pending}});
 const port=Number(process.env.WAKPPU_LOCAL_PORT||4173);
-const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.wav':'audio/wav','.mp3':'audio/mpeg'};
+const types={'.webp':'image/webp','.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.wav':'audio/wav','.mp3':'audio/mpeg'};
 const server=http.createServer(async(req,res)=>{
   const send=(status,data)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
   try {
@@ -121,13 +121,13 @@ const server=http.createServer(async(req,res)=>{
       if(['skins','skin_draw','skin_exchange','skin_equip'].includes(body.action)){
         execute(store,actor,{action:'bootstrap'});return send(200,skinAction(actor,body));
       }
-      if(body.action?.startsWith('purchase_')||body.action?.startsWith('admin_purchase_')||body.action?.startsWith('admin_paid_')){
+      if(body.action?.startsWith('purchase_')||body.action?.startsWith('admin_purchase_')||body.action?.startsWith('admin_paid_')||body.action?.startsWith('admin_keepsake_')){
         if(!bankPreview)return send(404,{error:'수동 계좌이체 로컬 미리보기를 실행해주세요.'});
         execute(store,actor,{action:'bootstrap'});
         try{return send(200,await bankPreview.execute(actor,body,store.players));}catch(error){if(/^PT\d{3}$/.test(error.code))error.status=Number(error.code.slice(2));throw error;}
       }
       if(body.action==='rankings'&&bankPreview){const result=execute(store,actor,body),supporters=await bankPreview.supporters();return send(200,result.map(row=>{const s=supporters.find(s=>s.nickname===row.nickname);return {...row,supporter:!!s,premium_supporter:s?.bonus===30,supporter_title_visible:s?.title_visible!==false};}));}
-      if(bankPreview){const bonus=await bankPreview.supporterLevel(actor);actor.supporterPack=bonus>=5;actor.premiumSupporterPack=bonus===30;}
+      if(bankPreview){const bonus=await bankPreview.supporterLevel(actor);actor.developerKeepsake=await bankPreview.keepsakeOwned(actor);actor.supporterPack=bonus>=5;actor.premiumSupporterPack=bonus===30;}
       return send(200,execute(store,actor,body));
     }
     const url=new URL(req.url,'http://localhost');let name=decodeURIComponent(url.pathname);

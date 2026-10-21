@@ -1,5 +1,5 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {createRequire} from 'node:module';
-const require=createRequire(new URL('./test-results/sql-check/package.json',import.meta.url)),{PGlite}=require('@electric-sql/pglite');
+const require=createRequire(process.env.WAKPPU_TEST_NODE_PACKAGE||new URL('./test-results/sql-check/package.json',import.meta.url)),{PGlite}=require('@electric-sql/pglite');
 test('guest self deletion SQL: actual anon only, consent, atomic cascade, audit preservation, replay, stale JWT denial and rollback',async()=>{
  const db=new PGlite(),u='00000000-0000-0000-0000-000000000001',v='00000000-0000-0000-0000-000000000002',w='00000000-0000-0000-0000-000000000003';
  try{
@@ -24,6 +24,8 @@ test('guest self deletion SQL: actual anon only, consent, atomic cascade, audit 
    insert into admin_audit_logs values(1,'${v}','${u}','{"reason":"test"}');
    create function wakppu_api(b jsonb) returns jsonb language sql security definer set search_path=public,pg_temp as $$select jsonb_build_object('ok',true)$$;`);
   const sql=await readFile(new URL('../supabase/migrations/20261021123758_guest_exit_switch.sql',import.meta.url),'utf8');await db.exec(sql);await db.exec(sql);
+  await db.exec(await readFile(new URL('../supabase/migrations/20261021131355_developer_keepsake.sql',import.meta.url),'utf8'));
+  await db.query('insert into wakppu_developer_keepsakes(user_id,granted_by,request_id,reason) values($1,$2,$3,$4)',[u,v,crypto.randomUUID(),'소장품 삭제 호환 검사']);
   const rpc=async(user,b)=>{await db.query("select set_config('test.uid',$1,false)",[user||'']);return (await db.query('select wakppu_api($1::jsonb) data',[JSON.stringify(b)])).rows[0].data;};
   const req=id=>({action:'guest_discard',expected_user_id:id,confirmation:'DELETE_GUEST'});
   await db.exec("select set_config('test.sid','10000000-0000-0000-0000-000000000009',false)");await assert.rejects(rpc(u,req(u)));
@@ -36,7 +38,7 @@ test('guest self deletion SQL: actual anon only, consent, atomic cascade, audit 
   await db.exec(`create table blocker(user_id uuid references auth.users);insert into blocker values('${u}');`);
   await assert.rejects(rpc(u,req(u)));assert.equal((await db.query('select count(*)::int n from wakppu_purchase_entitlements')).rows[0].n,1);assert.equal((await db.query('select deleted_user_id from wakppu_purchase_orders where id=1')).rows[0].deleted_user_id,null);await db.exec('drop table blocker');
   assert.deepEqual(await rpc(u,req(u)),{deleted:true,user_id:u});assert.deepEqual(await rpc(u,req(u)),{deleted:true,user_id:u});
-  for(const table of ['auth.users','players','game_states','auth.sessions','wakppu_skins','wakppu_purchase_entitlements','wakppu_purchase_cosmetics','wakppu_first_steps_grants']){
+  for(const table of ['auth.users','players','game_states','auth.sessions','wakppu_skins','wakppu_purchase_entitlements','wakppu_purchase_cosmetics','wakppu_first_steps_grants','wakppu_developer_keepsakes']){
    const col=table==='auth.users'?'id':'user_id';assert.equal((await db.query(`select count(*)::int n from ${table} where ${col}=$1`,[u])).rows[0].n,0,table);
   }
   assert.deepEqual((await db.query('select user_id,deleted_user_id,amount from wakppu_purchase_orders where id=1')).rows[0],{user_id:null,deleted_user_id:u,amount:0});

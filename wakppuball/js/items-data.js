@@ -38,8 +38,9 @@ list.find(d=>d.id==='rare_amplifying_crystal').name='보상 증폭석';
 list.find(d=>d.id==='hero_destruction_crystal').name='파괴 보상석';
 list.sort((a,b)=>ranks.findIndex(r=>r.id===a.rank)-ranks.findIndex(r=>r.id===b.rank));
 const prices={1:'5000000000000000000',3:'14000000000000000000',5:'22000000000000000000'};
-function channels(d){return d.group==='heart'?Object.entries(heartBalance):d.id==='hero_haste_wax'?[['respawn',200],['animation',150]]:[[d.group,d.value]];}
-function description(d){const effect=channels(d).map(([g,v])=>g==='respawn'?'재등장 대기시간 −'+Math.round((1-100/v)*100)+'%':g==='animation'?'파괴 모션 속도 ×'+v/100:'Gold ×'+v/100).join(' · ');return effect+' / '+(d.seconds?d.seconds/60+'분':'다음 '+d.count+'회 파괴');}
+function channels(d){if(d.permanent)return [];return d.group==='heart'?Object.entries(heartBalance):d.id==='hero_haste_wax'?[['respawn',200],['animation',150]]:[[d.group,d.value]];}
+const collectibles=[{id:"developer_piercing_fragment",name:"누군가의 엉덩이 피어싱 조각",description:"더럽다",rank:"common",permanent:true,image:"images/items/developer-piercing-fragment.webp"}];
+function description(d){if(d.permanent)return d.description;const effect=channels(d).map(([g,v])=>g==='respawn'?'재등장 대기시간 −'+Math.round((1-100/v)*100)+'%':g==='animation'?'파괴 모션 속도 ×'+v/100:'Gold ×'+v/100).join(' · ');return effect+' / '+(d.seconds?d.seconds/60+'분':'다음 '+d.count+'회 파괴');}
 function effective(effects,honey=0,coating=0,now=Date.now()){
  const winning={honey:{value:honey>now?200:100},shopReward:{value:coating>now?300:100},reward:{value:100},add:{value:0},damage:{value:100},difficulty:{value:100},animation:{value:100},respawn:{value:100}};
  for(const d of [...list].sort((a,b)=>a.id<b.id?-1:1)){const e=effects[d.id];if(!e||!(d.seconds?e.expires_at>now:e.remaining>0))continue;
@@ -51,5 +52,5 @@ function damage(base,e){return Math.max(1,Math.floor((base+e.add.value)*e.damage
 function required(base,e,coated){return Math.max(1,Math.ceil(base*(coated?2:1)*e.difficulty.value/100));}
 function reward(base,rebirth,goldEvent,e){return BigInt(base)*(2n**BigInt(rebirth))*BigInt(goldEvent)*BigInt(e.honey.value)*BigInt(e.shopReward.value)*BigInt(e.reward.value)/1000000n;}
 function timing(e){return {animation:e.animation.value/100,respawn:e.respawn.value/100};}
-root.WakppuItemData={ranks,list,prices,channels,description,effective,damage,required,reward,timing};
+root.WakppuItemData={ranks,list,collectibles,prices,channels,description,effective,damage,required,reward,timing};
 })(typeof window==='undefined'?globalThis:window);
