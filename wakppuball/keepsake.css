@@ -1,0 +1,8 @@
+#keepsakeDisplay { position:absolute; left:10px; top:10px; z-index:2; width:56px; display:grid; justify-items:center; gap:1px; pointer-events:none; user-select:none; opacity:.85; }
+#keepsakeDisplay * { pointer-events:none; }
+#keepsakeDisplay img { display:block; width:56px; height:56px; object-fit:contain; }
+#keepsakeDisplay span { font-size:11px; line-height:16px; font-variant-numeric:tabular-nums; color:var(--muted); text-shadow:0 1px 2px var(--bg-edge); }
+@media (max-width:600px), (max-height:480px) {
+ #keepsakeDisplay { width:44px; left:6px; top:6px; }
+ #keepsakeDisplay img { width:44px; height:44px; }
+}

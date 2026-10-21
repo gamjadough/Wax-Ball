@@ -16,7 +16,7 @@
   // Historic idempotent responses describe their original transaction, not current stock.
   // Rebirth also invalidates transactions from the prior run at the same revision.
   if(!Number.isSafeInteger(revision)||revision<Number(game?.revision||0)||(revision<transactionFloor&&(syncGold||Object.keys(next.effects||{}).length>0)))return false;
-  if(syncGold)++sequence;data=next;window.WakppuItemGame?.accept(next,syncGold);render();return true;
+  if(syncGold)++sequence;data=next;window.WakppuItemGame?.accept(next,syncGold);window.WakppuKeepsakeDisplay?.sync(next);render();return true;
  }
  async function refresh(){const seq=++sequence,account=window.WakppuItemGame?.read().account;if(!account){data=null;render();return;}try{const next=await WakppuAuth.invoke('items');if(seq===sequence&&account===window.WakppuItemGame?.read().account)accept(next,false);}catch(e){status(e.message);}}
  function effectText(d,e){if(d.seconds){const left=Math.max(0,Math.ceil((e.expires_at-Date.now())/1000));return Math.floor(left/60)+':'+String(left%60).padStart(2,'0');}return e.remaining+(d.unit==='hit'?'타격':'회 파괴');}
@@ -72,7 +72,7 @@
    if(action==='item_draw'){
     lastResults=result.results;window.WakppuDrawReveal.start(lastResults,account);
     status(payload.count+'개 아이템 지급 완료. 왁뿌볼을 깨서 확인하세요. 스킵은 연출만 생략합니다.');
-   }else status(defs.find(d=>d.id===payload.item_id)?.permanent?'더럽다':'아이템을 사용했습니다. 같은 계열은 가장 강한 효과만 적용됩니다.');
+   }else {if(payload.item_id==='developer_piercing_fragment')window.WakppuKeepsakeDisplay?.start(account);status(defs.find(d=>d.id===payload.item_id)?.permanent?'더럽다':'아이템을 사용했습니다. 같은 계열은 가장 강한 효과만 적용됩니다.');}
    await refresh();
   }catch(e){status(e.message);if(e.status===409)await window.WakppuItemGame.restore();}
   finally{busy=false;render();}
