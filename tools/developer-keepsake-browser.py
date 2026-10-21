@@ -21,9 +21,12 @@ with sync_playwright() as p:
    page.evaluate("async()=>{await WakppuAuth.signIn('guest','');await WakppuItemGame.restore()}");page.wait_for_function('WakppuItemGame.read().ready')
    before=page.evaluate("WakppuAuth.invoke('items')")
    adm.evaluate("async password=>{await WakppuAuth.signIn('dodoonglee@gmail.com',password);await WakppuItemGame.restore()}",password);adm.wait_for_function("!document.querySelector('#adminBtn').hidden");adm.locator('#adminBtn').tap()
+   shortcut=adm.locator('#adminKeepsakeOpen');expect(shortcut).to_be_visible();expect(shortcut).to_be_in_viewport();assert shortcut.bounding_box()['height']>=44
+   shortcut.tap();expect(adm.locator('#adminQuery')).to_be_focused();expect(adm.locator('#adminQuery')).to_be_in_viewport()
    expect(adm.locator('#adminKeepsakeGrant')).to_be_disabled()
    adm.locator('#adminQuery').fill('테스트플레이어');adm.locator('#adminSearch').tap();adm.locator('#adminResults .admin-player').filter(has_text='테스트플레이어').tap()
-   expect(adm.locator('#adminKeepsakeTarget')).to_contain_text('테스트플레이어')
+   expect(adm.locator('#adminKeepsakeTarget')).to_contain_text('테스트플레이어');expect(adm.locator('#adminKeepsakeReason')).to_be_focused();expect(adm.locator('#adminKeepsakeReason')).to_be_in_viewport()
+   adm.locator('#admin .sheet').evaluate('e=>e.scrollTop=0');shortcut.tap();expect(adm.locator('#adminKeepsakeReason')).to_be_focused()
    expect(adm.locator('#adminKeepsakeGrant')).to_be_enabled();adm.locator('#adminKeepsakeReason').fill('영구 소장품 테스트')
    grant=adm.locator('#adminKeepsakeGrant');assert grant.bounding_box()['height']>=44;grant.tap();expect(adm.locator('#adminKeepsakeOwned')).to_have_text('영구 보유 중');expect(grant).to_be_disabled()
    assert adm.locator('#admin .sheet').evaluate('e=>e.scrollWidth<=e.clientWidth+1')
@@ -42,7 +45,7 @@ with sync_playwright() as p:
    page.reload();page.wait_for_function('WakppuItemGame.read().ready');page.locator('#inventoryBtn').tap();expect(page.locator('[data-item="developer_piercing_fragment"]')).to_be_visible()
    adm.locator('#adminQuery').fill('존재하지않는계정');adm.locator('#adminSearch').tap();expect(adm.locator('#adminKeepsakeGrant')).to_be_disabled()
    assert not errors,errors
-   print(f'PASS developer keepsake {width}x{height}, reduced={reduced}: anonymous grant, permanent repeated use, no effects/gold changes, reload, image and selection clearing',flush=True)
+   print(f'PASS developer keepsake {width}x{height}, reduced={reduced}: top shortcut, search/selection navigation, anonymous grant, permanent repeated use, no effects/gold changes, reload, image and selection clearing',flush=True)
    ctx.close();adminctx.close()
   finally:server.terminate();server.wait(timeout=10)
  browser.close()
