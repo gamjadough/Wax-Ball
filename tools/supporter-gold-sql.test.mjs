@@ -72,5 +72,19 @@ test('actual SQL: supporter final reward, fractional carry, replay, all ball pat
  await db.exec(`update auth.users set email='' where id='${player}';insert into guest_lifecycle(user_id,created_at) values('${player}',now()-interval '4 days') on conflict(user_id) do update set first_play_at=null,created_at=excluded.created_at`);
  const protectedGuest=(await db.query('select * from wakppu_guest_accounts() where id=$1',[player])).rows[0];assert.equal(protectedGuest.eligible,false);assert.equal(protectedGuest.exemption,'관리자 지급 이력');
  assert.equal((await db.query('select wakppu_cleanup_unplayed_guests() as removed')).rows[0].removed,0);
+ // Permanent keepsake uses the real inventory API without consuming or changing rewards.
+ await db.exec(await sql('20261021131355_developer_keepsake.sql'));
+ const grant={action:'admin_keepsake_grant',user_id:player,item_id:'developer_piercing_fragment',reason:'영구 소장품 검사',request_id:crypto.randomUUID()};
+ await rpc(grant,admin);await rpc(grant,admin);
+ const keepsakeBefore=await items();assert.equal(keepsakeBefore.inventory.developer_piercing_fragment,1);
+ for(let i=0;i<3;i++){const used=await send('item_use',{item_id:'developer_piercing_fragment'});assert.deepEqual(used,keepsakeBefore);}
+ assert.equal((await db.query("select count(*)::int as n from admin_audit_logs where action='admin_keepsake_grant'")).rows[0].n,1);
+ // Remove the separate paid gift to isolate the keepsake's guest-lifecycle protection.
+ await db.query('delete from wakppu_purchase_entitlements where user_id=$1',[player]);
+ await db.query('delete from wakppu_first_steps_grants where user_id=$1',[player]);
+ await db.query('delete from wakppu_purchase_orders where user_id=$1',[player]);
+ const protectedKeepsake=(await db.query('select * from wakppu_guest_accounts() where id=$1',[player])).rows[0];
+ assert.equal(protectedKeepsake.eligible,false);assert.equal(protectedKeepsake.exemption,'개발자 소장품 지급 이력');
+ assert.equal((await db.query('select wakppu_cleanup_unplayed_guests() as removed')).rows[0].removed,0);
  }finally{await db.close();}
 });
