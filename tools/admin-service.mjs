@@ -71,7 +71,7 @@ export function execute(store, actor, body) {
     return {ok:true,background_mode:body.mode,server_time:new Date().toISOString()};
   }
   if(['limited','limited_buy','limited_select','limited_hit'].includes(action))return limitedAction(store,actor,body,catalog);
-  if(['pumpkin_skins','pumpkin_skin_exchange','pumpkin_skin_equip','pumpkin_scare_disable_buy'].includes(action))return pumpkinSkinAction(store,actor,body);
+  if(['pumpkin_skins','pumpkin_skin_exchange','pumpkin_skin_equip','pumpkin_scare_disable_buy','pumpkin_scare_disable_equip'].includes(action))return pumpkinSkinAction(store,actor,body);
   if(['admin_event_schedule','admin_event_schedule_cancel'].includes(action)){
     const kind=body.event_type,key=kind==='gold'?'gold_event':'admin_ball_event';
     if(!['gold','ball'].includes(kind))error('이벤트 종류를 선택하세요.');

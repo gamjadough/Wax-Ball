@@ -28,7 +28,7 @@ test('three cosmetic profiles preserve original stats and use existing audio wit
  assert.equal(x.skins.appearance(x.base,'missing'),x.base);
  const other={...x.base,id:'eternity'};assert.equal(x.skins.appearance(other,'wisp'),other);
  const html=readFileSync(new URL('../wakppuball/index.html',import.meta.url),'utf8');
- for(const file of ['eclipse-pumpkin.js','pumpkin-skin-art.js','pumpkin-skins.js','pumpkin-skins-ui.js'])assert.ok(html.includes('js/'+file+'?v='+(['pumpkin-skins.js','pumpkin-skins-ui.js'].includes(file)?'20261021-halloweenshop1':'20261020-pumpkin-skins1')));
+ for(const file of ['eclipse-pumpkin.js','pumpkin-skin-art.js','pumpkin-skins.js','pumpkin-skins-ui.js'])assert.ok(html.includes('js/'+file+'?v='+(file==='pumpkin-skins-ui.js'?'20261021-halloweenshop2':file==='pumpkin-skins.js'?'20261021-halloweenshop1':'20261020-pumpkin-skins1')));
  assert.ok(html.includes('pumpkin-skins.css?v=20261020-pumpkin-skins1'));assert.doesNotMatch(html,/preview-cracks|local-pumpkin-skins/);
 });
 test('all tiers preserve callback timing, respect reduced motion and clean every particle',()=>{
