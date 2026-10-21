@@ -17,11 +17,12 @@ try:
             ctx.route('**/*',lambda r:r.continue_() if r.request.url.startswith(base) else r.fulfill(status=200,body=''))
             page=ctx.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.on('dialog',lambda d:d.accept())
             page.goto(base+'/?preview=halloween',wait_until='domcontentloaded');page.wait_for_function('WakppuLimited.data?.tokens===450&&WakppuItemGame.read().ready');page.evaluate('WakppuPumpkinInventory.refresh()');page.wait_for_function('WakppuPumpkinInventory.data?.tokens==="450"')
+            page.evaluate("window.scareThemes=[];const start=WakppuHalloweenEffects.startScare;WakppuHalloweenEffects.startScare=o=>{scareThemes.push(o.theme||'base');return start({...o,random:()=>0});};")
             print('READY '+str(width),flush=True)
-            page.locator('#shopBtn').click();page.locator('#shopPurchaseTab').click()
-            expect(page.locator('#shopPurchase .pumpkin-skin-cards .skin-card')).to_have_count(3)
+            page.locator('#shopBtn').click();page.locator('#shopHalloweenTab').click()
+            expect(page.locator('#shopHalloween .pumpkin-skin-cards .skin-card')).to_have_count(3)
             for skin,balance in [('wisp','400'),('ghost','300'),('eclipse','100')]:
-                button=page.locator('#shopPurchase [data-pumpkin-exchange="pumpkin_'+skin+'"]');expect(button).to_be_enabled();assert button.bounding_box()['height']>=44;button.click()
+                button=page.locator('#shopHalloween [data-pumpkin-exchange="pumpkin_'+skin+'"]');expect(button).to_be_enabled();assert button.bounding_box()['height']>=44;button.click()
                 page.wait_for_function('(n)=>!WakppuPumpkinInventory.busy&&WakppuPumpkinInventory.data.tokens===n',arg=balance)
             page.screenshot(path=str(ROOT/f'tools/test-results/pumpkin-shop-{width}.png'))
             page.locator('[data-close="shop"]').click();page.locator('#collectionBtn').click();page.locator('#limitedCollectionTab').click();page.locator('[data-limited-detail]').click();page.locator('[data-limited-buy]').click();page.wait_for_function('!WakppuLimited.busy&&WakppuLimited.data.tokens===0');page.locator('[data-limited-select]').click()
@@ -39,7 +40,7 @@ try:
                 if skin!='wisp':expect(page.locator('#ballSvg [data-pumpkin-seam="'+skin+'"]')).not_to_have_count(0)
                 page.locator('#shopBtn').click();page.locator('#hammerLevelSelect').select_option('auto');page.wait_for_function('!WakppuItemGame.read().busy');page.locator('[data-close="shop"]').click()
                 page.locator('#ballSvg').click();page.wait_for_function('(g)=>BigInt(WakppuItemGame.read().gold)===BigInt(g)+1500000000n',arg=str(gold))
-                page.wait_for_timeout(2500);assert int(page.evaluate('WakppuItemGame.read().gold'))==gold+1500000000
+                page.wait_for_timeout(2500);assert page.evaluate('(id)=>scareThemes.includes(id)',skin);assert int(page.evaluate('WakppuItemGame.read().gold'))==gold+1500000000
                 page.wait_for_function('(name)=>skinAudio.some(x=>x.endsWith(name))',arg=f'{skin}-final.wav')
                 assert page.locator('.pumpkin-shard,.eclipse-shell-sector,.eclipse-umbra,.eclipse-corona').count()==0
                 assert page.evaluate('''()=>{const ids=[...document.querySelectorAll('svg [id]')].map(n=>n.id);return new Set(ids).size===ids.length;}''')

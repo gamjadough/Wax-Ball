@@ -4,5 +4,6 @@
 /* Preserve the full face on portrait phones; the overlay still covers the viewport. */
 .jackolantern-scare{overscroll-behavior:contain;touch-action:none}
 .jackolantern-scare-close{min-width:48px;min-height:48px;touch-action:manipulation}
+.jackolantern-scare.jackolantern-scare-eclipse{background:radial-gradient(ellipse at 50% 40%,#67242f,#100c19 58%,#000)}.jackolantern-scare-eclipse img{filter:sepia(.35) saturate(.8) hue-rotate(320deg) brightness(.78);opacity:.9}.scare-blood-moon{position:absolute;pointer-events:none;left:auto;right:8%;top:10%;width:min(32vw,25vh);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 45% 45%,#090711 52%,#431321 58%,#a54442 62%,#d69d73 63%,transparent 68%);box-shadow:0 0 35px #a8393840}.jackolantern-scare-eclipse .jackolantern-scare-close{z-index:2}
 @media (max-width:600px) and (orientation:portrait){.jackolantern-scare{background:radial-gradient(ellipse,#36100b,#000 75%)}.jackolantern-scare img{object-fit:contain}}
 @media (pointer:coarse){.collection-tabs .btn{min-height:44px}}
