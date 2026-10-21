@@ -47,6 +47,10 @@ const server=http.createServer(async(req,res)=>{
         }
         return send(200,demoPayments.execute(actor,body));
       }
+      if(req.url==='/local/custom-demo'&&process.env.WAKPPU_LOCAL_CUSTOM_PREVIEW==='1'){
+        execute(store,actor,{action:'bootstrap'});
+        const {prepare}=await import('./custom-preview-service.mjs');return send(200,prepare(store,actor,body.ball_id));
+      }
       if(req.url==='/local/input-guard-demo'&&process.env.WAKPPU_LOCAL_INPUT_GUARD_PREVIEW==='1'){
         if(!actor)return send(401,{error:'로컬 샘플 로그인이 필요합니다.'});
         const {scenario}=await import('./input-guard-preview.mjs');return send(200,scenario(store,body.mode));
@@ -131,6 +135,7 @@ const server=http.createServer(async(req,res)=>{
     if(name==='/index.html'&&url.searchParams.get('preview')==='skin-sounds')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-skin-inventory-preview.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='items')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-items-preview.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='halloween')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-halloween-preview.js"></script></body>'));
+    if(name==='/index.html'&&url.searchParams.get('preview')==='custom'&&process.env.WAKPPU_LOCAL_CUSTOM_PREVIEW==='1')data=Buffer.from(data.toString().replace('</body>','<link rel="stylesheet" href="custom-local.css"><script src="js/local-custom-ball.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='adminball')data=Buffer.from(data.toString().replace('</body>',`<script src="js/local-admin-ball-preview.js"></script><script>WakppuLocalAdminBallPreview(${JSON.stringify(password)});</script></body>`));
     if(name==='/index.html'&&url.searchParams.get('preview')==='rebirth500')data=Buffer.from(data.toString().replace('</body>',`<script src="js/local-rebirth-preview.js"></script><script>WakppuLocalRebirthPreview(${JSON.stringify(password)});</script></body>`));
     res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(data);

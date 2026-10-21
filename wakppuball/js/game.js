@@ -124,7 +124,7 @@
   function eventActive(){return !!adminBallAlwaysAvailable()||WakppuAdminBallEvent.current().phase==='active';}
   function eventBaseReward(){return WAKPPU_BALLS.reduce((best,b,i)=>state.unlocked[i]&&BigInt(b.reward)>best?BigInt(b.reward):best,1n)*10n;}
   function limitedSelected(){return !testSnapshot&&!eventSelected&&!!window.WakppuLimited?.data?.selected;}
-  function currentBall(){const base=eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:limitedSelected()?{...WakppuLimitedData.ball,reward:BigInt(WakppuLimitedData.ball.reward)}:WAKPPU_BALLS[state.selected];const equipped=window.WakppuSkins?.equippedRank(base.id);const ordinary=window.WakppuSkinSounds?.appearance(equipped?{...base,skinId:equipped}:base)||base;const pumpkin=window.WakppuPumpkinInventory?.equipped();const ball=pumpkin&&base.id===WakppuLimitedData.ball.id?WakppuPumpkinSkins.appearance(ordinary,pumpkin):ordinary;const e=window.WakppuItemData?.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt);return {...ball,clicks:e?WakppuItemData.required(ball.clicks,e,coatingActive()):ball.clicks*(coatingActive()?2:1)};}
+  function currentBall(){const base=eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:limitedSelected()?{...WakppuLimitedData.ball,reward:BigInt(WakppuLimitedData.ball.reward)}:WAKPPU_BALLS[state.selected];const equipped=window.WakppuSkins?.equippedRank(base.id);const ordinary=window.WakppuSkinSounds?.appearance(equipped?{...base,skinId:equipped}:base)||base;const pumpkin=window.WakppuPumpkinInventory?.equipped();const originalBall=pumpkin&&base.id===WakppuLimitedData.ball.id?WakppuPumpkinSkins.appearance(ordinary,pumpkin):ordinary;const ball=window.WakppuCustomBall?.appearance(originalBall)||originalBall;const e=window.WakppuItemData?.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt);return {...ball,clicks:e?WakppuItemData.required(ball.clicks,e,coatingActive()):ball.clicks*(coatingActive()?2:1)};}
   function eventPreferenceKey(){return SAVE_KEY+':event-choice:'+state.account?.id;}
   function switchEvent(use,remember=true){
     if(use&&(!eventActive()||testSnapshot||!state.remoteReady||eventRequest))return;
@@ -371,8 +371,8 @@
         el.style.visibility = vis;
       });
     });
-    window.WakppuSkinEffects?.syncCracks({ball:currentBall(),svg:svgEl,cracks:state.cracks,progress:v});
-    window.WakppuPumpkinSkins?.syncCracks({ball:currentBall(),svg:svgEl,cracks:state.cracks,progress:v,reduced:window.WakppuSettings?.reduced()});
+    window.WakppuSkinEffects?.syncCracks({ball:window.WakppuCustomBall?.effectBall(currentBall())||currentBall(),svg:svgEl,cracks:state.cracks,progress:v});
+    window.WakppuPumpkinSkins?.syncCracks({ball:window.WakppuCustomBall?.effectBall(currentBall())||currentBall(),svg:svgEl,cracks:state.cracks,progress:v,reduced:window.WakppuSettings?.reduced()});
     window.WakppuOnboarding?.render();
   }
 
@@ -633,13 +633,13 @@
     hintEl.classList.add('gone');
     playHitSound(data, v, isFinal);      // ① 소리
     window.WakppuPurchaseEffects?.hit({final:isFinal});
-    window.WakppuSkinEffects?.hit({ball:data,svg:svgEl,progress:v});
+    window.WakppuSkinEffects?.hit({ball:window.WakppuCustomBall?.effectBall(data)||data,svg:svgEl,progress:v});
     squish(clientX, v, isHammer);        // ② 눌림
     if (isFinal) {
       breakBall(data);                   // ③ 마지막: 깨짐
     } else {
       updateCracks(v);                   // ③ 금 늘리기
-      window.WakppuPumpkinSkins?.hit({ball:data,svg:svgEl,cracks:state.cracks,progress:v,reduced:window.WakppuSettings?.reduced(),physical:false});
+      window.WakppuPumpkinSkins?.hit({ball:window.WakppuCustomBall?.effectBall(data)||data,svg:svgEl,cracks:state.cracks,progress:v,reduced:window.WakppuSettings?.reduced(),physical:false});
       const p = toStage(clientX, clientY);
       spawnChips(p.x, p.y, v < 0.35 ? 2 : 4, 1, data);
     }
@@ -781,6 +781,26 @@
     // WebKit에서 마지막 균열을 한 프레임 이상 그린 뒤에만 SVG를 조각으로 교체합니다.
     svgEl.classList.add('instant');
     updateCracks(1);
+    if(data.custom&&window.WakppuCustomBall){
+      const visual=WakppuCustomBall.effectBall(data);
+      const reward=()=>{if(data.id==='admin-event'){const earned=eventAward;eventAward=null;displayEventReward=0n;updateAll();if(earned!==null){const c=ballCenter();floatText('+'+fmt(earned)+'G',c.x,c.y-wrap.offsetHeight*.32);}}else awardBreakReward(data);};
+      const respawn=()=>{eventClicks=0;wrap.classList.remove('broken','admin-ball-breaking');svgEl.classList.remove('instant');spawnBall(true);};
+      const options={ball:visual,wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,respawnSpeed,reduced:window.WakppuSettings?.reduced()??false,valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,reward,respawn};
+      if(visual.grade==='초월'){transcendentEffect=WakppuTranscendent.play(options);return;}
+      if(visual.id==='whitehole'){whiteholeEffect=WakppuWhitehole.play({...options,shatter:()=>{makeShards(SHAPES.circle,speed);wrap.classList.add('broken');}});return;}
+      if(visual.id===WakppuLimitedData.ball.id){transcendentEffect=visual.design.pumpkinSkin?WakppuPumpkinSkins.play(options):WakppuHalloweenEffects.play(options);return;}
+      if(visual.id==='admin-event'){
+        window.WakppuPurchaseEffects?.shatter({speed});
+        const fade=adminFade=svgEl.animate(options.reduced?[{opacity:1},{opacity:0}]:[{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(.8)'}],{duration:1100/speed,fill:'forwards'});
+        state.respawnTimer=setTimeout(()=>{fade.cancel();if(!options.valid())return;reward();respawn();},1100/speed+RESPAWN_DELAY_MS/respawnSpeed);return;
+      }
+      // Standard shattering keeps the uploaded image inside the existing SVG shard geometry.
+      requestAnimationFrame(()=>setTimeout(()=>{if(options.valid()){
+        makeShards(SHAPES.circle,speed);wrap.classList.add('broken');const c=ballCenter();flash(data);spawnChips(c.x,c.y,16,3,data);
+        setTimeout(()=>{if(options.valid())reward();},260/speed);
+        state.respawnTimer=setTimeout(()=>{if(options.valid())respawn();},900/speed+RESPAWN_DELAY_MS/respawnSpeed);
+      }},Math.max(55,110/speed)));return;
+    }
     if(data.id===window.WakppuLimitedData?.ball.id){
       window.WakppuPurchaseEffects?.shatter({speed});
       const options={ball:data,wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,respawnSpeed,reduced:window.WakppuSettings?.reduced()??false,valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,reward:()=>awardBreakReward(data),respawn:()=>{svgEl.classList.remove('instant');spawnBall(true);}};
@@ -1334,7 +1354,7 @@
       const progress=Number(value);if(!Number.isFinite(progress))return;
       state.clicks=Math.min(currentBall().clicks-1,Math.floor(currentBall().clicks*clamp(progress,0,1)));
       updateCracks(state.clicks/currentBall().clicks);
-      window.WakppuSkinEffects?.hit({ball:currentBall(),svg:svgEl,progress:state.clicks/currentBall().clicks});
+      window.WakppuSkinEffects?.hit({ball:window.WakppuCustomBall?.effectBall(currentBall())||currentBall(),svg:svgEl,progress:state.clicks/currentBall().clicks});
       updateAll();
     },
     prepareLocalTranscendent(id='starlight',mode='last') {
