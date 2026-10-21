@@ -44,3 +44,7 @@
 .ranking-premium-title{display:block;margin-top:2px;font-size:10px;line-height:1.4;font-weight:600;color:#d9bc80;overflow-wrap:anywhere;white-space:normal}
 .ranking-list li.ranking-premium em{color:#d7c49d}
 @media(max-width:520px){.ranking-premium-title{font-size:9px;letter-spacing:-.03em}.premium-profile-badge{font-size:13px}}
+
+@media(max-width:520px){.shop-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+
+.shop-tabs{flex-wrap:wrap}.shop-tabs .btn{min-width:0}

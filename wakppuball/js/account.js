@@ -52,7 +52,10 @@
   }
 
   async function invoke(action, payload = {}) {
+    if(window.WakppuGuestExit?.busy)throw new Error('계정을 전환 중입니다. 잠시 기다려주세요.');
+    const expectedAccount=window.WakppuItemGame?.read().account;
     const { data: { session } } = await client.auth.getSession();
+    if(expectedAccount&&session?.user.id!==expectedAccount&&!['status','rankings','bootstrap'].includes(action))throw new Error('계정이 변경되었습니다. 다시 시도해주세요.');
     if (!session && !['status','rankings'].includes(action)) throw new Error('로그인이 필요합니다.');
     const response = await fetch(`${config.url}/rest/v1/rpc/wakppu_api`, {
       method: 'POST',
@@ -64,7 +67,7 @@
       body: JSON.stringify({ b: { action, ...payload } }),
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw Object.assign(new Error(result.message || result.error || '서버 요청에 실패했습니다.'), {status:response.status});
+    if (!response.ok) throw Object.assign(new Error(result.message || result.error || '서버 요청에 실패했습니다.'), {status:response.status,code:result.code});
     return result;
   }
 
@@ -83,8 +86,22 @@
     linkEmail,
     completeEmailLink,
     refreshUser: () => client.auth.refreshSession(),
+    guestDriver:{
+      verify:async(email,password)=>{
+        const isolated=window.supabase.createClient(config.url,config.anonKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false,storageKey:'wakppu-switch-'+crypto.randomUUID()}});
+        const result=await isolated.auth.signInWithPassword({email,password});
+        return {...result,release:()=>isolated.auth.signOut({scope:'local'})};
+      },
+      check:async()=>client.auth.getUser(),
+      discard:async session=>{
+        const response=await fetch(`${config.url}/rest/v1/rpc/wakppu_api`,{method:'POST',headers:{'Content-Type':'application/json',apikey:config.anonKey,Authorization:'Bearer '+session.access_token},body:JSON.stringify({b:{action:'guest_discard',confirmation:'DELETE_GUEST',expected_user_id:session.user.id}})});
+        const result=await response.json();if(!response.ok)throw Object.assign(new Error(result.message||'삭제하지 못했습니다. 다시 시도해주세요.'),{status:response.status});return result;
+      },
+      adopt:session=>client.auth.setSession({access_token:session.access_token,refresh_token:session.refresh_token}),
+      clear:()=>client.auth.signOut({scope:'local'}),
+    },
   };
-  client.auth.onAuthStateChange((event, session) => window.dispatchEvent(new CustomEvent('wakppu-auth-changed', {
+  client.auth.onAuthStateChange((event, session) => !window.WakppuGuestExit?.busy&&window.dispatchEvent(new CustomEvent('wakppu-auth-changed', {
     detail: {event, user: session?.user || null},
   })));
 })();
