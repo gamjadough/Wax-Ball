@@ -1,2 +1,5 @@
 [functions.game-api]
 verify_jwt = true
+
+[functions.custom-ball-image]
+verify_jwt = true

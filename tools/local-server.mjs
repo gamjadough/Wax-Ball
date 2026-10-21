@@ -29,7 +29,7 @@ const server=http.createServer(async(req,res)=>{
   try {
     if(req.method==='POST'&&req.url.startsWith('/local/')) {
       if(req.headers.origin&&req.headers.origin!==`http://localhost:${port}`&&req.headers.origin!==`http://127.0.0.1:${port}`) return send(403,{error:'origin not allowed'});
-      let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>20000)return send(413,{error:'request too large'});}const body=JSON.parse(raw);
+      let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>(req.url==='/local/custom-image'?1700000:20000))return send(413,{error:'request too large'});}const body=JSON.parse(raw);
       if(req.url==='/local/login') {
         const admin=body.email==='dodoonglee@gmail.com';if(admin&&body.password!==password)return send(401,{error:'로컬 테스트 비밀번호가 틀립니다.'});
         if(body.email==='guest'&&!store.players.some(p=>p.id==='local-player')){const guest=createStore().players[1];guest.id='local-player';store.players.push(guest);}
@@ -66,6 +66,9 @@ const server=http.createServer(async(req,res)=>{
           return send(200,{ok:true,user:localUser(actor)});
         }
         return send(200,demoPayments.execute(actor,body));
+      }
+      if(req.url==='/local/custom-image'&&bankPreview&&process.env.WAKPPU_LOCAL_CUSTOM_LIVE==='1'){
+        execute(store,actor,{action:'bootstrap'});const response=await bankPreview.customImage(actor,body);res.writeHead(response.status,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(await response.text());
       }
       if(req.url==='/local/custom-demo'&&process.env.WAKPPU_LOCAL_CUSTOM_PREVIEW==='1'){
         execute(store,actor,{action:'bootstrap'});
@@ -121,7 +124,7 @@ const server=http.createServer(async(req,res)=>{
       if(['skins','skin_draw','skin_exchange','skin_equip'].includes(body.action)){
         execute(store,actor,{action:'bootstrap'});return send(200,skinAction(actor,body));
       }
-      if(body.action?.startsWith('purchase_')||body.action?.startsWith('admin_purchase_')||body.action?.startsWith('admin_paid_')||body.action?.startsWith('admin_keepsake_')){
+      if(body.action?.startsWith('custom_')||body.action?.startsWith('purchase_')||body.action?.startsWith('admin_purchase_')||body.action?.startsWith('admin_paid_')||body.action?.startsWith('admin_keepsake_')){
         if(!bankPreview)return send(404,{error:'수동 계좌이체 로컬 미리보기를 실행해주세요.'});
         execute(store,actor,{action:'bootstrap'});
         try{return send(200,await bankPreview.execute(actor,body,store.players));}catch(error){if(/^PT\d{3}$/.test(error.code))error.status=Number(error.code.slice(2));throw error;}
@@ -146,6 +149,7 @@ const server=http.createServer(async(req,res)=>{
     if(name==='/'||name==='/wakppuball/')name='/index.html';name=name.replace(/^\/wakppuball\//,'/');
     const file=path.resolve(root,'.'+name);if(!file.startsWith(root+path.sep))return send(403,{error:'forbidden'});
     let data=await readFile(file);
+    if(name==='/index.html'&&process.env.WAKPPU_LOCAL_CUSTOM_LIVE==='1')data=Buffer.from(data.toString().replace('<body>','<body data-custom-live-local>'));
     if(name==='/index.html') data=Buffer.from(data.toString().replace(/<script src="js\/account.js[^\"]*"><\/script>/,'<script src="js/local-account.js"></script>'));
     if(name==='/index.html'&&paymentsEnabled&&url.searchParams.get('preview')==='payments')data=Buffer.from(data.toString().replace('</body>','<link rel="stylesheet" href="/local-payments/store.css"><script type="module" src="/local-payments/store.js"></script></body>'));
     if(name==='/index.html'&&bankPreview&&url.searchParams.get('preview')==='bank')data=Buffer.from(data.toString().replace('</body>',`<script src="js/local-bank-preview.js"></script><script>WakppuLocalBankPreview(${JSON.stringify(password)});</script></body>`));

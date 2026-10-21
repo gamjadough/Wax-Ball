@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createStore,execute,ballIds,isBanned} from './admin-service.mjs';
+import {createStore as baseStore,execute,ballIds,isBanned} from './admin-service.mjs';
+const createStore=()=>{const s=baseStore();s.sleep_now_ms=Date.parse('2026-10-21T03:00:00Z');return s;};
 test('공지 등록·해제·재등록과 권한 차단 및 작업 기록',()=>{
   const s=createStore(),a=s.players[0],p=s.players[1];
   execute(s,a,{action:'admin_announcement',message:'테스트 공지'});

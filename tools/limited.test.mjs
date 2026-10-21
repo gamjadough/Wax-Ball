@@ -1,5 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {createRequire} from 'node:module';
-import {createStore,execute} from './admin-service.mjs';import {limitedAction,limitedDrop,limitedData,limitedState} from './limited-service.mjs';import {itemState} from './items-service.mjs';import {ballCatalog} from './event-ball-catalog.mjs';
+import {createStore as baseStore,execute} from './admin-service.mjs';import {limitedAction,limitedDrop,limitedData,limitedState} from './limited-service.mjs';import {itemState} from './items-service.mjs';import {ballCatalog} from './event-ball-catalog.mjs';
+const createStore=()=>{const s=baseStore();s.sleep_now_ms=Date.parse('2026-10-21T03:00:00Z');return s;};
 const catalog=await ballCatalog(),id=limitedData.ball.id;
 test('pumpkin 30% boundary, break-only drops, replay safety and event expiry; ordinary remains 10%',()=>{
  const store=createStore(),p=store.players[1];store.limited_preview='active';const s=limitedState(p);s.owned[id]={reward:String(limitedData.ball.reward)};s.selected=id;

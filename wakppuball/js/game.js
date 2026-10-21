@@ -1432,6 +1432,13 @@
     restore:restoreAccount
   };
   window.WakppuGuestGame={discarded:()=>{clearTimeout(remoteSaveTimer);animationEpoch++;window.WakppuLimited?.clear();state.account=null;state.accountNickname='';state.remoteReady=false;accountRole=null;itemRevision=0;state.gold=0n;state.rebirths=0;state.unlocked=WAKPPU_BALLS.map((_,i)=>i===0);state.discovered=['yellow'];state.selected=0;state.hammerOwned=false;state.hammerLevel=0;state.hammerSelectedLevel=null;state.honeyExpiresAt=0;state.coatingExpiresAt=0;ordinaryClicks.clear();eventSelected=false;testSnapshot=null;state.busy=false;spawnBall(false);updateAll();renderAccount();localStorage.removeItem(SAVE_KEY);}};
+  window.WakppuCustomGame={current:()=>currentBall().id,select:async id=>{
+    if(!state.remoteReady||state.busy||eventRequest||window.wakppuServerBlocked)return false;
+    if(id===currentBall().id)return true;
+    if(id===window.WakppuLimitedData?.ball.id){if(eventSelected)switchEvent(false);return await WakppuLimited.select(id);}
+    if(id==='admin-event'){if(!eventActive())return false;if(limitedSelected()&&!await WakppuLimited.select(null))return false;switchEvent(true);return eventSelected;}
+    const index=WAKPPU_BALLS.findIndex(b=>b.id===id);if(index<0||!state.unlocked[index])return false;await selectBall(index);return currentBall().id===id;
+  }};
   window.WakppuSkinGame={refresh:()=>{if(state.busy)return;const clicks=state.clicks;spawnBall(false);state.clicks=Math.min(clicks,currentBall().clicks-1);updateCracks(state.clicks/currentBall().clicks);updateAll();}};
   window.WakppuBeginnerRead=()=>{const b=currentBall(),ni=nextLockedIndex(),advanced=state.unlocked.some((open,i)=>open&&i>=WAKPPU_BALLS.findIndex(x=>x.id==='planet'));return {gold:String(state.gold),clicks:Math.min(state.clicks,b.clicks),required:b.clicks,damage:HAMMERS[activeHammerLevel()-1]?.cracks||1,busy:state.busy,baseReward:String(b.reward),green:!!state.unlocked[1],hammer:state.hammerOwned,early:state.rebirths===0&&!advanced&&accountRole!=='admin'&&!testSnapshot,ready:state.remoteReady,next:ni<0?null:{name:WAKPPU_BALLS[ni].name,price:String(WAKPPU_BALLS[ni].price),reward:String(WAKPPU_BALLS[ni].reward),clicks:WAKPPU_BALLS[ni].clicks}};};
   window.WakppuLimitedGame={render:renderCollection,resetCollection:()=>{collectionDetailIndex=null;renderCollection();},sync:(selected,clicks=0)=>{if(eventSelected)switchEvent(false);if(selected)ordinaryClicks.set(state.selected,state.clicks);wrap.classList.remove('broken');spawnBall(true);state.clicks=selected?clicks:(ordinaryClicks.get(state.selected)||0);updateCracks(state.clicks/currentBall().clicks);updateAll();},test:()=>!!testSnapshot};
