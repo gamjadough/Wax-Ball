@@ -13,7 +13,8 @@
   if(account!==g.account)reset();
   const r=document.getElementById('ballSvg').getBoundingClientRect();if(!r.width||!r.height)return;
   const point=[Math.round(performance.now()),Math.round(Math.max(0,Math.min(1000,(e.clientX-r.left)/r.width*1000))),Math.round(Math.max(0,Math.min(1000,(e.clientY-r.top)/r.height*1000)))];
-  const cap=WakppuInputGuardRules.policy.maxSamples;
+  const configured=globalThis.WakppuInputGuardRules?.policy?.maxSamples;
+  const cap=Number.isInteger(configured)&&configured>=1&&configured<=2048?configured:2048;
   if(samples.length<cap)samples.push(point);else{samples[head]=point;head=(head+1)%cap;}
  }
  async function flush(){

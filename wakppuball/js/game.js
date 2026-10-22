@@ -1252,10 +1252,14 @@
   document.addEventListener('pointerdown', () => SoundManager.unlock(), true);
 
   // 왁뿌볼 클릭 (볼 윤곽 안쪽만 반응)
+  let inputRecordFailed=false;
   svgEl.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
-    window.WakppuInputGuard?.record(e);
+    // Telemetry is advisory; server-side hit validation remains authoritative.
+    try{window.WakppuInputGuard?.record?.(e);}catch(error){
+      if(!inputRecordFailed){inputRecordFailed=true;console.warn('입력 기록 수집 오류: 타격 처리는 계속합니다.',error);}
+    }
     onHit(e.clientX, e.clientY);
   });
   stage.addEventListener('contextmenu', (e) => e.preventDefault());
