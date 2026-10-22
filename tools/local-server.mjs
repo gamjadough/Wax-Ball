@@ -29,7 +29,7 @@ const server=http.createServer(async(req,res)=>{
   try {
     if(req.method==='POST'&&req.url.startsWith('/local/')) {
       if(req.headers.origin&&req.headers.origin!==`http://localhost:${port}`&&req.headers.origin!==`http://127.0.0.1:${port}`) return send(403,{error:'origin not allowed'});
-      let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>20000)return send(413,{error:'request too large'});}const body=JSON.parse(raw);
+      let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>100000)return send(413,{error:'request too large'});}const body=JSON.parse(raw);
       if(req.url==='/local/login') {
         const admin=body.email==='dodoonglee@gmail.com';if(admin&&body.password!==password)return send(401,{error:'로컬 테스트 비밀번호가 틀립니다.'});
         if(body.email==='guest'&&!store.players.some(p=>p.id==='local-player')){const guest=createStore().players[1];guest.id='local-player';store.players.push(guest);}
