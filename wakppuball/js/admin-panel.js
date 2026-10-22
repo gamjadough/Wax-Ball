@@ -102,6 +102,7 @@
     const banned=m.status==='banned'||(m.status==='suspended'&&(!until||until.getTime()>Date.now()));
     const state=m.status==='banned'?'영구 밴':banned?'기간제 밴':m.status==='suspended'?'정상 (밴 기간 만료)':'정상';
     $('adminPlayerInfo').textContent=`${player.nickname}\nUser ID: ${player.id}\nGold: ${WakppuGold.integer(player.state.gold).toLocaleString('ko-KR')}G · 환생: ${player.state.rebirths}회\n해금: ${player.state.unlocked_ball_ids.join(', ')}\n도감: ${(player.state.discovered_ball_ids||[]).join(', ')}\n랭킹: ${player.ranking_hidden?'숨김':'표시'}${banned?' (밴으로 제외됨)':''}\n이용 상태: ${state}\n종료: ${until?until.toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})+' (한국 시간)':banned?'기한 없음':'—'}\n사유: ${m.last_reason||'—'}`;
+    $('adminPlayerInfo').textContent+=`\n자동 제재 횟수: ${Math.max(0,Math.trunc(Number(m.strikes)||0))}회\n※ 감지 기록 건수가 아닌 자동 제재 누적 횟수입니다. 관리자 밴 해제 시 초기화됩니다.`;
     syncSelection();
   }
   let pending=false;
