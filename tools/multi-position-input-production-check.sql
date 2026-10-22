@@ -17,7 +17,12 @@ begin
   if (public.wakppu_input_metrics(points)->>'loop_period')::int<>7 then raise exception 'Live cycle metrics mismatch';end if;
   req:=jsonb_build_object('action','input_report','request_id',gen_random_uuid(),'session_id',sid,'samples',points);r:=public.wakppu_api(req);
   if (r->'input_guard'->>'score')::int<>least(100,(step+1)*35) or r->'input_guard'->>'speed_limited_until' is null then raise exception 'Live escalation mismatch';end if;
-  again:=public.wakppu_api(req);if again<>r then raise exception 'Replayed report changed evidence';end if;
+  if step<2 then
+   again:=public.wakppu_api(req);if again<>r then raise exception 'Replayed report changed evidence';end if;
+  else
+   -- The outer moderation gate intentionally rejects even retries once suspended.
+   begin perform public.wakppu_api(req);raise exception 'Suspended account bypassed outer gate';exception when sqlstate 'PT403' then null;end;
+  end if;
   if step<2 and r->'input_guard'->>'restricted_until' is not null then raise exception 'Premature suspension';end if;
  end loop;
  if r->'input_guard'->>'restricted_until' is null then raise exception 'No repeated-cycle suspension';end if;
