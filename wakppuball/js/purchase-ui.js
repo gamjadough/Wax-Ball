@@ -1,7 +1,7 @@
 (() => {
  'use strict';
  const $=id=>document.getElementById(id),game=()=>window.WakppuItemGame?.read();
- let data=null,owner=null,sequence=0,busy=false,config=null,adminOffset=0,adminBusy=false,adminOwner=null,adminRead=0;
+ let data=null,owner=null,sequence=0,busy=false,config=null,adminOffset=0,adminBusy=false,adminOwner=null,adminRead=0,adminNoticeId=null;
  const states={pending:'입금 대기',claimed:'입금 알림 접수 · 관리자 확인 대기',approved:'상품 지급 완료',cancelled:'주문 취소',refunded:'환불 완료 · 상품 회수',revoked:'관리자 지급 회수 완료'};
  const money=n=>Number(n).toLocaleString('ko-KR')+'원',time=t=>new Date(t).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',hour12:false});
  const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
@@ -76,7 +76,7 @@
  async function adminLoad(reset=false){
   if(adminBusy)return;const read=++adminRead;$('purchaseAdminRefresh').disabled=true;if(reset)adminOffset=0;const current=game()?.account;adminOwner=current;
   try{
-   const [cfg,list]=await Promise.all([WakppuAuth.invoke('admin_purchase_config'),WakppuAuth.invoke('admin_purchase_orders',{offset:adminOffset,status:$('purchaseAdminFilter').value})]);
+   const [cfg,list]=await Promise.all([WakppuAuth.invoke('admin_purchase_config'),adminNoticeId?WakppuAuth.invoke('admin_purchase_inbox',{order_id:adminNoticeId}):WakppuAuth.invoke('admin_purchase_orders',{offset:adminOffset,status:$('purchaseAdminFilter').value})]);
    if(current!==game()?.account||read!==adminRead)return;config=cfg;
    if(!$('purchaseConfigForm').dataset.dirty){for(const key of ['bank_name','account_number','account_holder','support_contact'])$('purchaseConfigForm').elements[key].value=cfg[key];$('purchaseConfigForm').elements.enabled.checked=cfg.enabled;}
    const drafts=new Map([...$('purchaseAdminOrders').querySelectorAll('input[data-confirm-amount],input[data-deposit-reference]')].map(n=>[(n.dataset.confirmAmount?'amount:':'reference:')+(n.dataset.confirmAmount||n.dataset.depositReference),n.value]));
@@ -104,11 +104,12 @@
     if(o.status==='approved'&&o.supporter_refund_blocked)row.append(node('p','업그레이드에 사용한 응원팩입니다. 프리미엄 후원팩을 먼저 환불 처리한 뒤 회수할 수 있습니다. 송금 전에 확인하세요.'));
     $('purchaseAdminOrders').append(row);
    }
-   if(!list.orders.length)$('purchaseAdminOrders').textContent='해당 주문이 없습니다.';
-   $('purchaseAdminPrev').disabled=adminOffset===0;$('purchaseAdminNext').disabled=list.orders.length<50;
+   if(!list.orders.length)$('purchaseAdminOrders').textContent=adminNoticeId?'이미 처리되었거나 취소된 주문입니다. 전체 주문에서 이력을 확인하세요.':'해당 주문이 없습니다.';
+   $('purchaseAdminNoticeClear').hidden=!adminNoticeId;
+   $('purchaseAdminPrev').disabled=!!adminNoticeId||adminOffset===0;$('purchaseAdminNext').disabled=!!adminNoticeId||list.orders.length<50;
   }catch(e){if(read===adminRead){config=null;$('purchaseAdminOrders').replaceChildren();$('purchaseAdminStatus').textContent=e.message;}}finally{if(read===adminRead)$('purchaseAdminRefresh').disabled=false;}
  }
- async function adminMutate(action,payload){if(adminBusy)return;adminBusy=true;try{await WakppuAuth.invoke(action,payload);if(adminOwner!==game()?.account)return;$('purchaseAdminStatus').textContent='처리했습니다. 거래 기록에 저장되었습니다.';}catch(e){$('purchaseAdminStatus').textContent=e.message;}finally{adminBusy=false;await adminLoad();await refresh();}}
+ async function adminMutate(action,payload){if(adminBusy)return;adminBusy=true;try{await WakppuAuth.invoke(action,payload);if(adminOwner!==game()?.account)return;$('purchaseAdminStatus').textContent='처리했습니다. 거래 기록에 저장되었습니다.';}catch(e){$('purchaseAdminStatus').textContent=e.message;}finally{adminBusy=false;await adminLoad();await refresh();window.WakppuPurchaseNotices?.refresh();}}
  document.addEventListener('DOMContentLoaded',()=>{
   $('shopPremium').innerHTML='<h3>💜 유료 상점</h3><p id="purchaseNotice" role="status"></p><p>응원팩: 골드 +5% · 프리미엄 후원팩: 골드 +30%·전용 꾸미기 · 별빛 오라 스킨: 500원·외형 전용</p><p>후원 보너스는 환생·꿀·코팅·아이템·이벤트 계산 후 파괴 보상에만 적용됩니다. 높은 쪽 하나만 적용하며 1G 미만은 누적됩니다. 이미 생성된 주문은 주문 당시 금액을 유지합니다.</p><section id="purchaseOwnedSection" class="purchase-owned" hidden><h3>보유 상품</h3><div id="purchaseOwned"></div></section><p id="purchaseStatus" role="status"></p><label class="purchase-depositor">입금자명<input id="purchaseDepositor" maxlength="30" autocomplete="name" placeholder="실제 이체에 사용할 이름"></label><div id="purchaseProducts" class="purchase-products"></div><h3>최근 주문 내역 (최대 50건)</h3><button id="purchaseRefresh" class="btn small" type="button">주문·지급 상태 새로고침</button><div id="purchaseHistory"></div>';
   const inventory=node('section');inventory.id='purchaseInventory';inventory.className='purchase-owned';inventory.innerHTML='<h3>유료 스킨 · 모든 볼</h3><div id="purchaseInventoryContent"></div>';($('inventorySkinsPage')||$('itemsModal').querySelector('.sheet')).prepend(inventory);
@@ -118,14 +119,15 @@
   const admin=node('section');admin.id='purchaseAdmin';
   admin.innerHTML='<h3>💰 유료 상점 · 계좌이체 주문</h3><p>실제 은행 거래내역을 직접 확인한 뒤 지급하세요. 입금 알림·송금 화면만으로 지급하지 마세요. 환불은 은행에서 먼저 완료한 뒤 아래에서 상품을 회수합니다.</p><form id="purchaseConfigForm"><label>은행명<input name="bank_name" maxlength="50" required></label><label>받을 계좌번호<input name="account_number" maxlength="50" inputmode="numeric" required></label><label>예금주<input name="account_holder" maxlength="50" required></label><label>문의 방법 (이메일 등)<input name="support_contact" maxlength="200" required></label><label class="purchase-check"><input name="enabled" type="checkbox">새 계좌이체 주문 받기</label><button class="btn" type="submit">계좌·판매 상태 저장</button></form><p>계좌 변경 전 생성된 주문은 당시 계좌 정보를 유지합니다. 변경 후에도 기존 계좌의 입금을 확인하세요.</p><p id="purchaseAdminStatus" role="status"></p><label>주문 상태<select id="purchaseAdminFilter"><option value="all">전체</option><option value="pending">입금 대기</option><option value="claimed">입금 알림 접수</option><option value="approved">지급 완료</option><option value="cancelled">취소</option><option value="refunded">환불 완료</option></select></label><button id="purchaseAdminRefresh" class="btn">주문·설정 새로고침</button><div id="purchaseAdminOrders"></div><div class="purchase-pages"><button id="purchaseAdminPrev" class="btn">이전 50건</button><button id="purchaseAdminNext" class="btn">다음 50건</button></div>';
   $('admin').querySelector('.sheet').append(admin);
+  const clearNotice=button('전체 주문 보기',()=>{adminNoticeId=null;adminLoad(true);});clearNotice.id='purchaseAdminNoticeClear';clearNotice.hidden=true;$('purchaseAdminOrders').before(clearNotice);
   $('purchaseConfigForm').oninput=()=>{$('purchaseConfigForm').dataset.dirty='1';};
   $('purchaseConfigForm').onsubmit=e=>{e.preventDefault();if(!config||adminBusy){$('purchaseAdminStatus').textContent='먼저 설정을 새로고침하세요.';return;}const form=e.currentTarget;const payload={mode:'set',revision:config.revision,enabled:form.elements.enabled.checked};for(const key of ['bank_name','account_number','account_holder','support_contact'])payload[key]=form.elements[key].value.trim();if(confirm('입력한 계좌와 예금주를 확인했나요? 판매를 켜면 이 계좌가 구매자에게 안내됩니다.')){delete form.dataset.dirty;adminMutate('admin_purchase_config',payload);}};
-  $('purchaseAdminRefresh').onclick=()=>{delete $('purchaseConfigForm').dataset.dirty;adminLoad(true);};$('purchaseAdminFilter').onchange=()=>adminLoad(true);
+  $('purchaseAdminRefresh').onclick=()=>{delete $('purchaseConfigForm').dataset.dirty;adminLoad(true);};$('purchaseAdminFilter').onchange=()=>{adminNoticeId=null;adminLoad(true);};
   $('purchaseAdminPrev').onclick=()=>{adminOffset=Math.max(0,adminOffset-50);adminLoad();};$('purchaseAdminNext').onclick=()=>{adminOffset+=50;adminLoad();};
   new MutationObserver(()=>{if(!$('admin').hidden)adminLoad();}).observe($('admin'),{attributes:true,attributeFilter:['hidden']});
-  window.addEventListener('wakppu-account-restored',()=>{data=null;owner=null;config=null;++sequence;++adminRead;$('purchaseAdminRefresh').disabled=false;adminOffset=0;$('purchaseAdminOrders').replaceChildren();$('purchaseConfigForm').reset();delete $('purchaseConfigForm').dataset.dirty;render();refresh();});
+  window.addEventListener('wakppu-account-restored',()=>{data=null;owner=null;config=null;++sequence;++adminRead;$('purchaseAdminRefresh').disabled=false;adminOffset=0;adminNoticeId=null;$('purchaseAdminNoticeClear').hidden=true;$('purchaseAdminOrders').replaceChildren();$('purchaseConfigForm').reset();delete $('purchaseConfigForm').dataset.dirty;render();refresh();});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
   setInterval(()=>{if(!document.hidden&&!$('shopPremium').hidden&&!$('shop').hidden)refresh();},15000);refresh();render();
  });
- window.WakppuPurchases={refresh,serverHits:()=>!!game()?.account&&(owner!==game()?.account||!data||!!data.owned?.supporter_pack||!!data.owned?.premium_supporter_pack||data.orders?.some(o=>o.product_id==='first_steps_pack'&&['pending','claimed'].includes(o.status)))};
+ window.WakppuPurchases={refresh,openNotice:async id=>{if($('adminBtn').hidden||adminBusy)return;adminNoticeId=id;adminOffset=0;$('admin').hidden=false;await adminLoad();$('purchaseAdmin').scrollIntoView({block:'start'});},serverHits:()=>!!game()?.account&&(owner!==game()?.account||!data||!!data.owned?.supporter_pack||!!data.owned?.premium_supporter_pack||data.orders?.some(o=>o.product_id==='first_steps_pack'&&['pending','claimed'].includes(o.status)))};
 })();

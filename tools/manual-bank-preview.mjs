@@ -6,6 +6,7 @@ export async function createBankPreview(){
  const custom=process.env.WAKPPU_LOCAL_CUSTOM_LIVE==='1';let images;
  if(custom){await (await import('./custom-sql-fixture.mjs')).installCustom(db);images=(await import('./custom-edge-fixture.mjs')).imageFixture(db,rpc);}
  const auto=process.env.WAKPPU_LOCAL_AUTO_REBIRTH==='1';if(auto){if(!custom)throw new Error('Auto rebirth preview requires the custom SQL fixture');await (await import('./auto-rebirth-fixture.mjs')).installAutoRebirth(db);}
+ if(process.env.WAKPPU_LOCAL_PURCHASE_NOTICES==='1')await db.exec(await (await import('node:fs/promises')).readFile(new URL('../supabase/migrations/20261022091944_admin_purchase_inbox.sql',import.meta.url),'utf8'));
  // Fake bank details exist only in this explicit local preview, never migrations.
  await db.exec("update wakppu_purchase_config set enabled=true,bank_name='로컬 테스트 은행',account_number='000-0000-0000',account_holder='실제 입금 금지',support_contact='로컬 체험 전용 · 실제 송금하지 마세요' where id;");
  const idFor=actor=>{const h=createHash('sha256').update(actor.id).digest('hex');return [h.slice(0,8),h.slice(8,12),h.slice(12,16),h.slice(16,20),h.slice(20,32)].join('-');};
