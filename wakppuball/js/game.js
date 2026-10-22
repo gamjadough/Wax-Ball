@@ -673,7 +673,7 @@
       const action=limitedSelected()?'limited_hit':'item_hit';
       try{result=await WakppuAuth.invoke(action,req);}catch(error){if(error.status)throw error;result=await WakppuAuth.invoke(action,req);}
       if(account!==state.account?.id)return;
-      itemBreakTiming=BigInt(result.reward)>0n?timing:null;
+      itemBreakTiming=BigInt(result.reward)>0n?WakppuHalloweenDecorData.timing(timing,result.pet_timing?.equipped??null):null;
       if(WakppuItems.accept(result)===false){itemBreakTiming=null;await restoreAccount();return;}
       state.gold=BigInt(result.gold);itemRevision=result.revision;
       if(result.limited)WakppuLimited.accept(result.limited);
@@ -776,7 +776,7 @@
      4. 깨지는 연출
      ========================================================================== */
   function breakBall(data) {
-    const timing=itemBreakTiming||WakppuItemData.timing(WakppuItemData.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt));
+    const timing=itemBreakTiming||window.WakppuHalloweenDecor.timing(WakppuItemData.timing(WakppuItemData.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt)));
     itemBreakTiming=null;
     const speed=timing.animation,respawnSpeed=timing.respawn;
     if(!eventSelected&&!limitedSelected())ordinaryClicks.delete(state.selected);

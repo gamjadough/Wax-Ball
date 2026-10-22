@@ -4,3 +4,15 @@
 @keyframes hdecor-drift{50%{transform:translateY(-7px) rotate(4deg)}}@keyframes hdecor-flare{0%{opacity:0;transform:scale(.4)}30%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:translateY(-12px) scale(.7)}}@keyframes hdecor-flight{0%{opacity:0;transform:translate(0,18px) scale(.75)}15%{opacity:.85}65%{opacity:.85;transform:translate(min(30vw,180px),-8px) rotate(-8deg)}100%{opacity:0;transform:translate(min(45vw,260px),-24px) scale(.6)}}@keyframes hdecor-reveal{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 @media(max-width:600px){.hdecor-section{padding:12px}.hdecor-grid{grid-template-columns:minmax(0,1fr)}.hdecor-card{display:grid;grid-template-columns:76px minmax(0,1fr);text-align:left;align-items:center;padding:12px}.hdecor-card>.hdecor-art{grid-row:span 5;width:76px}.hdecor-card p,.hdecor-card strong{min-width:0}.hdecor-card .btn{grid-column:2}.hdecor-companion{max-width:60px}.hdecor-bat{width:52px}}
 @media(prefers-reduced-motion:reduce){.hdecor-companion,.hdecor-bat,.hdecor-embers,.hdecor-result{animation:none}.hdecor-bat{opacity:.8}.hdecor-embers{opacity:.65}}.reduced-effects .hdecor-companion,.reduced-effects .hdecor-bat,.reduced-effects .hdecor-embers,.reduced-effects .hdecor-result{animation:none}.reduced-effects .hdecor-bat{opacity:.8}.reduced-effects .hdecor-embers{opacity:.65}
+
+/* Permanent pets travel inside the game stage; the inner body has its own gait. */
+.hdecor-companion{left:0;top:0;right:auto;width:clamp(52px,12vw,82px);max-width:82px;z-index:3;animation:none;will-change:transform;contain:layout style;filter:drop-shadow(0 3px 5px #14102255)}
+.hpet-body{transform-box:fill-box;transform-origin:center;animation:hpet-float 2.8s ease-in-out infinite}.hpet-pumpkin_ember .hpet-body{animation:hpet-hop 1.2s ease-in-out infinite}.hpet-wings{transform-box:fill-box;transform-origin:center;animation:hpet-flap .65s ease-in-out infinite}
+.hdecor-card b{display:block;color:#ffe0a6;font-size:13px}.hdecor-actions .btn{min-height:44px}
+@keyframes hpet-float{50%{transform:translateY(-5px) rotate(3deg)}}@keyframes hpet-hop{50%{transform:translateY(-7px) scale(.97,1.03)}}@keyframes hpet-flap{50%{transform:scaleY(.65)}}
+@media(max-width:600px){.hdecor-companion{width:56px;max-width:56px}.hdecor-card>.hdecor-art{width:86px}.hdecor-card{grid-template-columns:86px minmax(0,1fr)}}
+@media(max-height:420px){.hdecor-companion{width:46px;max-width:46px}}
+@media(prefers-reduced-motion:reduce){.hpet-body,.hpet-wings{animation:none}.hdecor-companion{will-change:auto}}.reduced-effects .hpet-body,.reduced-effects .hpet-wings{animation:none}.reduced-effects .hdecor-companion{will-change:auto}
+
+.hpet-paused .hpet-body,.hpet-paused .hpet-wings{animation-play-state:paused}
+#itemsModal .skin-switch .btn{min-height:44px}

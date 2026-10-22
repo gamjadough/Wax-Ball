@@ -26,30 +26,31 @@ with sync_playwright() as p:
     button=shop.locator('.hdecor-open');expect(button).to_be_enabled();assert button.bounding_box()['height']>=44;button.tap();page.wait_for_function('(n)=>!WakppuHalloweenDecorUI.busy&&document.querySelector("#halloweenDecorShop .hdecor-balance").textContent.includes(n+"캔디")',arg=1000-(i+1)*100)
    state=rpc();assert state['tokens']=='400' and state['shards']=='3' and len(state['owned'])==3 and state['opened']=='6';assert state['gold']==gold;expect(shop.locator('.hdecor-result')).to_contain_text('중복 획득')
    fixture('exchange');shop.locator('[data-hdecor-id="pumpkin_ember"]').tap();page.wait_for_function('!WakppuHalloweenDecorUI.busy');expect(shop.locator('.hdecor-result')).to_contain_text('조각 교환');assert rpc()['shards']=='0'
-   ghost=shop.locator('[data-hdecor-id="little_ghost"]');ghost.tap();expect(ghost).to_have_text('장착 해제');page.locator('[data-close="shop"]').tap();expect(page.locator('.hdecor-companion')).to_have_count(1)
-   box=page.locator('.hdecor-companion');assert box.evaluate("e=>getComputedStyle(e).pointerEvents==='none'");clicks=page.evaluate('WakppuBeginnerRead().clicks');page.locator('#ballSvg').tap();page.wait_for_function('(v)=>WakppuBeginnerRead().clicks!==v',arg=clicks);page.wait_for_function('!WakppuItemGame.read().busy')
-   page.reload();page.wait_for_function('WakppuItemGame.read().ready');expect(page.locator('.hdecor-companion')).to_have_count(1)
-   page.locator('#inventoryBtn').tap();page.locator('#inventorySkinsTab').tap();inventory=page.locator('#halloweenDecorInventory');expect(inventory).to_be_visible();inventory.locator('[data-hdecor-id="pumpkin_ember"]').tap();expect(inventory.locator('[data-hdecor-id="pumpkin_ember"]')).to_have_text('장착 해제');page.locator('#itemsClose').tap();expect(page.locator('.hdecor-companion')).to_have_count(0)
-   clicks=page.evaluate('WakppuBeginnerRead().clicks');page.locator('#ballSvg').tap();page.wait_for_function('(v)=>WakppuBeginnerRead().clicks!==v',arg=clicks);expect(page.locator('.hdecor-embers')).to_have_count(1);page.wait_for_function('!WakppuItemGame.read().busy')
-   # Refill only the missing bat in this explicit disposable fixture, via a real shard exchange.
-   fixture('exchange');page.locator('#inventoryBtn').tap();page.locator('#inventorySkinsTab').tap();inventory.locator('[data-hdecor-id="bat_swarm"]').tap();page.wait_for_function('!WakppuHalloweenDecorUI.busy');expect(inventory.locator('[data-hdecor-id="bat_swarm"]')).to_have_text('사용')
-   inventory.locator('[data-hdecor-id="bat_swarm"]').tap();page.wait_for_function('!WakppuHalloweenDecorUI.busy');page.locator('#itemsClose').tap();expect(page.locator('.hdecor-bats')).to_have_count(1);assert page.locator('.hdecor-bat').count()==(1 if reduced else 2 if width<600 else 3)
-   clicks=page.evaluate('WakppuBeginnerRead().clicks');page.locator('#ballSvg').tap();page.wait_for_function('(v)=>WakppuBeginnerRead().clicks!==v',arg=clicks);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
-   out=ROOT/'tools/test-results';out.mkdir(exist_ok=True);page.screenshot(path=str(out/f'halloween-decor-play-{width}.png'));expect(page.locator('.hdecor-bats')).to_have_count(0,timeout=6500)
-   page.locator('#inventoryBtn').tap();page.locator('#inventorySkinsTab').tap();inventory.locator('[data-hdecor-id="little_ghost"]').tap();expect(inventory.locator('[data-hdecor-id="little_ghost"]')).to_have_text('장착 해제');page.locator('#itemsClose').tap()
-   before_break=page.evaluate('WakppuItemGame.read().gold')
-   while page.evaluate('WakppuBeginnerRead().clicks')<4:
-    page.locator('#ballSvg').tap();page.wait_for_function('!WakppuItemGame.read().busy')
-   page.locator('#ballSvg').tap();page.wait_for_function('WakppuBeginnerRead().busy');expect(page.locator('.hdecor-companion')).to_have_count(0)
-   page.wait_for_function('!WakppuItemGame.read().busy');expect(page.locator('.hdecor-companion')).to_have_count(1);assert int(page.evaluate('WakppuItemGame.read().gold'))==int(before_break)+1
-   fixture('ended');page.locator('#shopBtn').tap();page.locator('#shopHalloweenTab').tap();expect(shop.locator('.hdecor-open')).to_be_disabled();expect(shop.locator('[data-hdecor-id="little_ghost"]')).to_be_enabled();assert page.locator('#shop .sheet').evaluate('e=>e.scrollWidth<=e.clientWidth+1');shop.scroll_into_view_if_needed();page.screenshot(path=str(out/f'halloween-decor-shop-{width}.png'))
-   page.locator('[data-close="shop"]').tap();page.evaluate("async password=>{await WakppuAuth.signIn('dodoonglee@gmail.com',password);await WakppuItemGame.restore()}",password);page.wait_for_function('WakppuItemGame.read().ready');expect(page.locator('.hdecor-companion')).to_have_count(0);assert len(rpc()['owned'])==3 and rpc()['admin_content_access'];admin_tokens=rpc()['tokens']
-   page.locator('#inventoryBtn').tap();page.locator('#inventorySkinsTab').tap();expect(inventory).to_contain_text('개발자 상시 이용');clear=inventory.locator('.hdecor-unequip');expect(clear).to_be_disabled()
-   for item in ['little_ghost','pumpkin_ember']:
-    inventory.locator('[data-hdecor-id="'+item+'"]').tap();expect(clear).to_be_enabled();assert clear.bounding_box()['height']>=44;clear.tap();page.wait_for_function('!WakppuHalloweenDecorUI.busy');expect(clear).to_be_disabled();assert rpc()['equipped'] is None
-   inventory.locator('[data-hdecor-id="bat_swarm"]').tap();page.wait_for_function('!WakppuHalloweenDecorUI.busy');expect(page.locator('.hdecor-bats')).to_have_count(1);inventory.locator('.hdecor-stop').tap();expect(page.locator('.hdecor-bats')).to_have_count(0)
-   page.locator('#itemsClose').tap();page.locator('#shopBtn').tap();page.locator('#shopHalloweenTab').tap();shop.locator('[data-hdecor-id="little_ghost"]').tap();expect(shop.locator('.hdecor-unequip')).to_be_enabled();shop.locator('.hdecor-unequip').tap();page.wait_for_function('!WakppuHalloweenDecorUI.busy');expect(shop.locator('.hdecor-unequip')).to_be_disabled();assert rpc()['equipped'] is None and rpc()['tokens']==admin_tokens and rpc()['opened']=='0'
-   page.locator('[data-close="shop"]').tap();page.reload();page.wait_for_function('WakppuItemGame.read().ready');expect(page.locator('.hdecor-companion')).to_have_count(0);assert rpc()['equipped'] is None
-   assert not errors,errors;print(f'PASS {width}x{height} reduced={reduced}: 100 candy, lost response retry, 3 equal rewards, duplicates/exchange, equip/use, reload, expiry, touch and account isolation',flush=True);ctx.close()
+   page.locator('[data-close="shop"]').tap();page.locator('#inventoryBtn').tap();page.locator('#inventoryPetsTab').tap();inventory=page.locator('#halloweenDecorInventory');expect(inventory).to_be_visible();expect(page.locator('#inventorySkinsPage')).to_be_hidden();assert page.locator('#inventorySkinsPage .hdecor-section').count()==0
+   expect(inventory).to_contain_text('골드 +10%');expect(inventory).to_contain_text('파괴 모션 시간 10% 단축');expect(inventory).to_contain_text('재생성 대기 시간 10% 단축');assert page.locator('#inventoryPetsTab').evaluate('e=>parseFloat(getComputedStyle(e).minHeight)>=44')
+   # Finish the remaining acquisition through three real draws; the RNG fixture cycles equally.
+   page.locator('#itemsClose').tap();page.locator('#shopBtn').tap();page.locator('#shopHalloweenTab').tap()
+   for i in range(3):
+    shop.locator('.hdecor-open').tap();page.wait_for_function('!WakppuHalloweenDecorUI.busy');page.wait_for_timeout(80)
+   assert len(rpc()['owned'])==3
+   page.locator('[data-close="shop"]').tap()
+   out=ROOT/'tools/test-results';out.mkdir(exist_ok=True)
+   for item in ['little_ghost','pumpkin_ember','bat_swarm']:
+    page.locator('#inventoryBtn').tap();page.locator('#inventoryPetsTab').tap();button=inventory.locator('[data-hdecor-id="'+item+'"]');button.tap();expect(button).to_have_text('장착 해제');page.wait_for_function('!WakppuHalloweenDecorUI.busy');assert rpc()['equipped']==item
+    assert page.locator('#itemsModal .sheet').evaluate('e=>e.scrollWidth<=e.clientWidth+1');page.screenshot(path=str(out/f'halloween-pets-inventory-{width}-{item}.png'));page.locator('#itemsClose').tap()
+    pet=page.locator('.hdecor-companion');expect(pet).to_have_count(1);assert pet.get_attribute('data-pet')==item;assert pet.evaluate("e=>getComputedStyle(e).pointerEvents==='none'")
+    start=pet.evaluate('e=>getComputedStyle(e).transform');page.wait_for_timeout(300);after=pet.evaluate('e=>getComputedStyle(e).transform');assert (start==after) if reduced else (start!=after)
+    assert pet.evaluate('e=>{const a=e.getBoundingClientRect(),b=document.querySelector("#stage").getBoundingClientRect();return a.left>=b.left-1&&a.right<=b.right+1&&a.top>=b.top-1&&a.bottom<=b.bottom+1}')
+    before=page.evaluate('WakppuItemGame.read().gold')
+    for i in range(5):
+     page.locator('#ballSvg').tap();page.wait_for_function('!WakppuItemGame.read().busy')
+    assert int(page.evaluate('WakppuItemGame.read().gold'))==int(before)+1;expect(pet).to_have_count(1);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth');page.screenshot(path=str(out/f'halloween-pets-play-{width}-{item}.png'))
+    page.reload();page.wait_for_function('WakppuItemGame.read().ready');expect(page.locator('.hdecor-companion')).to_have_count(1);assert rpc()['equipped']==item
+    page.locator('#inventoryBtn').tap();page.locator('#inventoryPetsTab').tap();inventory.locator('.hdecor-stop').tap();expect(page.locator('.hpet-paused')).to_have_count(1);assert rpc()['equipped']==item;inventory.locator('.hdecor-unequip').tap();page.wait_for_function('!WakppuHalloweenDecorUI.busy');expect(page.locator('.hdecor-companion')).to_have_count(0);assert rpc()['equipped'] is None;page.locator('#itemsClose').tap()
+   fixture('ended');page.locator('#shopBtn').tap();page.locator('#shopHalloweenTab').tap();expect(shop.locator('.hdecor-open')).to_be_disabled();expect(shop.locator('[data-hdecor-id="bat_swarm"]')).to_be_enabled();page.locator('[data-close="shop"]').tap()
+   page.evaluate("async password=>{await WakppuAuth.signIn('dodoonglee@gmail.com',password);await WakppuItemGame.restore()}",password);page.wait_for_function('WakppuItemGame.read().ready');expect(page.locator('.hdecor-companion')).to_have_count(0);assert len(rpc()['owned'])==3 and rpc()['admin_content_access'];admin_tokens=rpc()['tokens']
+   page.locator('#inventoryBtn').tap();page.locator('#inventoryPetsTab').tap();expect(inventory).to_contain_text('개발자 상시 이용');inventory.locator('[data-hdecor-id="bat_swarm"]').tap();page.wait_for_function('!WakppuHalloweenDecorUI.busy');assert rpc()['equipped']=='bat_swarm' and rpc()['tokens']==admin_tokens
+   inventory.locator('.hdecor-unequip').tap();page.wait_for_function('!WakppuHalloweenDecorUI.busy');assert rpc()['equipped'] is None
+   assert not errors,errors;print(f'PASS {width}x{height} reduced={reduced}: equal box/retry, separate pets tab, 3 permanent pets, wander bounds, equip/reload/unequip, paused motion, touch hits/rewards and developer access',flush=True);ctx.close()
   finally:server.terminate();server.wait(timeout=10)
  browser.close()

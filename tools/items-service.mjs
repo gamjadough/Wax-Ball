@@ -1,10 +1,11 @@
+import {petTiming} from './halloween-pet-service.mjs';
 import {adminContentAccess} from './admin-content.mjs';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 const sandbox={};vm.runInNewContext(readFileSync(new URL('../wakppuball/js/items-data.js',import.meta.url),'utf8'),sandbox);
 export const itemData=sandbox.WakppuItemData;
 export function itemState(actor){return actor.items||=( {inventory:{},effects:{},pity:0,total:0,revision:0,requests:new Map()} );}
-export function snapshot(actor){const s=itemState(actor);return {admin_content_access:adminContentAccess(actor),inventory:{...s.inventory,...(actor.developerKeepsake?{developer_piercing_fragment:1}:{}),...(adminContentAccess(actor)?Object.fromEntries(itemData.list.map(d=>[d.id,Math.max(1,s.inventory[d.id]||0)])):{})},effects:structuredClone(s.effects),pity:s.pity,total:s.total,revision:s.revision,gold:String(actor.state.gold),hammer_selected_level:actor.state.hammer_selected_level??null};}
+export function snapshot(actor){const s=itemState(actor);return {pet_timing:petTiming(actor),admin_content_access:adminContentAccess(actor),inventory:{...s.inventory,...(actor.developerKeepsake?{developer_piercing_fragment:1}:{}),...(adminContentAccess(actor)?Object.fromEntries(itemData.list.map(d=>[d.id,Math.max(1,s.inventory[d.id]||0)])):{})},effects:structuredClone(s.effects),pity:s.pity,total:s.total,revision:s.revision,gold:String(actor.state.gold),hammer_selected_level:actor.state.hammer_selected_level??null};}
 export function itemAction(actor,b,{rng=()=>crypto.getRandomValues(new Uint32Array(1))[0]/4294967296,now=Date.now()}={}){
  const s=itemState(actor),fail=(m,status=400)=>{throw Object.assign(new Error(m),{status});};
  if(b.action==='items')return snapshot(actor);
