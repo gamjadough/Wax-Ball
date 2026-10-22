@@ -5,7 +5,7 @@ const fixture=()=>{const store=createStore();store.sleep_now_ms=Date.parse('2026
 test('metrics: fixed mobile taps, jitter, slow regular clicks, short bursts and invalid reports',()=>{
  assert.equal(analyze(samples(0,200)).suspect,false);assert.equal(analyze(samples(0,60,240,17)).suspect,false);assert.equal(analyze(samples(0,5,100)).suspect,false);
  const m=analyze(samples());assert.equal(m.suspect,true);assert.equal(m.fixed,1);assert.equal(m.cps,10);
- for(const s of [null,[[1,500,500],[0,500,500]],[[0,-1,500]],[[0,500.5,500]],Array(513).fill([0,0,0])])assert.throws(()=>analyze(s));
+ for(const s of [null,[[1,500,500],[0,500,500]],[[0,-1,500]],[[0,500.5,500]],Array(2049).fill([0,0,0])])assert.throws(()=>analyze(s));
 });
 test('server bucket: accepted inputs only, replay does not charge, throttle has no reward, refill and slow traffic',()=>{
  const {store,player,send}=fixture();const first={action:'item_hit',request_id:crypto.randomUUID(),item_revision:0};const r=execute(store,player,first);const g=guardState(player,store.input_now_ms);assert.deepEqual(execute(store,player,first),r);assert.equal(g.hits.length,1);

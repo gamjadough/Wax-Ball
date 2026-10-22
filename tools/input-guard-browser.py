@@ -36,16 +36,26 @@ try:
    assert report.value.ok;assert lost[0]
    captured=report.value.request.post_data_json['samples'];assert len(captured)>=3;assert all(len(s)==3 and 0<=s[1]<=1000 and 0<=s[2]<=1000 for s in captured)
    assert report.value.json()['input_guard']['score']==0
-   for mode in ['normal','fixed','rate']:
+   for mode in ['normal','fixed','rate','human','fast']:
     data=scenario(mode);assert data['moderation']['status']=='active',data
     if mode=='rate':assert data['result']['throttled']
+    if mode=='fast':assert data['result']['input_guard']['score']==0 and data['result']['input_guard']['speed_limited_until']
+   page.evaluate('WakppuItemGame.restore()');page.wait_for_function('WakppuItemGame.read().ready')
+   for fraction in [.35,.5,.65]:
+    r=page.locator('#ballSvg').bounding_box();page.touchscreen.tap(r['x']+r['width']*fraction,r['y']+r['height']*.5);page.wait_for_function('!WakppuItemGame.read().busy')
+   with page.expect_response(lambda r:'/local/api' in r.url and r.request.post_data_json.get('action')=='input_report') as speed_report:page.evaluate('WakppuInputGuard.flush()')
+   assert speed_report.value.ok;assert speed_report.value.json()['input_guard']['speed_limited_until'];expect(page.locator('#inputGuardNotice')).to_be_visible()
+   assert page.locator('#inputGuardNotice').bounding_box()['height']<120
+   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+   page.screenshot(path=str(ROOT/f'tools/test-results/input-guard-speed-{width}x{height}.png'))
    data=scenario('macro');assert data['moderation']['status']=='suspended';assert data['result']['input_guard']['score']==100
+   data=scenario('paused');assert data['moderation']['status']=='suspended';assert data['records']['rows'][0]['metrics']['loop_period']==7
    page.reload();page.wait_for_function('window.wakppuServerBlocked===true')
    # Protected endpoint remains inaccessible to ordinary users, even with a forged target.
    assert page.evaluate('WakppuAuth.invoke("admin_input_guard").then(()=>false,e=>e.status===403)')
    page.evaluate('(password)=>WakppuAuth.signIn("dodoonglee@gmail.com",password)',password);page.reload();page.wait_for_function('WakppuItemGame.read().ready&&!document.querySelector("#adminBtn").hidden')
    page.locator('#adminBtn').click();page.locator('#inputGuardRefresh').scroll_into_view_if_needed();page.locator('#inputGuardRefresh').click();expect(page.locator('#inputGuardRows')).to_contain_text('의심 점수 100')
-   expect(page.locator('#inputGuardRows')).to_contain_text('거의 동일한 입력 간격');expect(page.locator('#inputGuardRows')).to_contain_text('자동 제한 종료')
+   expect(page.locator('#inputGuardRows')).to_contain_text('다중 위치 순환 반복');expect(page.locator('#inputGuardRows')).to_contain_text('순환 7지점');expect(page.locator('#inputGuardRows')).to_contain_text('자동 제한 종료')
    for selector in ['#inputGuardRefresh','#inputGuardPrev','#inputGuardNext']:
     assert page.locator(selector).bounding_box()['height']>=44
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
