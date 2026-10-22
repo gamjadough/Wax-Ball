@@ -1431,6 +1431,22 @@
     accept:(data,syncGold=true)=>{if(Number(data.revision)<itemRevision)return false;if(syncGold)state.gold=BigInt(data.gold);itemRevision=Number(data.revision);if(Object.prototype.hasOwnProperty.call(data,'hammer_selected_level'))state.hammerSelectedLevel=data.hammer_selected_level;updateAll();if(!state.busy)updateCracks(state.clicks/currentBall().clicks);return true;},
     restore:restoreAccount
   };
+  window.WakppuAutoRebirthGame={
+    run:async()=>{
+      const cost=nextRebirthCost();
+      if(document.hidden||!state.remoteReady||!state.account||testSnapshot||cost===null||state.gold<cost||state.busy||eventRequest||hammerSelectionBusy||window.wakppuServerBlocked||window.WakppuGuestExit?.busy||window.WakppuGuestDialog?.busy||window.WakppuItems?.busy||window.WakppuLimited?.busy||window.WakppuSkins?.busy)return false;
+      const account=state.account.id;state.busy=true;pendingItemHits=[];clearTimeout(remoteSaveTimer);
+      try{
+        await WakppuItemGame.flush();
+        if(account!==state.account?.id||document.hidden)return false;
+        const result=await WakppuAuth.invoke('auto_rebirth_run',{rebirths:state.rebirths,item_revision:itemRevision});
+        if(account!==state.account?.id)return false;
+        if(result.performed){rebirthModal.hidden=true;window.WakppuItems?.clearEffects();}
+        await restoreAccount();await window.WakppuItems?.refresh();
+        return result.performed;
+      }finally{if(account===state.account?.id){state.busy=false;updateAll();}}
+    }
+  };
   window.WakppuGuestGame={discarded:()=>{clearTimeout(remoteSaveTimer);animationEpoch++;window.WakppuLimited?.clear();state.account=null;state.accountNickname='';state.remoteReady=false;accountRole=null;itemRevision=0;state.gold=0n;state.rebirths=0;state.unlocked=WAKPPU_BALLS.map((_,i)=>i===0);state.discovered=['yellow'];state.selected=0;state.hammerOwned=false;state.hammerLevel=0;state.hammerSelectedLevel=null;state.honeyExpiresAt=0;state.coatingExpiresAt=0;ordinaryClicks.clear();eventSelected=false;testSnapshot=null;state.busy=false;spawnBall(false);updateAll();renderAccount();localStorage.removeItem(SAVE_KEY);}};
   window.WakppuCustomGame={current:()=>currentBall().id,select:async id=>{
     if(!state.remoteReady||state.busy||eventRequest||window.wakppuServerBlocked)return false;

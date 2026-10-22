@@ -50,3 +50,4 @@
 .shop-tabs{flex-wrap:wrap}.shop-tabs .btn{min-width:0}
 
 .purchase-card select{width:100%;min-height:44px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);color:var(--text);font:inherit}.purchase-card select option{background:var(--panel-2);color:var(--text)}.purchase-card label{display:grid;gap:8px;margin:12px 0;min-width:0}
+.auto-rebirth-controls{padding:12px;border:1px solid #665073;border-radius:12px;margin:12px 0;overflow-wrap:anywhere}.auto-rebirth-controls .btn{min-width:140px;min-height:44px}.auto-rebirth-controls [aria-pressed="true"]{background:#513265;color:#fff}.auto-rebirth-controls p{font-size:13px;line-height:1.6}

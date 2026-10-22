@@ -22,14 +22,15 @@
   for(const p of data?.products||[]){
    const custom=p.id==='custom_ball_single'||p.id==='custom_ball_all',customAccess=custom&&(data.custom?.plan==='all'||p.id==='custom_ball_single'&&data.custom?.plan==='single');const premium=p.id==='premium_supporter_pack',covered=custom&&p.id==='custom_ball_single'&&data.custom?.plan==='all'||p.id==='supporter_pack'&&!!data.owned.premium_supporter_pack;
    const card=node('article',undefined,'purchase-card'+(premium?' purchase-premium-card':''));const icon=node('div',premium?'♛':p.id==='starlight_skin'?'✦':p.id==='first_steps_pack'?'🎁':'💜',p.id==='starlight_skin'?'purchase-skin-sample':'purchase-pack-sample');icon.setAttribute('aria-hidden','true');
-   const starter=p.id==='first_steps_pack',owned=!!data.owned[p.id]||(starter&&!!data.starter_grant),skin=p.id==='starlight_skin';
+   const starter=p.id==='first_steps_pack',owned=!!data.owned[p.id]||(starter&&!!data.starter_grant)||(p.id==='auto_rebirth'&&data.auto_rebirth?.owned),skin=p.id==='starlight_skin';
    const buy=customAccess?button('커스텀 편집하기',()=>window.WakppuCustomBall?.open(),busy):owned&&skin?equipButton('purchaseCardEquip'):button(covered?'프리미엄에 포함':owned?(starter?'구매 완료 · 재구매 불가':'적용 중'):money(p.amount)+(premium&&p.amount===8900||p.id==='custom_ball_all'&&data.custom?.plan==='single'?' · 업그레이드':' · 주문하기'),()=>order(p.id),busy||!data.enabled||!data.eligible||owned||covered);buy.dataset.purchaseProduct=p.id;
    card.append(icon,node('h3',p.name),node('p',p.description));
    if(custom&&p.id==='custom_ball_single'&&!customAccess&&!covered){const label=node('label','적용 대상 · 구매 후 변경 불가');const select=node('select');select.id='customOrderTarget';const balls=[...WAKPPU_BALLS,ADMIN_EVENT_BALL,WakppuLimitedData.ball].filter(b=>data.custom?.balls.includes(b.id));for(const b of balls)select.add(new Option(b.name,b.id));if(balls.some(b=>b.id===customSelection))select.value=customSelection;label.append(select);card.append(label);}
    if(p.id==='custom_ball_all')card.append(node('p',data.custom?.plan==='single'?'단일 이용권 보유 · 차액 20,000원으로 업그레이드':'50,000원 · 보유한 모든 볼과 추후 해금한 볼에 적용'));
    if(premium){card.append(node('p',p.amount===8900?'기존 응원팩 보유 · 차액 8,900원으로 업그레이드':'신규 구매 10,000원 · 기존 응원팩 보유자는 8,900원'));const sample=node('div','♛ 프리미엄 후원자','premium-supporter-sample');sample.setAttribute('aria-label','전용 칭호와 금빛 랭킹 디자인 미리보기');card.append(sample);}
-   if(owned||customAccess)card.append(node('p',custom?'커스텀 이용권 보유 · 타격량·보상 변경 없음':skin?(data.equipped?'보유 중 · 장착 중':'보유 중 · 미장착'):starter?(data.starter_grant?.reclaimed_at?'환불 처리 완료 · 재구매 불가':'지급 완료 · 아이템은 인벤토리에서 사용'):premium?'전용 꾸미기 · 파괴 골드 +30% 적용 중':covered?'프리미엄의 +30%만 적용 중':'보유 중 · 외형·파괴 골드 +5% 적용 중','purchase-owned-state'));
+   if(owned||customAccess)card.append(node('p',p.id==='auto_rebirth'?'자동 환생 영구 이용권 보유 · ON/OFF 설정 가능':custom?'커스텀 이용권 보유 · 타격량·보상 변경 없음':skin?(data.equipped?'보유 중 · 장착 중':'보유 중 · 미장착'):starter?(data.starter_grant?.reclaimed_at?'환불 처리 완료 · 재구매 불가':'지급 완료 · 아이템은 인벤토리에서 사용'):premium?'전용 꾸미기 · 파괴 골드 +30% 적용 중':covered?'프리미엄의 +30%만 적용 중':'보유 중 · 외형·파괴 골드 +5% 적용 중','purchase-owned-state'));
    card.append(buy);$('purchaseProducts').append(card);
+   if(p.id==='auto_rebirth'&&owned){buy.textContent='자동 환생 설정';buy.disabled=busy;buy.onclick=()=>{$('shop').hidden=true;$('rebirthBtn').click();window.WakppuAutoRebirth?.refresh();};}
   }
   if(data?.starter_grant)$('purchaseOwned').append(node('p',data.starter_grant.reclaimed_at?'🎁 첫걸음 성장팩 · 환불 처리 완료':'🎁 첫걸음 성장팩 · 3,000G 및 아이템 지급 완료'));
   if(data?.owned.premium_supporter_pack){
@@ -63,7 +64,7 @@
  async function refresh(){
   if(busy)return;const version=++sequence,current=game()?.account;
   if(!current||!game()?.ready){data=null;owner=null;render();return;}
-  try{const next=await WakppuAuth.invoke('purchase_catalog');if(version!==sequence||current!==game()?.account)return;data=next;owner=current;render();if(next.starter_grant&&Number(next.starter_grant.revision)>Number(game()?.revision||0)&&!game()?.busy){await WakppuItemGame.restore();await window.WakppuItems?.refresh();}}
+  try{const next=await WakppuAuth.invoke('purchase_catalog');if(version!==sequence||current!==game()?.account)return;data=next;owner=current;render();window.WakppuAutoRebirth?.refresh();if(next.starter_grant&&Number(next.starter_grant.revision)>Number(game()?.revision||0)&&!game()?.busy){await WakppuItemGame.restore();await window.WakppuItems?.refresh();}}
   catch(e){if(version===sequence){data=null;owner=null;render();status(e.message);}}
  }
  async function mutate(action,payload,message){
