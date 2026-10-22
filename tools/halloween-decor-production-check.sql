@@ -24,5 +24,27 @@ begin
  if (r->>'clicks')::integer<>1 then raise exception 'Existing gameplay changed';end if;
  if has_table_privilege('authenticated','public.wakppu_halloween_cosmetics','select,insert,update,delete') or has_function_privilege('anon','public.wakppu_halloween_cosmetic_snapshot(uuid)','execute') then raise exception 'Private state exposed';end if;
 end $check$;
-select 'PASS: live 100 candy price, reward/retry, shards, equip/use, unchanged normal hit; synthetic changes rolled back' as result;
+-- A separate disposable developer account verifies virtual access and role removal.
+do $admin_check$
+declare u uuid:=gen_random_uuid();s jsonb;r jsonb;balance text; candy text; id text;
+begin
+ insert into auth.users(id,aud,role,is_anonymous,created_at,updated_at,raw_user_meta_data) values(u,'authenticated','authenticated',false,now(),now(),'{}');
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated','is_anonymous',false)::text,true);
+ perform public.wakppu_api('{"action":"bootstrap"}');update public.players set role='admin' where user_id=u;
+ s:=public.wakppu_api('{"action":"halloween_cosmetics"}');balance:=s->>'gold';candy:=s->>'tokens';
+ if not (s->>'admin_content_access')::boolean or (select count(*) from jsonb_object_keys(s->'owned'))<>3 then raise exception 'Developer automatic access missing';end if;
+ foreach id in array array['little_ghost','pumpkin_ember',null,'little_ghost'] loop
+  s:=public.wakppu_api(jsonb_build_object('action','halloween_decor_equip','item_id',id,'request_id',gen_random_uuid(),'item_revision',s->'revision','decor_revision',s->'decor_revision'));
+  if s->>'equipped' is distinct from id then raise exception 'Developer equip/unequip failed';end if;
+ end loop;
+ s:=public.wakppu_api(jsonb_build_object('action','halloween_decor_use','item_id','bat_swarm','request_id',gen_random_uuid(),'item_revision',s->'revision','decor_revision',s->'decor_revision'));
+ if s->>'gold'<>balance or s->>'tokens'<>candy or s->>'opened'<>'0' then raise exception 'Developer access charged resources';end if;
+ if (select owned from public.wakppu_halloween_cosmetics where user_id=u)<>'{}'::jsonb then raise exception 'Virtual access altered earned inventory';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated','is_anonymous',true)::text,true);
+ r:=public.wakppu_api('{"action":"halloween_cosmetics"}');if r->'owned'<>'{}'::jsonb or r->>'equipped' is not null then raise exception 'Anonymous developer bypass';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated','is_anonymous',false)::text,true);
+ update public.players set role='player' where user_id=u;
+ r:=public.wakppu_api('{"action":"halloween_cosmetics"}');if r->'owned'<>'{}'::jsonb or r->>'equipped' is not null then raise exception 'Role removal retained developer cosmetics';end if;
+end $admin_check$;
+select 'PASS: live 100 candy price, reward/retry, shards, equip/use, unchanged normal hit, developer access/equip/unequip/revocation; synthetic changes rolled back' as result;
 rollback;

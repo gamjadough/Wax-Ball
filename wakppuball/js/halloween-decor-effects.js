@@ -11,7 +11,7 @@
  }
  function sync(id,data){
   if(account!==id){clear();shattered=false;}account=id;owned=data?.owned||{};equipped=data?.equipped||null;
-  if(!owned[equipped])equipped=null;render();
+  if(!owned[equipped])equipped=null;if(!owned.bat_swarm)clearBurst();render();
  }
  function hit({final=false}={}){
   if(final){shattered=true;clear();return;}
@@ -27,5 +27,5 @@
  window.addEventListener('wakppu-auth-changed',e=>{if(e.detail?.user?.id!==account){clear();account=null;equipped=null;owned={};}});
  window.addEventListener('wakppu-account-restored',()=>{if(read()?.account!==account)clear();else render();});
  window.addEventListener('wakppu-settings-changed',()=>{clearBurst();render();});document.addEventListener('visibilitychange',()=>{if(document.hidden)clear();else render();});window.addEventListener('pagehide',clear);window.addEventListener('pageshow',render);
- window.WakppuHalloweenDecor={sync,hit,use,spawn:()=>{shattered=false;clearBurst();render();}};
+ window.WakppuHalloweenDecor={sync,hit,use,stop:clearBurst,spawn:()=>{shattered=false;clearBurst();render();}};
 })();

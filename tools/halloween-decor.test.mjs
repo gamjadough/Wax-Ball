@@ -18,7 +18,7 @@ test('actual SQL: authoritative equal catalog, atomic charges, replay, shards, o
   const source=await readFile(new URL('./skins-sql.test.mjs',import.meta.url),'utf8');await db.exec(source.match(/await db.exec\(`([\s\S]*?)`\);/)[1].replaceAll('${u}',u).replaceAll('${v}',v));
   await db.exec(`create table wakppu_limited_players(user_id uuid primary key references players,tokens bigint default 100000);create table wakppu_limited_settings(id boolean primary key,starts_at timestamptz,ends_at timestamptz);insert into wakppu_limited_settings values(true,now()-interval '1 day',now()+interval '1 day');`);
   const visual=vm.runInNewContext(await readFile(new URL('../wakppuball/js/halloween-decor-data.js',import.meta.url),'utf8')+';WakppuHalloweenDecorData',{});assert.deepEqual(Array.from(visual.list,d=>d.id),ids);assert.equal(visual.price,100);assert.equal(visual.exchange,3);
-  const sql=await readFile(migration,'utf8');await db.exec(sql);await db.exec(sql);
+  const sql=await readFile(migration,'utf8');await db.exec(sql);await db.exec(sql);const patch=await readFile(new URL('../supabase/migrations/20261022095516_halloween_decor_admin_access.sql',import.meta.url),'utf8');await db.exec(patch);await db.exec(patch);
   const rpc=async(user,b)=>{await db.query("select set_config('test.uid',$1,false)",[user||'']);return (await db.query('select wakppu_api($1::jsonb) data',[JSON.stringify(b)])).rows[0].data;};
   const get=(user=u)=>rpc(user,{action:'halloween_cosmetics'}),request=async(action,item_id=null)=>{const s=await get();return {action,item_id,request_id:crypto.randomUUID(),item_revision:s.revision,decor_revision:s.decor_revision};},send=async(a,id=null)=>rpc(u,await request(a,id));
   const initial=(await db.query('select to_jsonb(g)-\'item_revision\' as data from game_states g where user_id=$1',[u])).rows[0].data;
@@ -38,6 +38,22 @@ test('actual SQL: authoritative equal catalog, atomic charges, replay, shards, o
   await db.query('update wakppu_halloween_cosmetics set shards=3 where user_id=$1',[u]);await send('halloween_decor_exchange','bat_swarm');for(let i=0;i<3;i++)assert.equal((await send('halloween_decor_use','bat_swarm')).owned.bat_swarm,true);
   assert.equal((await get()).tokens,'88000');assert.deepEqual((await db.query('select to_jsonb(g)-\'item_revision\' as data from game_states g where user_id=$1',[u])).rows[0].data,initial);
   await db.exec('update test_settings set maintenance=true');await assert.rejects(get(),{code:'PT503'});await db.exec('update test_settings set maintenance=false');await db.query('update players set banned=true where user_id=$1',[u]);await assert.rejects(get(),{code:'PT403'});
+  await db.query("update players set role='admin' where user_id=$1",[v]);
+  let admin=await get(v);assert.equal(admin.admin_content_access,true);assert.equal(Object.keys(admin.owned).length,3);const tokens=admin.tokens;await db.query('update game_states set rebirths=rebirths+1,gold=0 where user_id=$1',[v]);assert.equal(Object.keys((await get(v)).owned).length,3);
+  const adminSend=async(a,id=null)=>{const s=await get(v);return rpc(v,{action:a,item_id:id,request_id:crypto.randomUUID(),item_revision:s.revision,decor_revision:s.decor_revision});};
+  await adminSend('halloween_decor_equip','little_ghost');assert.equal((await get(v)).equipped,'little_ghost');await adminSend('halloween_decor_equip','pumpkin_ember');await adminSend('halloween_decor_use','bat_swarm');assert.equal((await get(v)).tokens,tokens);
+  await adminSend('halloween_decor_equip');assert.equal((await get(v)).equipped,null);await adminSend('halloween_decor_equip','little_ghost');
+  await db.exec("select set_config('test.anonymous','true',false)");assert.deepEqual((await get(v)).owned,{});assert.equal((await get(v)).equipped,null);await assert.rejects(adminSend('halloween_decor_use','bat_swarm'),{code:'PT403'});
+  await db.exec("select set_config('test.anonymous','false',false)");await db.query("update players set role='player' where user_id=$1",[v]);assert.deepEqual((await get(v)).owned,{});assert.equal((await get(v)).equipped,null);await assert.rejects(adminSend('halloween_decor_equip','little_ghost'),{code:'PT403'});
   await db.exec('set role authenticated');for(const name of ['wakppu_halloween_cosmetics','wakppu_halloween_cosmetic_requests'])await assert.rejects(db.query('select * from '+name),{code:'42501'});await assert.rejects(db.query('select wakppu_halloween_cosmetic_snapshot($1)',[v]),{code:'42501'});await db.exec('reset role');
  }finally{await db.close();}
+});
+
+test('local admin automatic access, free equip/use, unequip and revocation',()=>{
+ const store=createStore(),actor=store.players[1];actor.role='admin';actor.is_anonymous=false;
+ const get=()=>decorAction(store,actor,{action:'halloween_cosmetics'}),send=(action,item_id=null)=>{const s=get();return decorAction(store,actor,{action,item_id,request_id:crypto.randomUUID(),item_revision:s.revision,decor_revision:s.decor_revision});};
+ const before=get();actor.state.rebirths++;assert.equal(Object.keys(get().owned).length,3);assert.equal(Object.keys(before.owned).length,3);assert.deepEqual(decorState(actor).owned,{});
+ send('halloween_decor_equip','little_ghost');send('halloween_decor_use','bat_swarm');assert.equal(get().tokens,before.tokens);assert.equal(get().gold,before.gold);send('halloween_decor_equip');assert.equal(get().equipped,null);
+ send('halloween_decor_equip','pumpkin_ember');actor.is_anonymous=true;assert.deepEqual(get().owned,{});assert.equal(get().equipped,null);assert.throws(()=>send('halloween_decor_use','bat_swarm'));
+ actor.is_anonymous=false;actor.role='player';assert.deepEqual(get().owned,{});assert.throws(()=>send('halloween_decor_equip','little_ghost'));
 });
