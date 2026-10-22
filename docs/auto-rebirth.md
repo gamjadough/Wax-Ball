@@ -6,7 +6,7 @@ ON일 때 화면이 보이고 게임이 준비된 동안 비용 도달을 검사
 
 서버는 기존 로그인·정지·점검·수면 시간 검사를 거쳐 이용권, 설정, 실제 골드, 환생 횟수, 아이템 revision을 확인한다. 기존 save/reset 체인으로 Gold·일반 해금·꿀·코팅·사용 중 아이템 효과를 초기화하고 한정 볼 선택을 해제한다. 망치·도감·보유 아이템·한정 볼 소유권은 보존한다. 환생 후 revision을 증가시켜 오래된 탭의 저장과 중복 환생을 막는다. 최대 1,000회에서는 실행하지 않는다. 환불·회수 후 설정은 OFF가 된다.
 
-배포 순서는 `20261022083921_auto_rebirth.sql` 적용, `tools/auto-rebirth-production-check.sql` 롤백 검증, 게임 정적 파일 배포다. Edge Function 변경은 없다.
+배포 순서는 `20261022083921_auto_rebirth.sql`과 `20261022085110_auto_rebirth_progress_reset.sql` 적용, `tools/auto-rebirth-production-check.sql` 롤백 검증, 게임 정적 파일 배포다. 후속 마이그레이션은 이전 형식과 아이템 형식의 타격 진행도를 모두 초기화한다. Edge Function 변경은 없다.
 
 검증:
 

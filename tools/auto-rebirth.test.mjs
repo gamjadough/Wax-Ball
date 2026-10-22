@@ -13,12 +13,14 @@ test('auto rebirth: exact economy, paid grant, OFF default, server threshold, ve
  await gift();assert.equal((await call('auto_rebirth_status')).enabled,false);
  await db.query("update game_states set gold=2000000,rebirths=0,unlocked_ball_ids='[\"yellow\",\"green\"]',selected_ball_id='green',hammer_owned=true,hammer_level=8,discovered_ball_ids='[\"yellow\",\"green\"]',honey_expires_at=now()+interval '1 hour',coating_expires_at=now()+interval '1 hour' where user_id=$1",[user]);
  await db.query("insert into wakppu_items(user_id,effects) values($1,'{\"test\":{}}') on conflict(user_id) do update set effects=excluded.effects",[user]);
+ await db.query("update game_states set current_clicks=2,item_current_clicks=2,current_ball_id='green' where user_id=$1",[user]);
  const run=()=>call('auto_rebirth_run',{rebirths:0,item_revision:0});
  assert.equal((await run()).performed,false);await call('auto_rebirth_toggle',{enabled:true});
  await db.query('update game_states set gold=1999999 where user_id=$1',[user]);assert.equal((await run()).performed,false);
  await db.query('update game_states set gold=2000000 where user_id=$1',[user]);assert.equal((await call('auto_rebirth_run',{rebirths:0,item_revision:9})).performed,false);
  assert.equal((await run()).performed,true);assert.equal((await run()).performed,false);
  let s=(await db.query('select * from game_states where user_id=$1',[user])).rows[0];assert.equal(s.rebirths,1);assert.equal(String(s.gold),'0');assert.equal(s.item_revision,1);assert.deepEqual(s.unlocked_ball_ids,['yellow']);assert.equal(s.honey_expires_at,null);assert.equal(s.coating_expires_at,null);assert.equal(s.hammer_level,8);assert.deepEqual(s.discovered_ball_ids,['yellow','green']);assert.deepEqual((await db.query('select effects from wakppu_items where user_id=$1',[user])).rows[0].effects,{});
+ assert.equal(s.current_clicks,0);assert.equal(s.item_current_clicks,0);assert.equal(s.current_ball_id,'yellow');
  await db.query('update game_states set rebirths=1000,gold=1e500 where user_id=$1',[user]);assert.equal((await call('auto_rebirth_run',{rebirths:1000,item_revision:1})).performed,false);
  await db.exec('update test_settings set maintenance=true');await assert.rejects(call('auto_rebirth_status'));await db.exec('update test_settings set maintenance=false');
  await db.query('update players set banned=true where user_id=$1',[user]);await assert.rejects(run());await db.query('update players set banned=false where user_id=$1',[user]);
