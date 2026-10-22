@@ -54,7 +54,15 @@ try:
    # Protected endpoint remains inaccessible to ordinary users, even with a forged target.
    assert page.evaluate('WakppuAuth.invoke("admin_input_guard").then(()=>false,e=>e.status===403)')
    page.evaluate('(password)=>WakppuAuth.signIn("dodoonglee@gmail.com",password)',password);page.reload();page.wait_for_function('WakppuItemGame.read().ready&&!document.querySelector("#adminBtn").hidden')
-   page.locator('#adminBtn').click();page.locator('#inputGuardRefresh').scroll_into_view_if_needed();page.locator('#inputGuardRefresh').click();expect(page.locator('#inputGuardRows')).to_contain_text('의심 점수 100')
+   page.locator('#adminBtn').click()
+   page.locator('#adminQuery').fill('local-admin');page.locator('#adminSearch').click();page.locator('#adminResults button').first.click()
+   expect(page.locator('#adminPlayerInfo')).to_contain_text('자동 제재 횟수: 0회')
+   page.locator('#adminQuery').fill('local-player');page.locator('#adminSearch').click();page.locator('#adminResults button').first.click()
+   import re
+   expect(page.locator('#adminPlayerInfo')).to_contain_text(re.compile(r'자동 제재 횟수: [1-9]\d*회'))
+   expect(page.locator('#adminPlayerInfo')).to_contain_text('감지 기록 건수가 아닌')
+   assert '경고 횟수' not in page.locator('#adminPlayerInfo').inner_text()
+   page.locator('#inputGuardRefresh').scroll_into_view_if_needed();page.locator('#inputGuardRefresh').click();expect(page.locator('#inputGuardRows')).to_contain_text('의심 점수 100')
    expect(page.locator('#inputGuardRows')).to_contain_text('다중 위치 순환 반복');expect(page.locator('#inputGuardRows')).to_contain_text('순환 7지점');expect(page.locator('#inputGuardRows')).to_contain_text('자동 제한 종료')
    for selector in ['#inputGuardRefresh','#inputGuardPrev','#inputGuardNext']:
     assert page.locator(selector).bounding_box()['height']>=44
