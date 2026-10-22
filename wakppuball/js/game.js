@@ -398,6 +398,7 @@
     svgEl.innerHTML = buildBallSvgInner(data, uid);
     if(data.design.pumpkinSkin==='eclipse')window.WakppuEclipsePumpkin?.decorate({svg:svgEl,reduced:window.WakppuSettings?.reduced()});
     window.WakppuPurchaseEffects?.spawn(data);
+    window.WakppuHalloweenDecor?.spawn();
     window.WakppuSkinClock?.update(svgEl);
 
     const layer = svgEl.querySelector('#' + uid + '-cracks');
@@ -635,6 +636,7 @@
     hintEl.classList.add('gone');
     playHitSound(data, v, isFinal);      // ① 소리
     window.WakppuPurchaseEffects?.hit({final:isFinal});
+    window.WakppuHalloweenDecor?.hit({final:isFinal});
     window.WakppuSkinEffects?.hit({ball:window.WakppuCustomBall?.effectBall(data)||data,svg:svgEl,progress:v});
     squish(clientX, v, isHammer);        // ② 눌림
     if (isFinal) {

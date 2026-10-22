@@ -7,6 +7,7 @@ import {createStore} from './admin-service.mjs';
 import {execute} from './input-guard-service.mjs';
 import {itemData,itemState,snapshot} from './items-service.mjs';
 import {limitedState,limitedSnapshot} from './limited-service.mjs';
+import {decorAction,decorState} from './halloween-decor-service.mjs';
 import {skinAction,skinState} from './skins-service.mjs';
 import {createDemoPayments} from './payment-demo-service.mjs';
 const paymentsEnabled=process.env.WAKPPU_LOCAL_PAYMENTS==='1',demoPayments=createDemoPayments();
@@ -82,6 +83,15 @@ const server=http.createServer(async(req,res)=>{
         if(actor?.role!=='admin')return send(403,{error:'로컬 관리자 로그인 필요'});
         const time=Date.parse(body.time);if(!Number.isFinite(time))return send(400,{error:'잘못된 로컬 테스트 시각'});
         store.sleep_now_ms=time;return send(200,{server_time:new Date(time).toISOString()});
+      }
+      if(req.url==='/local/halloween-decor-demo'&&process.env.WAKPPU_LOCAL_HALLOWEEN_BOX_PREVIEW==='1'){
+        if(!actor)return send(401,{error:'로컬 로그인 필요'});store.limited_preview=body.mode==='ended'?'ended':'active';
+        if(body.mode==='reset'){actor.halloweenDecor=null;limitedState(actor).tokens=1000;actor.decorTestRoll=0;}
+        if(body.mode==='exchange'){decorState(actor).owned={little_ghost:true};decorState(actor).equipped=null;decorState(actor).shards=3;}
+        return send(200,{ok:true});
+      }
+      if(body.action==='halloween_cosmetics'||body.action?.startsWith('halloween_decor_')){
+        execute(store,actor,{action:'bootstrap'});return send(200,decorAction(store,actor,body,process.env.WAKPPU_LOCAL_HALLOWEEN_BOX_PREVIEW==='1'?()=>((actor.decorTestRoll=(actor.decorTestRoll??0)+1)-1)%3/3+.01:undefined));
       }
       if(req.url==='/local/halloween-demo'){
         if(!actor)return send(401,{error:'로컬 로그인 필요'});
