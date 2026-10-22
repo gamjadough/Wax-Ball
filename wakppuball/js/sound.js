@@ -218,5 +218,5 @@ const SoundManager = (() => {
   }
 
   function stop(name){for(const a of pools[name]?.items||[]){a.pause();a.currentTime=0;}}
-  return { init, unlock, play, stop };
+  return { init, unlock, play, stop, ready:name=>!!pools[name]?.ok };
 })();
