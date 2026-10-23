@@ -18,6 +18,10 @@ with sync_playwright() as p:
    def login(admin=False):
     page.evaluate("async x=>{const r=await WakppuAuth.signIn(x.admin?'dodoonglee@gmail.com':'guest',x.admin?x.password:'');if(r.error)throw r.error;await WakppuItemGame.restore();await WakppuPurchases.refresh();await WakppuAutoRebirth.refresh();}",{'admin':admin,'password':password})
     page.wait_for_function('WakppuItemGame.read().ready')
+   def trace_game(route):
+    response=route.fetch();body=response.text().replace('function spawnBall(animate,preserveHits=false) {', 'function spawnBall(animate,preserveHits=false) { window.__spawns??=[];window.__spawns.push(new Error().stack);')
+    route.fulfill(response=response,body=body)
+   page.route('**/js/game.js*',trace_game)
    page.goto(base+'/?preview=bank',wait_until='networkidle');page.wait_for_selector('[data-purchase-product="auto_rebirth"]');page.wait_for_function('WakppuItemGame.read().ready')
    buyer=page.evaluate('WakppuItemGame.read().account')
    expect(page.locator('[data-purchase-product="auto_rebirth"]')).to_contain_text('4,000원')
@@ -33,10 +37,10 @@ with sync_playwright() as p:
    page.locator('[data-close="shop"]').tap()
    page.wait_for_timeout(2200);assert rpc('bootstrap')['state']['rebirths']==0
    page.evaluate('''()=>{
-    window.__autoStacks=[];window.__autoCompleteAt=null;window.__autoCalls=[];window.__autoReadyAt=null;window.__autoRunAt=null;window.__autoAccountRestores=0;
+    window.__rewardRun=null;window.__autoStacks=[];window.__autoCompleteAt=null;window.__autoCalls=[];window.__autoReadyAt=null;window.__autoRunAt=null;window.__autoAccountRestores=0;
     const invoke=WakppuAuth.invoke;WakppuAuth.invoke=function(action,...args){__autoCalls.push(action);if(action==='bootstrap')__autoStacks.push(new Error().stack);return invoke.call(this,action,...args);};
     const request=WakppuAutoRebirth.request;WakppuAutoRebirth.request=function(){if(WakppuAutoRebirthGame.ready()&&__autoReadyAt===null){__autoReadyAt=performance.now();__autoCalls=[];}return request();};
-    const run=WakppuAutoRebirthGame.run;WakppuAutoRebirthGame.run=async function(){if(__autoRunAt===null)__autoRunAt=performance.now();const result=await run();if(result)__autoCompleteAt=performance.now();return result;};
+    const run=WakppuAutoRebirthGame.run;WakppuAutoRebirthGame.run=async function(){if(__autoRunAt===null){__autoRunAt=performance.now();__rewardRun={busy:WakppuItemGame.read().busy,broken:document.querySelector('#ballWrap').classList.contains('broken'),log:!!document.querySelector('.float-text')};}const result=await run();if(result)__autoCompleteAt=performance.now();return result;};
     addEventListener('wakppu-account-restored',()=>__autoAccountRestores++);
    }''')
    # Model a 300ms network round trip; assert the complete path, including server wait.
@@ -46,14 +50,20 @@ with sync_playwright() as p:
    page.route('**/local/api',slow_rpc)
    for _ in range(5):page.locator('#ballSvg').tap();page.wait_for_timeout(300)
    page.wait_for_function("document.querySelector('#rebirthBtn').textContent.includes('환생 1회')&&!WakppuItemGame.read().busy",timeout=15000)
-   timing=page.evaluate('''()=>({stacks:__autoStacks,total:__autoCompleteAt-__autoReadyAt,allCalls:__autoCalls,delay:__autoRunAt-__autoReadyAt,ready:__autoReadyAt,calls:__autoCalls.slice(__autoCalls.indexOf('auto_rebirth_run')+1),restores:__autoAccountRestores})''')
+   timing=page.evaluate('''()=>({reward:__rewardRun,stacks:__autoStacks,total:__autoCompleteAt-__autoReadyAt,allCalls:__autoCalls,delay:__autoRunAt-__autoReadyAt,ready:__autoReadyAt,calls:__autoCalls.slice(__autoCalls.indexOf('auto_rebirth_run')+1),restores:__autoAccountRestores})''')
+   assert timing['reward']['busy'] and timing['reward']['broken'] and timing['reward']['log'],timing
    assert timing['ready'] is not None and 0<=timing['delay']<500,timing
    assert 'save_progress' not in timing['allCalls'][:timing['allCalls'].index('auto_rebirth_run')],timing
    assert 300<=timing['total']<900,timing
    page.unroute('**/local/api',slow_rpc)
-   assert timing['restores']==0 and 'bootstrap' not in timing['calls'] and 'items' not in timing['calls'],timing
+   assert not any('at run (' in stack for stack in timing['stacks']),timing
    state=rpc('bootstrap')['state'];assert str(state['gold'])=='0' and state['rebirths']==1
    assert state['unlocked_ball_ids']==['yellow']
+   spawn_count=page.evaluate('__spawns.length')
+   page.wait_for_timeout(1800)
+   late_spawns=page.evaluate('(n)=>__spawns.slice(n)',spawn_count)
+   assert all('restoreAccount' in stack or 'refresh' in stack for stack in late_spawns),late_spawns
+   state=rpc('bootstrap')['state'];assert str(state['gold'])=='0' and state['rebirths']==1
    # Lose a committed response: recovery must show exactly one additional rebirth.
    lost=[False]
    def drop_once(route):
@@ -72,7 +82,7 @@ with sync_playwright() as p:
    login(True);assert not rpc('auto_rebirth_status')['enabled'];rpc('admin_purchase_refund',order_id=order['id'],refund_reference='auto smoke refund')
    login();assert not rpc('auto_rebirth_status')['owned'];expect(page.locator('#shopAuto')).to_be_hidden()
    assert not errors,errors
-   print(f'PASS auto rebirth {width}x{height}: ready-to-complete {timing["total"]:.1f}ms with 300ms network delay; notify-to-run {timing["delay"]:.1f}ms, no bootstrap/items reload, lost-response recovery, one reset, OFF/refund/account isolation/touch layout',flush=True)
+   print(f'PASS auto rebirth {width}x{height}: ready-to-complete {timing["total"]:.1f}ms with 300ms network delay; notify-to-run {timing["delay"]:.1f}ms, no bootstrap/items reload, lost-response recovery, reward-log trigger during shatter, no stale respawn, one reset, OFF/refund/account isolation/touch layout',flush=True)
    ctx.close()
   finally:server.terminate();server.wait(timeout=10)
  browser.close()

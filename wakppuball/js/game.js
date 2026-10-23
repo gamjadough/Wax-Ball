@@ -111,7 +111,9 @@
   let remoteSaveTimer = null;
   let testSnapshot = null;
   let animationEpoch = 0;
+  let rewardReadyEpoch = -1;
   let itemRevision=0,itemAward=null,remoteInFlight=Promise.resolve(),pendingItemHits=WakppuHitRequests.createQueue();
+
   let whiteholeEffect = null;
   let transcendentEffect = null;
   let hammerSelectionBusy=false;
@@ -695,7 +697,8 @@
       if(eventSelected){eventAward=BigInt(result.reward);displayEventReward=eventAward;}
       onHit(x,y,result.clicks-state.clicks,activeHammerLevel()>0,true,result.required_clicks);
     }catch(error){if(error.cancelled){pendingItemHits.clear();return;}if(error.status===429){pendingItemHits.clear();hintEl.textContent=error.message;hintEl.classList.remove('gone');return;}try{await WakppuHitRequests.run(signal=>restoreAccount({signal}),{attempts:1,valid:()=>account===state.account?.id});}catch{state.remoteReady=false;pendingItemHits.clear();}hintEl.textContent=error.message;hintEl.classList.remove('gone');}
-    finally{eventRequest=false;if(!state.busy){updateAll();const next=pendingItemHits.shift();if(next)queueMicrotask(()=>hitItem(...next));}}
+    finally{eventRequest=false;window.WakppuAutoRebirth?.request();if(!state.busy){updateAll();const next=pendingItemHits.shift();if(next)queueMicrotask(()=>hitItem(...next));}}
+
   }
 
   async function selectHammerLevel(){
@@ -794,13 +797,15 @@
     if(!eventSelected&&!limitedSelected())ordinaryClicks.delete(state.selected);
     const epoch=animationEpoch;
     state.busy = true;
+    rewardReadyEpoch = -1;
     // WebKit에서 마지막 균열을 한 프레임 이상 그린 뒤에만 SVG를 조각으로 교체합니다.
     svgEl.classList.add('instant');
     updateCracks(1);
     if(data.custom&&window.WakppuCustomBall){
       const visual=WakppuCustomBall.effectBall(data);
-      const reward=()=>{if(data.id==='admin-event'){const earned=eventAward;eventAward=null;displayEventReward=0n;updateAll();if(earned!==null){const c=ballCenter();floatText('+'+fmt(earned)+'G',c.x,c.y-wrap.offsetHeight*.32);}}else awardBreakReward(data);};
+      const reward=()=>{if(data.id==='admin-event'){const earned=eventAward;eventAward=null;displayEventReward=0n;rewardReadyEpoch=animationEpoch;updateAll();if(earned!==null){const c=ballCenter();floatText('+'+fmt(earned)+'G',c.x,c.y-wrap.offsetHeight*.32);}}else awardBreakReward(data);};
       const respawn=()=>{eventClicks=0;wrap.classList.remove('broken','admin-ball-breaking');svgEl.classList.remove('instant');spawnBall(true,true);};
+
       const options={ball:visual,wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,respawnSpeed,reduced:window.WakppuSettings?.reduced()??false,valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,reward,respawn};
       if(visual.grade==='초월'){transcendentEffect=WakppuTranscendent.play(options);return;}
       if(visual.id==='whitehole'){whiteholeEffect=WakppuWhitehole.play({...options,shatter:()=>{makeShards(SHAPES.circle,speed);wrap.classList.add('broken');}});return;}
@@ -832,6 +837,7 @@
         fade.cancel();wrap.classList.remove('admin-ball-breaking');
         if(epoch!==animationEpoch||!eventSelected)return;
         displayEventReward=0n;
+        rewardReadyEpoch=animationEpoch;
         if(earned!==null){updateAll();const c=ballCenter();floatText('+'+fmt(earned)+'G',c.x,c.y-wrap.offsetHeight*.32);}
         eventClicks=0;spawnBall(true,true);updateAll();
       },1100/speed+RESPAWN_DELAY_MS/respawnSpeed);return;
@@ -871,6 +877,7 @@
     }, 260/speed);
     clearTimeout(state.respawnTimer);
     state.respawnTimer = setTimeout(() => {
+      if(epoch!==animationEpoch)return;
       wrap.classList.remove('broken');
       svgEl.classList.remove('instant');
       spawnBall(true,true);
@@ -882,6 +889,7 @@
     const reward=BigInt(data.reward)*rebirthMultiplier(state.rebirths)*BigInt(honeyMultiplier())*BigInt(coatingMultiplier())*BigInt(window.WakppuGoldEvent?.multiplier()||1);
     if(!testSnapshot&&itemAward===null)state.gold+=reward;
     const displayed=itemAward??reward;itemAward=null;
+    rewardReadyEpoch=animationEpoch;
     updateAll();
     floatText('+'+fmt(displayed)+'G',center.x,center.y-wrap.offsetHeight*.32);
   }
@@ -1452,13 +1460,22 @@
   };
   function autoRebirthReady(){
     const cost=nextRebirthCost();
-    return !document.hidden&&state.remoteReady&&!!state.account&&!testSnapshot&&cost!==null&&state.gold>=cost&&!state.busy&&!eventRequest&&!pendingItemHits.length&&!hammerSelectionBusy&&!window.wakppuServerBlocked&&!window.WakppuGuestExit?.busy&&!window.WakppuGuestDialog?.busy&&!window.WakppuItems?.busy&&!window.WakppuLimited?.busy&&!window.WakppuSkins?.busy;
+    return !document.hidden&&state.remoteReady&&!!state.account&&!testSnapshot&&cost!==null&&state.gold>=cost&&(!state.busy||rewardReadyEpoch===animationEpoch)&&!eventRequest&&!hammerSelectionBusy&&!window.wakppuServerBlocked&&!window.WakppuGuestExit?.busy&&!window.WakppuGuestDialog?.busy&&!window.WakppuItems?.busy&&!window.WakppuLimited?.busy&&!window.WakppuSkins?.busy;
+
   }
   window.WakppuAutoRebirthGame={
     ready:autoRebirthReady,
     run:async()=>{
       if(!autoRebirthReady())return false;
-      const account=state.account.id,beforeRebirths=state.rebirths;state.busy=true;pendingItemHits.clear();clearTimeout(remoteSaveTimer);
+      const account=state.account.id,beforeRebirths=state.rebirths;
+      let stoppedEpoch=null;
+      if(state.busy){
+        // The reward is settled. Retire all old callbacks before waiting on the network.
+        stoppedEpoch=++animationEpoch;rewardReadyEpoch=-1;clearTimeout(state.respawnTimer);
+        adminFade?.cancel();adminFade=null;whiteholeEffect?.cancel();whiteholeEffect=null;transcendentEffect?.cancel();transcendentEffect=null;
+      }
+      state.busy=true;pendingItemHits.clear();clearTimeout(remoteSaveTimer);
+
       try{
         // Drain older writes, then save the latest rewards and rebirth in one transaction.
         await remoteInFlight.catch(()=>{});
@@ -1485,7 +1502,10 @@
           if(account===state.account?.id&&state.remoteReady&&state.rebirths===beforeRebirths+1)return true;
         }
         throw error;
-      }finally{if(account===state.account?.id){state.busy=false;updateAll();}}
+      }finally{if(account===state.account?.id){
+        if(stoppedEpoch!==null&&animationEpoch===stoppedEpoch){wrap.classList.remove('broken','admin-ball-breaking');svgEl.classList.remove('instant');spawnBall(false);}
+        state.busy=false;updateAll();
+      }}
     }
   };
   window.WakppuGuestGame={discarded:()=>{clearTimeout(remoteSaveTimer);animationEpoch++;window.WakppuLimited?.clear();state.account=null;state.accountNickname='';state.remoteReady=false;accountRole=null;itemRevision=0;state.gold=0n;state.rebirths=0;state.unlocked=WAKPPU_BALLS.map((_,i)=>i===0);state.discovered=['yellow'];state.selected=0;state.hammerOwned=false;state.hammerLevel=0;state.hammerSelectedLevel=null;state.honeyExpiresAt=0;state.coatingExpiresAt=0;ordinaryClicks.clear();eventSelected=false;testSnapshot=null;state.busy=false;spawnBall(false);updateAll();renderAccount();localStorage.removeItem(SAVE_KEY);}};

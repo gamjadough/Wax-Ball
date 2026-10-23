@@ -20,7 +20,7 @@
  async function toggle(){
   if(busy||owner!==WakppuItemGame.read().account||!state?.owned)return;
   const enabled=!state.enabled;
-  if(enabled&&!confirm('자동 환생을 켤까요? 필요 골드를 모으면 보상·파괴 연출 종료 후 자동 환생합니다. Gold·해금한 일반 볼·꿀·보석 코팅·사용 중 아이템 효과는 초기화됩니다. 접속 중에만 작동합니다.'))return;
+  if(enabled&&!confirm('자동 환생을 켤까요? 필요 골드를 모으면 골드 보상 지급 즉시 자동 환생합니다. 남은 파괴 연출과 재생성 대기는 생략합니다. Gold·해금한 일반 볼·꿀·보석 코팅·사용 중 아이템 효과는 초기화됩니다. 접속 중에만 작동합니다.'))return;
   busy=true;++sequence;const account=owner;render();
   try{const next=await WakppuAuth.invoke('auto_rebirth_toggle',{enabled});if(account===WakppuItemGame.read().account)state=next;}
   catch(e){if(account===WakppuItemGame.read().account)$('autoRebirthStatus').textContent=e.message;}
@@ -34,7 +34,7 @@
   finally{busy=false;render();if(!state)await refresh();}
  }
  document.addEventListener('DOMContentLoaded',()=>{
-  const help='접속 중 필요 골드 도달 시 실행 · Gold·해금 볼·꿀·코팅·사용 중 아이템 효과 초기화 · 망치·도감·보유 아이템 유지';
+  const help='접속 중 골드 보상 지급 즉시 실행 · 재생성 대기 생략 · Gold·해금 볼·꿀·코팅·사용 중 아이템 효과 초기화 · 망치·도감·보유 아이템 유지';
   for(const [prefix,parent] of [['rebirthAuto',$('rebirthConfirm')],['shopAuto',$('purchaseOwnedSection')]]){
    const box=document.createElement('section');box.id=prefix;box.hidden=true;box.className='auto-rebirth-controls';
    const button=document.createElement('button');button.id=prefix+'Toggle';button.type='button';button.className='btn';button.onclick=toggle;

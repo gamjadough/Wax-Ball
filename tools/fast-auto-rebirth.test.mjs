@@ -31,7 +31,7 @@ function gameFixture(){
  const saved={gold:'0',rebirths:1,item_revision:1,unlocked_ball_ids:['yellow'],selected_ball_id:'yellow',discovered_ball_ids:['yellow','green'],hammer_owned:true,hammer_level:8,hammer_selected_level:3,honey_expires_at:null,coating_expires_at:null};
  let reply={performed:true,progress:saved,items:{gold:'0',revision:1,inventory:{used:2},effects:{}}};
  const limited={data:{selected:'pumpkin',tokens:'55',owned:{pumpkin:{}}},accept(x){this.data=x;}},items={clearEffects:()=>calls.push('clear'),accept:()=>{calls.push('accept');return true;},refresh:async()=>calls.push('items-refresh')};
- const c={remoteInFlight:Promise.resolve(),remotePayload:()=>({gold:String(state.gold),rebirths:state.rebirths}),window:{},document:{hidden:false},state,nextRebirthCost:()=>2000000n,testSnapshot:null,eventRequest:false,hammerSelectionBusy:false,pendingItemHits:[],remoteSaveTimer:null,clearTimeout(){},itemRevision:0,rebirthModal:{hidden:false},eventSelected:true,eventClicks:5,eventAward:1n,displayEventReward:1n,ordinaryClicks:new Map([[0,3]]),WakppuLimited:limited,WakppuItems:items,WakppuItemGame:{flush:async()=>{throw new Error('redundant save');}},WakppuAuth:{invoke:async(action,body)=>{calls.push(action);assert.equal(body.progress.gold,String(state.gold));if(reply instanceof Error)throw reply;return reply;}},WAKPPU_BALLS:[{id:'yellow'},{id:'green'}],HAMMERS:Array(30).fill({}),WakppuGold:{integer:BigInt},wrap:{classList:{remove(){}}},svgEl:{classList:{remove(){}}},spawnBall:()=>calls.push('spawn'),updateAll:()=>calls.push('render'),restoreAccount:async()=>calls.push('restore')};
+ const c={animationEpoch:10,rewardReadyEpoch:-1,adminFade:null,whiteholeEffect:null,transcendentEffect:null,remoteInFlight:Promise.resolve(),remotePayload:()=>({gold:String(state.gold),rebirths:state.rebirths}),window:{},document:{hidden:false},state,nextRebirthCost:()=>2000000n,testSnapshot:null,eventRequest:false,hammerSelectionBusy:false,pendingItemHits:[],remoteSaveTimer:null,clearTimeout(){},itemRevision:0,rebirthModal:{hidden:false},eventSelected:true,eventClicks:5,eventAward:1n,displayEventReward:1n,ordinaryClicks:new Map([[0,3]]),WakppuLimited:limited,WakppuItems:items,WakppuItemGame:{flush:async()=>{throw new Error('redundant save');}},WakppuAuth:{invoke:async(action,body)=>{calls.push(action);assert.equal(body.progress.gold,String(state.gold));if(reply instanceof Error)throw reply;return reply;}},WAKPPU_BALLS:[{id:'yellow'},{id:'green'}],HAMMERS:Array(30).fill({}),WakppuGold:{integer:BigInt},wrap:{classList:{remove(){}}},svgEl:{classList:{remove(){}}},spawnBall:()=>{c.animationEpoch++;c.rewardReadyEpoch=-1;calls.push('spawn');},updateAll:()=>calls.push('render'),restoreAccount:async()=>calls.push('restore')};
  Object.assign(c.window,{WakppuItems:items,WakppuLimited:limited});vm.createContext(c);vm.runInContext(readFileSync(new URL('../wakppuball/js/hit-requests.js',import.meta.url),'utf8'),c);c.pendingItemHits=c.WakppuHitRequests.createQueue();
  vm.runInContext(game.slice(game.indexOf('  function applySavedProgress'),game.indexOf('  async function restoreAccount')),c);
  vm.runInContext(game.slice(game.indexOf('  function autoRebirthReady'),game.indexOf('  window.WakppuGuestGame=')),c);
@@ -48,4 +48,19 @@ test('guards prevent mid-animation transactions; legacy response and lost respon
  f=gameFixture();f.setReply(new Error('lost response'));await assert.rejects(f.api.run(),/lost response/);assert.ok(f.calls.includes('restore'));assert.equal(f.c.state.busy,false);
  f=gameFixture();f.setReply(new Error('lost committed response'));f.c.restoreAccount=async()=>{f.calls.push('restore');f.c.state.rebirths=1;f.c.state.gold=0n;};assert.equal(await f.api.run(),true);assert.equal(f.c.state.rebirths,1);
  f=gameFixture();f.setFlush(async()=>{f.c.state.account={id:'b'};});assert.equal(await f.api.run(),false);assert.deepEqual(f.calls,[]);assert.equal(f.c.state.gold,2000000n);
+});
+
+
+test('settled reward can interrupt respawn; cancel old effects before any network wait and keep input locked',async()=>{
+ const f=gameFixture();f.c.state.busy=true;f.c.rewardReadyEpoch=9;assert.equal(f.api.ready(),false);
+ f.c.rewardReadyEpoch=10;assert.equal(f.api.ready(),true);
+ for(const name of ['adminFade','whiteholeEffect','transcendentEffect'])f.c[name]={cancel:()=>f.calls.push(name)};
+ let release;f.setFlush(()=>new Promise(r=>release=r));const task=f.api.run();await settle();
+ assert.equal(f.c.animationEpoch,11);assert.equal(f.c.rewardReadyEpoch,-1);assert.equal(f.c.state.busy,true);assert.equal(f.api.ready(),false);
+ assert.deepEqual(f.calls,['adminFade','whiteholeEffect','transcendentEffect']);release();assert.equal(await task,true);
+ assert.equal(f.calls.filter(x=>x==='spawn').length,1);assert.equal(f.c.state.rebirths,1);assert.equal(f.c.state.busy,false);
+});
+test('backgrounding during an interrupted animation restores a playable ball without sending a rebirth',async()=>{
+ const f=gameFixture();f.c.state.busy=true;f.c.rewardReadyEpoch=10;f.setFlush(async()=>{f.c.document.hidden=true;});
+ assert.equal(await f.api.run(),false);assert.deepEqual(f.calls,['spawn','render']);assert.equal(f.c.state.gold,2000000n);assert.equal(f.c.state.busy,false);
 });
