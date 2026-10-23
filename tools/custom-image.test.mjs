@@ -6,7 +6,7 @@ test('image service: actual PNG decode/re-encode, private owned assets, idempote
   const call=async(user,body)=>{const response=await images.handle(user,body);return {status:response.status,data:await response.json()};};
   assert.equal((await call(null,{action:'health'})).data.private_storage,true);assert.equal((await call(null,{action:'status'})).status,401);
   await rpc(admin,{action:'admin_purchase_config',mode:'set',revision:0,enabled:true,bank_name:'테스트 은행',account_number:'000-00000',account_holder:'테스트',support_contact:'실제 송금 금지'});
-  for(const user of [u,v]){const {order}=await rpc(user,{action:'purchase_order',product_id:'custom_ball_all',depositor:'샘플',request_id:crypto.randomUUID()});await rpc(admin,{action:'admin_purchase_approve',order_id:order.id,confirmed_amount:50000,deposit_reference:order.id});}
+  for(const user of [u,v]){const {order}=await rpc(user,{action:'purchase_order',product_id:'custom_ball_all',depositor:'샘플',request_id:crypto.randomUUID()});await rpc(admin,{action:'admin_purchase_approve',order_id:order.id,confirmed_amount:29000,deposit_reference:order.id});}
   const png=new PNG({width:512,height:512});png.data.fill(140);const source=PNG.sync.write(png,{colorType:6,bitDepth:8});const image='data:image/png;base64,'+source.toString('base64');
   const request={action:'save',mode:'save',target:'yellow',effect:'yellow',sound:'yellow',revision:0,request_id:crypto.randomUUID(),image};
   const result=await call(u,request);assert.equal(result.status,200,JSON.stringify(result.data));assert.equal(result.data.state.revision,1);assert.equal(images.files.size,1);

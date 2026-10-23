@@ -39,7 +39,7 @@ test('defaults, malformed saved data, safe bounds, storage failures and cross-ta
  for(const raw of [null,'broken','[]','{"muted":"yes","sfxVolume":"100"}']){
   const f=fixture(raw);assert.equal(f.settings.read().showRemainingHits,true);assert.equal(f.settings.read().music,false);assert.equal(f.settings.effectVolume(),.7);
  }
- const f=fixture();f.settings.set({showRemainingHits:false});assert.equal(f.nodes.get('#ballProgressText').hidden,true);assert.equal(JSON.parse(f.storage.get(key)).showRemainingHits,false);f.settings.set({showRemainingHits:true});assert.equal(f.nodes.get('#ballProgressText').hidden,false);f.settings.set({music:true,musicVolume:150,sfxVolume:-5,muted:'invalid',unknown:true});
+ const f=fixture();f.settings.set({showRemainingHits:false});assert.equal(f.nodes.get('#ballProgress').hidden,true);assert.equal(JSON.parse(f.storage.get(key)).showRemainingHits,false);f.settings.set({showRemainingHits:true});assert.equal(f.nodes.get('#ballProgress').hidden,false);f.settings.set({music:true,musicVolume:150,sfxVolume:-5,muted:'invalid',unknown:true});
  assert.equal(f.settings.musicVolume(),1);assert.equal(f.settings.effectVolume(),0);assert.equal(f.settings.read().muted,false);
  assert.equal(Object.hasOwn(JSON.parse(f.storage.get(key)),'unknown'),false);
  f.storage.set(key,'{"muted":true,"reduceEffects":true}');f.context.dispatchEvent({type:'storage',key});

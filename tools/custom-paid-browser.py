@@ -28,16 +28,23 @@ with sync_playwright() as p:
     if page.locator('#shop').is_visible():page.locator('[data-close="shop"]').click()
     page.locator('#adminBtn').tap();
     with page.expect_response(lambda r:r.url.endswith('/local/api') and r.request.post_data_json.get('action')=='admin_purchase_orders'):page.locator('#purchaseAdminRefresh').click()
+    page.wait_for_load_state('networkidle');expect(page.locator('#purchaseAdminRefresh')).to_be_enabled()
     page.locator('[data-confirm-amount="'+order['id']+'"]').fill(str(order['amount']));page.locator('[data-deposit-reference="'+order['id']+'"]').fill('mock-'+order['id'])
+    expect(page.locator('[data-confirm-amount="'+order['id']+'"]')).to_have_value(str(order['amount']))
+    expect(page.locator('[data-deposit-reference="'+order['id']+'"]')).to_have_value('mock-'+order['id'])
     page.locator('[data-approve-order="'+order['id']+'"]').click();expect(page.locator('#purchaseAdminStatus')).to_contain_text('처리했습니다')
     login();shop()
    page.goto(base+'/?preview=bank');expect(page.locator('#shopPremium')).to_be_visible();page.wait_for_load_state('networkidle');shop()
+   expect(page.locator('[data-purchase-product="custom_ball_single"]')).to_contain_text('9,900원')
+   expect(page.locator('[data-purchase-product="custom_ball_all"]')).to_contain_text('29,000원')
+   assert '50,000원' not in page.locator('#purchaseProducts').inner_text()
    page.locator('#purchaseDepositor').fill('로컬 샘플');page.locator('#customOrderTarget').select_option('yellow')
    with page.expect_response(lambda r:r.url.endswith('/local/api') and r.request.post_data_json.get('action')=='purchase_order') as response:page.locator('[data-purchase-product="custom_ball_single"]').tap()
-   order=response.value.json()['order'];assert order['amount']==30000 and order['custom_target']=='yellow'
+   order=response.value.json()['order'];assert order['amount']==9900 and order['custom_target']=='yellow'
    assert rpc('custom_status')['plan']=='none';approve(order)
-   expect(page.locator('[data-purchase-product="custom_ball_all"]')).to_contain_text('20,000원')
+   expect(page.locator('[data-purchase-product="custom_ball_all"]')).to_contain_text('19,100원')
    page.locator('[data-purchase-product="custom_ball_single"]').tap();expect(page.locator('#customModal')).to_be_visible();expect(page.locator('#customPlanState')).to_contain_text('단일 볼 이용 중')
+   expect(page.locator('#customModal')).to_contain_text('단일 볼 9,900원 · 전체 볼 29,000원')
    assert page.locator('#customEffect option[value="skin:transcendent"]').get_attribute('disabled') is not None
    page.locator('#customSample').click();page.locator('#customEffect').select_option('whitehole');page.locator('#customSound').select_option('admin-event')
    expect(page.locator('#customApply')).to_be_enabled();page.locator('#customApply').click();expect(page.locator('#customStatus')).to_contain_text('저장했습니다')
@@ -52,7 +59,7 @@ with sync_playwright() as p:
    page.locator('#unlockBtn').tap();expect(page.locator('#ballName')).to_have_text('초록색 왁뿌볼');page.evaluate('WakppuItemGame.flush()');expect(page.locator('#ballSvg image')).to_have_count(0)
    shop();page.locator('#purchaseDepositor').fill('로컬 샘플')
    with page.expect_response(lambda r:r.url.endswith('/local/api') and r.request.post_data_json.get('action')=='purchase_order') as response:page.locator('[data-purchase-product="custom_ball_all"]').tap()
-   upgrade=response.value.json()['order'];assert upgrade['amount']==20000 and upgrade['custom_upgrade_order_id']==order['id'];approve(upgrade)
+   upgrade=response.value.json()['order'];assert upgrade['amount']==19100 and upgrade['custom_upgrade_order_id']==order['id'];approve(upgrade)
    page.locator('[data-purchase-product="custom_ball_all"]').tap();expect(page.locator('#customModal')).to_be_visible();expect(page.locator('#customPlanState')).to_contain_text('전체 볼 이용 중')
    page.locator('#customTarget').select_option('green');page.locator('#customSample').click();page.locator('#customEffect').select_option('yellow');page.locator('#customApplyAll').click();expect(page.locator('#customStatus')).to_contain_text('모든 볼')
    expect(page.locator('#ballSvg image')).to_have_count(1);now=page.evaluate('WakppuBeginnerRead()');assert now['required']==8 and now['baseReward']=='10'
