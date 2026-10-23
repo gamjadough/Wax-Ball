@@ -4,6 +4,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
 import {createStore} from './admin-service.mjs';
+import {createProfileService} from './profile-service.mjs';
 import {execute} from './input-guard-service.mjs';
 import {itemData,itemState,snapshot} from './items-service.mjs';
 import {limitedState,limitedSnapshot} from './limited-service.mjs';
@@ -14,6 +15,8 @@ const paymentsEnabled=process.env.WAKPPU_LOCAL_PAYMENTS==='1',demoPayments=creat
 const bankPreview=process.env.WAKPPU_LOCAL_BANK_PREVIEW==='1'?await (await import('./manual-bank-preview.mjs')).createBankPreview():null;
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../wakppuball');
 const store=createStore(),sessions=new Map();
+const profiles=createProfileService(store);
+const profilePreview=process.env.WAKPPU_LOCAL_PROFILE_PREVIEW==='1'?(await import('./profile-preview-service.mjs')).createProfilePreview(store):null;
 // Opt-in, isolated onboarding preview. Never changes production or other previews.
 if(process.env.WAKPPU_LOCAL_BEGINNER_PREVIEW==='1')for(const actor of store.players)if(actor.role!=='admin')actor.state.gold='0';
 // Test clock is available only in this isolated loopback server.
@@ -24,7 +27,7 @@ const deletedSessions=new Map();
 const localUser=actor=>({id:actor.id,email:actor.email||null,is_anonymous:actor.role!=='admin'&&!actor.localAuth?.verified,
   email_confirmed_at:actor.localAuth?.verified||null,user_metadata:{wakppu_email_link_pending:!!actor.localAuth?.pending}});
 const port=Number(process.env.WAKPPU_LOCAL_PORT||4173);
-const types={'.webp':'image/webp','.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.wav':'audio/wav','.mp3':'audio/mpeg'};
+const types={'.png':'image/png','.webp':'image/webp','.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.wav':'audio/wav','.mp3':'audio/mpeg'};
 const server=http.createServer(async(req,res)=>{
   const send=(status,data)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
   try {
@@ -134,6 +137,9 @@ const server=http.createServer(async(req,res)=>{
       if(['skins','skin_draw','skin_exchange','skin_equip'].includes(body.action)){
         execute(store,actor,{action:'bootstrap'});return send(200,skinAction(actor,body));
       }
+      if(['profile_status','profile_equip','player_profile'].includes(body.action)||(profilePreview&&body.action==='rankings')){
+        execute(store,actor,{action:'bootstrap'});return send(200,(profilePreview||profiles).execute(actor,body));
+      }
       if(body.action?.startsWith('auto_rebirth_')||body.action?.startsWith('custom_')||body.action?.startsWith('purchase_')||body.action?.startsWith('admin_purchase_')||body.action?.startsWith('admin_paid_')||body.action?.startsWith('admin_keepsake_')){
         if(!bankPreview)return send(404,{error:'수동 계좌이체 로컬 미리보기를 실행해주세요.'});
         execute(store,actor,{action:'bootstrap'});
@@ -170,6 +176,7 @@ const server=http.createServer(async(req,res)=>{
     if(name==='/index.html'&&url.searchParams.get('preview')==='items')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-items-preview.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='halloween')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-halloween-preview.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='custom'&&process.env.WAKPPU_LOCAL_CUSTOM_PREVIEW==='1')data=Buffer.from(data.toString().replace('</body>','<link rel="stylesheet" href="custom-local.css"><script src="js/local-custom-ball.js"></script></body>'));
+    if(name==='/index.html'&&profilePreview&&url.searchParams.get('preview')==='profiles')data=Buffer.from(data.toString().replace('</body>','<script src="js/local-profile-preview.js"></script></body>'));
     if(name==='/index.html'&&url.searchParams.get('preview')==='adminball')data=Buffer.from(data.toString().replace('</body>',`<script src="js/local-admin-ball-preview.js"></script><script>WakppuLocalAdminBallPreview(${JSON.stringify(password)});</script></body>`));
     if(name==='/index.html'&&url.searchParams.get('preview')==='rebirth500')data=Buffer.from(data.toString().replace('</body>',`<script src="js/local-rebirth-preview.js"></script><script>WakppuLocalRebirthPreview(${JSON.stringify(password)});</script></body>`));
     res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(data);

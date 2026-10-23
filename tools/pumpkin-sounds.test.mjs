@@ -11,4 +11,5 @@ test('pumpkin has dedicated staged CC0 sounds, unchanged gameplay and startup pr
  const manifest=JSON.parse(read('wakppuball/sounds/pumpkin/sources.json'));assert.equal(manifest.license,'CC0-1.0');assert.equal(manifest.outputs.length,5);
  for(const output of manifest.outputs){const bytes=fs.readFileSync(new URL('../wakppuball/sounds/pumpkin/'+output.file,import.meta.url));assert.equal(createHash('sha256').update(bytes).digest('hex'),output.sha256);assert.ok(bytes.length>1000&&bytes.length<15000);assert.ok(output.peak<=.620001);assert.ok(output.duration<=1.05);}
  const html=read('wakppuball/index.html');for(const [n,version] of [['game','20261023-hit-queue1'],['limited-data','20261020-pumpkin-drop30'],['limited-ui','20261023-candy-shop1']])assert.ok(html.includes('js/'+n+'.js?v='+version));
+
 });
