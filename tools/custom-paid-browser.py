@@ -63,7 +63,7 @@ with sync_playwright() as p:
    page.locator('[data-purchase-product="custom_ball_all"]').tap();expect(page.locator('#customModal')).to_be_visible();expect(page.locator('#customPlanState')).to_contain_text('전체 볼 이용 중')
    page.locator('#customTarget').select_option('green');page.locator('#customSample').click();page.locator('#customEffect').select_option('yellow');page.locator('#customApplyAll').click();expect(page.locator('#customStatus')).to_contain_text('모든 볼')
    expect(page.locator('#ballSvg image')).to_have_count(1);now=page.evaluate('WakppuBeginnerRead()');assert now['required']==8 and now['baseReward']=='10'
-   page.locator('#customFile').set_input_files({'name':'unsafe.svg','mimeType':'image/svg+xml','buffer':b'<svg/>'});expect(page.locator('#customStatus')).to_contain_text('8MB 이하')
+   page.locator('#customFile').set_input_files({'name':'unsafe.svg','mimeType':'image/svg+xml','buffer':b'<svg/>'});expect(page.locator('#customImageStatus')).to_contain_text('읽을 수 없는 사진')
    assert page.locator('#customModal').evaluate('(e)=>e.scrollWidth<=e.clientWidth');assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
    for sel in ['#customClose','#customApply','#customPlay']:assert page.locator(sel).bounding_box()['height']>=44
    out=ROOT/'tools/test-results';out.mkdir(exist_ok=True);page.locator('#customModal').evaluate('(e)=>e.scrollTop=0');page.screenshot(path=str(out/f'custom-paid-{width}x{height}.png'))
