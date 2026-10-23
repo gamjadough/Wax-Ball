@@ -2,7 +2,7 @@
   'use strict';
   const key='wakppuball:player-settings:v1';
   const systemMotion=matchMedia('(prefers-reduced-motion: reduce)');
-  const defaults={muted:false,sfx:true,sfxVolume:70,music:false,musicVolume:25,reduceEffects:false,flashes:true};
+  const defaults={muted:false,sfx:true,sfxVolume:70,music:false,musicVolume:25,reduceEffects:false,flashes:true,showRemainingHits:true};
   let stored=true,settings={...defaults};
   function valid(input,fallback=defaults){
     const result={...fallback};
@@ -23,6 +23,7 @@
       if(typeof defaults[name]==='boolean')input.checked=settings[name];else input.value=settings[name];
       const output=document.querySelector('[data-setting-output="'+name+'"]');if(output)output.textContent=settings[name]+'%';
     }
+    const hitCount=document.querySelector('#ballProgressText');if(hitCount)hitCount.hidden=!settings.showRemainingHits;
     const preview=document.querySelector('#settingsSoundPreview');
     if(preview)preview.disabled=settings.muted||!settings.sfx||settings.sfxVolume===0;
     const storageStatus=document.querySelector('#settingsStorageStatus');
