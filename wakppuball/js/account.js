@@ -51,14 +51,14 @@
     return client.auth.updateUser({password, data: {wakppu_email_link_pending: false}});
   }
 
-  async function invoke(action, payload = {}) {
+  async function invoke(action, payload = {}, {signal} = {}) {
     if(window.WakppuGuestExit?.busy)throw new Error('계정을 전환 중입니다. 잠시 기다려주세요.');
     const expectedAccount=window.WakppuItemGame?.read().account;
     const { data: { session } } = await client.auth.getSession();
     if(expectedAccount&&session?.user.id!==expectedAccount&&!['status','rankings','bootstrap'].includes(action))throw new Error('계정이 변경되었습니다. 다시 시도해주세요.');
     if (!session && !['status','rankings'].includes(action)) throw new Error('로그인이 필요합니다.');
     const response = await fetch(`${config.url}/rest/v1/rpc/wakppu_api`, {
-      method: 'POST',
+      method: 'POST',signal,
       headers: {
         'Content-Type': 'application/json',
         'apikey': config.anonKey,
