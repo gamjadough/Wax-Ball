@@ -24,7 +24,7 @@ begin
  perform set_config('request.jwt.claims',jsonb_build_object('sub',v,'role','authenticated','is_anonymous',false)::text,true);
  r:=public.wakppu_api(jsonb_build_object('action','player_profile','nickname',n));
  if r->'card'<>'null' or r->>'online'<>'false' or length(r->>'gold')<>3001 or (r->>'rebirths')::int<>1000 or r->>'rank' is null then raise exception 'Public stats or unequip failed';end if;
- if (select count(*) from jsonb_object_keys(r))<>10 or r ?| array['email','user_id','last_seen_at','moderation','role'] then raise exception 'Private data exposed';end if;
+ if (select count(*) from jsonb_object_keys(r))<>9 or r ?| array['email','user_id','last_seen_at','moderation','role'] then raise exception 'Private data exposed';end if;
  begin perform public.wakppu_api(jsonb_build_object('action','profile_equip','card_id',null,'user_id',u));raise exception 'Cross-account write permitted';
  exception when sqlstate 'PT403' then null;end;
  perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated','is_anonymous',false)::text,true);
