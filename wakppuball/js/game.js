@@ -1453,9 +1453,10 @@
       if(!autoRebirthReady())return false;
       const account=state.account.id,beforeRebirths=state.rebirths;state.busy=true;pendingItemHits=[];clearTimeout(remoteSaveTimer);
       try{
-        await WakppuItemGame.flush();
+        // Drain older writes, then save the latest rewards and rebirth in one transaction.
+        await remoteInFlight.catch(()=>{});
         if(account!==state.account?.id||document.hidden)return false;
-        const result=await WakppuAuth.invoke('auto_rebirth_run',{rebirths:state.rebirths,item_revision:itemRevision});
+        const result=await WakppuAuth.invoke('auto_rebirth_run',{rebirths:state.rebirths,item_revision:itemRevision,progress:remotePayload()});
         if(account!==state.account?.id)return false;
         if(result.performed){rebirthModal.hidden=true;window.WakppuItems?.clearEffects();}
         if(result.performed&&result.progress&&result.items){

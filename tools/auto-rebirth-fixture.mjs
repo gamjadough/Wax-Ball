@@ -20,4 +20,5 @@ export async function installAutoRebirth(db){
  await db.exec(await readFile(autoMigration,'utf8'));
  await db.exec(await readFile(new URL('../supabase/migrations/20261022085110_auto_rebirth_progress_reset.sql',import.meta.url),'utf8'));
  await db.exec(await readFile(new URL('../supabase/migrations/20261023092450_fast_auto_rebirth.sql',import.meta.url),'utf8'));
+ await db.exec(await readFile(new URL('../supabase/migrations/20261023100040_atomic_auto_rebirth.sql',import.meta.url),'utf8'));
 }
