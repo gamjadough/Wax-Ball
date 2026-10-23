@@ -19,7 +19,7 @@ try:
             page.goto(base+'/?preview=halloween',wait_until='domcontentloaded');page.wait_for_function('WakppuLimited.data?.tokens===450&&WakppuItemGame.read().ready');page.evaluate('WakppuPumpkinInventory.refresh()');page.wait_for_function('WakppuPumpkinInventory.data?.tokens==="450"')
             page.evaluate("window.scareThemes=[];const start=WakppuHalloweenEffects.startScare;WakppuHalloweenEffects.startScare=o=>{scareThemes.push(o.theme||'base');return start({...o,random:()=>0});};")
             print('READY '+str(width),flush=True)
-            page.locator('#shopBtn').click();page.locator('#shopHalloweenTab').click()
+            page.locator('#halloweenCurrency').click()
             expect(page.locator('#shopHalloween .pumpkin-skin-cards .skin-card')).to_have_count(3)
             for skin,balance in [('wisp','400'),('ghost','300'),('eclipse','100')]:
                 button=page.locator('#shopHalloween [data-pumpkin-exchange="pumpkin_'+skin+'"]');expect(button).to_be_enabled();assert button.bounding_box()['height']>=44;button.click()

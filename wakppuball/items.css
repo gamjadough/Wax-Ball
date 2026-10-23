@@ -42,3 +42,6 @@ body:has(#itemsModal:not([hidden])) .local-items-preview{display:none}
 @keyframes draw-fragment{from{opacity:.8;transform:none}to{opacity:0;transform:translate(var(--fragment-x),var(--fragment-y)) rotate(var(--fragment-rotation))}}
 @keyframes draw-shatter{to{opacity:0;transform:scale(1.2) rotate(12deg)}}
 @media(prefers-reduced-motion:reduce){.draw-breaking .draw-wax-ball svg,.draw-breaking .draw-wax-fragment{animation:none}}
+
+button.season-currency{font-family:inherit;color:var(--text);min-height:44px;line-height:1.35;cursor:pointer;touch-action:manipulation}button.season-currency:focus-visible{outline:3px solid #ffd399;outline-offset:3px}button.season-currency:disabled{cursor:default}
+.shop-tabs[hidden]{display:none!important}

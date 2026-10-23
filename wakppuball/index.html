@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="purchase-notices.css?v=20261022-notices1">
   <link rel="stylesheet" href="halloween-decor.css?v=20261022-pets1">
   <link rel="stylesheet" href="keepsake.css?v=20261021-display1">
-  <link rel="stylesheet" href="items.css?v=20261010-shop-tabs">
+  <link rel="stylesheet" href="items.css?v=20261023-candy-shop1">
   <link rel="stylesheet" href="limited.css?v=20261021-halloweenshop1">
   <link rel="stylesheet" href="transcendent.css?v=20261016-unified-seams">
   <link rel="stylesheet" href="skin-cutscene.css?v=20261016-preview1">
@@ -53,7 +53,7 @@
         <span id="goldValue" class="gold-value">0</span>
         <span class="gold-unit">G</span>
       </div>
-      <div id="halloweenCurrency" class="season-currency" hidden aria-label="보유 할로윈 사탕"><span aria-hidden="true">🍬</span><span id="halloweenCurrencyValue">0</span><span>사탕</span></div>
+      <button id="halloweenCurrency" class="season-currency" type="button" hidden aria-label="할로윈 사탕 · 할로윈 상점 열기" aria-haspopup="dialog" aria-controls="shop"><span aria-hidden="true">🍬</span><span id="halloweenCurrencyValue">0</span><span>사탕</span></button>
       <button id="shopBtn" class="btn top-btn" type="button">🛒 상점</button>
       <button id="rebirthBtn" class="btn top-btn" type="button">환생</button>
       <div class="account-tools">
@@ -171,14 +171,14 @@
   <div id="shop" class="modal" hidden>
     <div class="sheet compact" role="dialog" aria-modal="true" aria-labelledby="shopTitle">
       <div class="sheet-head"><h2 id="shopTitle">🛒 상점</h2><button data-close="shop" class="btn small" type="button">닫기</button></div>
-      <div class="shop-tabs" role="tablist" aria-label="상점 메뉴"><button id="shopPurchaseTab" class="btn" role="tab" aria-selected="true" aria-controls="shopPurchase">아이템 구매</button><button id="shopDrawTab" class="btn" role="tab" aria-selected="false" aria-controls="shopDraw" tabindex="-1">뽑기</button><button id="shopPremiumTab" class="btn" role="tab" aria-selected="false" aria-controls="shopPremium" tabindex="-1">유료 상점</button><button id="shopHalloweenTab" class="btn" role="tab" aria-selected="false" aria-controls="shopHalloween" tabindex="-1">🎃 할로윈 상점</button></div>
+      <div class="shop-tabs" role="tablist" aria-label="상점 메뉴"><button id="shopPurchaseTab" class="btn" role="tab" aria-selected="true" aria-controls="shopPurchase">아이템 구매</button><button id="shopDrawTab" class="btn" role="tab" aria-selected="false" aria-controls="shopDraw" tabindex="-1">뽑기</button><button id="shopPremiumTab" class="btn" role="tab" aria-selected="false" aria-controls="shopPremium" tabindex="-1">유료 상점</button></div>
       <section id="shopPurchase" role="tabpanel" aria-labelledby="shopPurchaseTab">
       <article class="shop-item"><h3>🍯 꿀</h3><p id="honeyInfo" class="dialog-text"></p><button id="honeyBtn" class="btn primary" type="button">구매 · 30K G</button></article>
       <article class="shop-item"><h3>💎 보석 코팅</h3><p id="coatingInfo" class="dialog-text"></p><button id="coatingBtn" class="btn primary" type="button">구매 · 5M G</button></article>
       <article class="shop-item"><h3>🪵 망치</h3><p id="hammerInfo" class="dialog-text"></p><div class="hammer-actions"><button id="hammerBtn" class="btn primary" type="button"></button><label class="hammer-level-label" for="hammerLevelSelect">레벨 선택<select id="hammerLevelSelect" class="btn" disabled><option value="auto">망치 구매 후 선택</option></select></label></div><p id="hammerLevelStatus" class="meta" role="status" aria-live="polite"></p></article>
       </section>
       <section id="shopPremium" role="tabpanel" aria-labelledby="shopPremiumTab" hidden></section>
-      <section id="shopHalloween" role="tabpanel" aria-labelledby="shopHalloweenTab" hidden></section>
+      <section id="shopHalloween" role="region" aria-label="할로윈 상점" hidden></section>
       <section id="shopDraw" role="tabpanel" aria-labelledby="shopDrawTab" hidden><p id="shopItemsStatus" role="status"></p><p id="shopItemsLogin">계정에서 빠른 시작 또는 로그인 후 사용할 수 있습니다.</p></section>
     </div>
   </div>
@@ -271,11 +271,11 @@
   <script src="js/pumpkin-skin-art.js?v=20261020-pumpkin-skins1"></script>
   <script src="js/pumpkin-skins.js?v=20261021-halloweenshop1"></script>
   <script src="js/halloween-effects.js?v=20261021-halloweenshop1"></script>
-  <script src="js/limited-ui.js?v=20261020-pumpkin-drop30"></script>
+  <script src="js/limited-ui.js?v=20261023-candy-shop1"></script>
   <script src="js/items-data.js?v=20261021-keepsake"></script>
   <script src="js/sleep-hours.js?v=20261013-sleep2"></script>
   <script src="js/keepsake-display.js?v=20261021-display1"></script>
-  <script src="js/items-ui.js?v=20261021-keepsake-display1"></script>
+  <script src="js/items-ui.js?v=20261023-candy-shop1"></script>
   <script src="js/items-reveal.js?v=20261016-settings1"></script>
   <script src="js/ball-art.js?v=20261020-pumpkin-skins1"></script>
   <script src="js/event-time.js?v=20261018-countdown1"></script>
@@ -286,10 +286,10 @@
   <script src="js/skin-effects.js?v=20261016-unified-seams"></script>
   <script src="js/skin-cutscene.js?v=20261016-skins-release1"></script>
   <script src="js/skins-ui.js?v=20261022-pets1"></script>
-  <script src="js/pumpkin-skins-ui.js?v=20261021-halloweenshop2"></script>
+  <script src="js/pumpkin-skins-ui.js?v=20261023-candy-shop1"></script>
   <script src="js/halloween-decor-data.js?v=20261022-pets1"></script>
   <script src="js/halloween-decor-effects.js?v=20261022-pets1"></script>
-  <script src="js/halloween-decor-ui.js?v=20261022-pets1"></script>
+  <script src="js/halloween-decor-ui.js?v=20261023-candy-shop1"></script>
   <script src="js/admin-ball-event.js?v=20261016-separate2"></script>
   <script src="js/hammers-data.js?v=20261007-hammer30"></script>
   <script src="js/purchase-effects.js?v=20261019-shatter4"></script>

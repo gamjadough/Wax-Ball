@@ -54,7 +54,7 @@
   ui={disableButtons:[optout,inventoryOptout].map(n=>n.querySelector('button')),balance:[a,b].map(n=>n.querySelector('.pumpkin-skin-balance')),status:[a,b].map(n=>n.querySelector('.pumpkin-skin-status')),cards:[a,b].map(n=>n.querySelector('.pumpkin-skin-cards')),unequip,shopUnequip};
   const onClick=e=>{const exchange=e.target.closest('[data-pumpkin-exchange]'),equip=e.target.closest('[data-pumpkin-equip]');if(equip)transact('pumpkin_skin_equip',data?.equipped===equip.dataset.pumpkinEquip?null:equip.dataset.pumpkinEquip);if(exchange){const id=exchange.dataset.pumpkinExchange,p=def(id),cost=data?.catalog?.find(d=>d.skin_id===id)?.cost;if(p&&confirm(p.name+' 스킨을 사탕 '+cost+'개로 교환할까요?'))transact('pumpkin_skin_exchange',id);}};
   a.addEventListener('click',onClick);b.addEventListener('click',onClick);unequip.onclick=shopUnequip.onclick=()=>transact('pumpkin_skin_equip',null);
-  for(const id of ['shopBtn','inventoryBtn','inventorySkinsTab','shopHalloweenTab'])document.getElementById(id)?.addEventListener('click',refresh);
+  for(const id of ['shopBtn','inventoryBtn','inventorySkinsTab','halloweenCurrency'])document.getElementById(id)?.addEventListener('click',refresh);
   window.addEventListener('wakppu-account-restored',refresh);setInterval(()=>{render();},1000);
   setInterval(()=>{if(!document.getElementById('shop').hidden||!document.getElementById('itemsModal').hidden)refresh();},15000);refresh();render();
  });
