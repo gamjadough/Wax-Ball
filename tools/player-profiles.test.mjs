@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {createRequire} from 'node:module';
 import {createStore} from './admin-service.mjs';
 import {createProfileService} from './profile-service.mjs';
+import {profileTitles,setProfileTitle} from './profile-titles-service.mjs';
 const require=createRequire(process.env.WAKPPU_TEST_DEPS||new URL('./test-results/sql-check/package.json',import.meta.url));
 const {PGlite}=require('@electric-sql/pglite');
 test('normal local profiles contain no sample players and selection preserves progression',()=>{
@@ -12,6 +13,17 @@ test('normal local profiles contain no sample players and selection preserves pr
  service.execute(actor,{action:'profile_equip',card_id:null});
  assert.equal(service.execute(actor,{action:'player_profile',nickname:actor.nickname}).card,null);
  assert.deepEqual(actor.state,before);assert.ok(!store.players.some(p=>p.profileDemo));
+});
+test('profile titles: owned choices only, none/auto, revoked and anonymous admin, no reward or card changes',()=>{
+ const store=createStore(),p=store.players[1],admin=store.players[0],before=structuredClone(p.state);
+ assert.deepEqual(profileTitles(p).title_catalog.map(t=>t.id),['auto','none']);
+ assert.throws(()=>setProfileTitle(p,{title_id:'premium'}),{status:403});
+ p.premiumSupporterPack=true;p.profileCard=null;
+ for(const id of ['supporter','premium','none','auto']){setProfileTitle(p,{title_id:id});assert.equal(profileTitles(p).title_equipped,id);}
+ assert.equal(profileTitles(p).title,'프리미엄 후원자');assert.equal(p.profileCard,null);assert.deepEqual(p.state,before);
+ setProfileTitle(p,{title_id:'premium'});p.premiumSupporterPack=false;assert.equal(profileTitles(p).title,null);
+ setProfileTitle(admin,{title_id:'premium'});admin.is_anonymous=true;assert.throws(()=>setProfileTitle(admin,{title_id:'premium'}),{status:403});
+ assert.throws(()=>setProfileTitle(p,{title_id:'none',user_id:admin.id}),{status:403});
 });
 test('SQL profiles: privacy, huge Gold, default/free persistent cards, server gates, private grants and admin catalog access',async()=>{
  const db=new PGlite(),a='00000000-0000-0000-0000-000000000001',p='00000000-0000-0000-0000-000000000002';
@@ -79,5 +91,39 @@ test('SQL profiles: privacy, huge Gold, default/free persistent cards, server ga
   await db.exec('set role authenticated');
   for(const table of ['wakppu_profile_cards','wakppu_profile_card_defs'])await assert.rejects(db.exec('select * from '+table),{code:'42501'});
   await assert.rejects(db.exec("select wakppu_api_before_profiles('{}')"),{code:'42501'});
+  await db.exec(`reset role;update profile_test_gate set blocked=false;update players set ranking_hidden=false;
+   create table auth.users(id uuid primary key,is_anonymous boolean default false);
+   insert into auth.users values('${a}',false),('${p}',false);
+   create table wakppu_purchase_cosmetics(user_id uuid primary key,equipped boolean default false,title_visible boolean default true);
+   create table profile_test_bonus(user_id uuid primary key,bonus integer);
+   insert into profile_test_bonus values('${p}',30);
+   create function wakppu_supporter_percent(u uuid) returns integer language sql stable as $$select coalesce((select bonus from profile_test_bonus where user_id=u),0)$$;
+   update players set role='admin' where nickname='admin';`);
+  await db.exec(await readFile(new URL('../supabase/migrations/20261023102333_profile_inventory_titles.sql',import.meta.url),'utf8'));
+  await rpc(p,{action:'profile_equip',card_id:null});
+  const progressBefore=(await db.query('select * from game_states order by user_id')).rows;
+  let titled=await rpc(p,{action:'profile_status'});assert.equal(titled.title_equipped,'auto');assert.equal(titled.title,'프리미엄 후원자');
+  for(const id of ['supporter','premium','none','auto']){
+   titled=await rpc(p,{action:'profile_title',title_id:id});assert.equal(titled.title_equipped,id);assert.equal(titled.equipped,null);
+   const publicProfile=await rpc(a,{action:'player_profile',nickname:'player'});
+   assert.equal(publicProfile.title,id==='none'?null:id==='supporter'?'왁뿌볼 후원자':'프리미엄 후원자');
+   const ranked=await rpc(null,{action:'rankings'});assert.equal(ranked.find(r=>r.nickname==='player').profile_title,publicProfile.title);
+  }
+  await assert.rejects(rpc(p,{action:'profile_title',title_id:'admin'}),{code:'PT403'});
+  await assert.rejects(rpc(p,{action:'profile_title',title_id:null}),{code:'PT400'});
+  await assert.rejects(rpc(p,{action:'profile_title',title_id:'none',user_id:a}),{code:'PT403'});
+  await assert.rejects(rpc(null,{action:'profile_title',title_id:'none'}),{code:'PT401'});
+  await db.exec("update profile_test_bonus set bonus=0");
+  await assert.rejects(rpc(p,{action:'profile_title',title_id:'premium'}),{code:'PT403'});
+  await rpc(a,{action:'profile_title',title_id:'premium'});
+  await assert.rejects(rpc(a,{action:'profile_title',title_id:'premium'},true),{code:'PT403'});
+  await db.exec("update players set role='player' where nickname='admin'");
+  assert.equal((await rpc(a,{action:'profile_status'})).title,null);
+  await db.exec('update profile_test_gate set blocked=true');
+  await assert.rejects(rpc(p,{action:'profile_title',title_id:'none'}),{code:'PT503'});
+  assert.deepEqual((await db.query('select * from game_states order by user_id')).rows,progressBefore);
+  await db.exec('set role authenticated');
+  await assert.rejects(db.exec("select wakppu_profile_title_state('"+p+"')"),{code:'42501'});
+  await assert.rejects(db.exec("select wakppu_api_before_profile_titles('{}')"),{code:'42501'});
  }finally{await db.close();}
 });

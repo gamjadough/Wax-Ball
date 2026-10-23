@@ -49,6 +49,20 @@ try:
    page.evaluate('WakppuProfiles.open("slow")');expect(page.locator('#profileNickname')).to_have_text('<img src=x onerror=alert(1)>');expect(page.locator('#profileNickname img')).to_have_count(0);page.locator('#profileClose').tap()
    page.evaluate('WakppuProfiles.open("slow")');page.locator('#profileClose').tap();page.wait_for_timeout(350);expect(page.locator('#playerProfileDialog')).to_be_hidden()
    page.locator('[data-close="ranking"]').tap();page.locator('#inventoryBtn').tap();page.locator('#inventoryProfileCardsTab').tap();expect(page.locator('#inventoryProfileCardsPage')).to_be_visible()
+   expect(page.locator('#inventoryProfileCardsTab')).to_have_text('프로필')
+   art=page.locator('#profileInventoryArt');art.scroll_into_view_if_needed()
+   box=art.bounding_box();assert box['height']<=260 and abs(box['width']/box['height']-1.5)<.02,box
+   page.screenshot(path=str(ROOT/f'tools/test-results/profile-inventory-image-{width}x{height}.png'))
+   assert page.locator('#inventoryProfileCardsPage').evaluate('(e)=>e.scrollWidth<=e.clientWidth')
+   titles=page.locator('#profileTitleSelect');expect(titles).to_be_enabled()
+   choices=titles.locator('option').evaluate_all('(es)=>es.map(e=>e.value)')
+   for choice in choices:
+    titles.select_option(choice);page.locator('#profileTitleSave').tap();expect(page.locator('#profileInventoryStatus')).to_have_text('칭호 설정을 저장했습니다.')
+    page.wait_for_function('(id)=>document.querySelector("#profileTitleSelect").value===id',arg=choice)
+    page.locator('#profileCardSelf').tap()
+    if choice=='none':expect(page.locator('#profileTitle')).to_be_hidden()
+    page.locator('#profileClose').tap()
+   titles.select_option('none');page.locator('#profileTitleSave').tap();expect(page.locator('#profileEquippedTitle')).to_have_text('현재 칭호: 없음')
    before=page.evaluate('WakppuItemGame.read().gold');page.locator('#profileCardUnequip').tap();expect(page.locator('#profileCardEquip')).to_have_text('장착')
    page.locator('#profileCardSelf').tap();expect(page.locator('#profileCardBadge')).to_contain_text('카드 미장착');expect(page.locator('#profileArt')).to_be_hidden();page.locator('#profileClose').tap()
    page.locator('#profileCardEquip').tap();expect(page.locator('#profileCardEquip')).to_have_text('장착 중');assert page.evaluate('WakppuItemGame.read().gold')==before
@@ -57,7 +71,7 @@ try:
    page.screenshot(path=str(ROOT/f'tools/test-results/profile-inventory-{width}x{height}.png'))
    page.locator('#inventorySkinsTab').tap();expect(page.locator('#inventoryProfileCardsPage')).to_be_hidden();expect(page.locator('#inventorySkinsPage')).to_be_visible()
    page.locator('#inventoryPetsTab').tap();expect(page.locator('#inventoryPetsPage')).to_be_visible();page.locator('#inventoryItemsTab').tap();expect(page.locator('#inventoryItemsPage')).to_be_visible()
-   page.locator('#itemsClose').tap();page.reload(wait_until='networkidle');page.wait_for_function('WakppuItemGame.read().ready');assert page.evaluate('WakppuAuth.invoke("profile_status").then(x=>x.equipped)')=='wax_beginning'
+   page.locator('#itemsClose').tap();page.reload(wait_until='networkidle');page.wait_for_function('WakppuItemGame.read().ready');assert page.evaluate('WakppuAuth.invoke("profile_status").then(x=>x.equipped)')=='wax_beginning';assert page.evaluate('WakppuAuth.invoke("profile_status").then(x=>x.title_equipped)')=='none'
    # Escape returns focus, and changing accounts dismisses the old player's dialog.
    page.locator('#rankingList .profile-rank-button').first.focus();page.keyboard.press('Space');expect(page.locator('#playerProfileDialog')).to_be_visible();page.keyboard.press('Escape');expect(page.locator('#playerProfileDialog')).to_be_hidden();expect(page.locator('#ranking')).to_be_visible()
    page.locator('#rankingList .profile-rank-button').first.tap();page.evaluate('window.dispatchEvent(new Event("wakppu-account-restored"))');expect(page.locator('#playerProfileDialog')).to_be_hidden()

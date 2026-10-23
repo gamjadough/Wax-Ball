@@ -137,7 +137,7 @@ const server=http.createServer(async(req,res)=>{
       if(['skins','skin_draw','skin_exchange','skin_equip'].includes(body.action)){
         execute(store,actor,{action:'bootstrap'});return send(200,skinAction(actor,body));
       }
-      if(['profile_status','profile_equip','player_profile'].includes(body.action)||(profilePreview&&body.action==='rankings')){
+      if(['profile_status','profile_equip','profile_title','player_profile'].includes(body.action)||(profilePreview&&body.action==='rankings')){
         execute(store,actor,{action:'bootstrap'});return send(200,(profilePreview||profiles).execute(actor,body));
       }
       if(body.action?.startsWith('auto_rebirth_')||body.action?.startsWith('custom_')||body.action?.startsWith('purchase_')||body.action?.startsWith('admin_purchase_')||body.action?.startsWith('admin_paid_')||body.action?.startsWith('admin_keepsake_')){

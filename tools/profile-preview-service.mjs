@@ -1,6 +1,7 @@
 // Opt-in loopback demo only. No production accounts, database or online tracking.
 import {randomInt} from 'node:crypto';
 import {ballIds,isBanned} from './admin-service.mjs';
+import {profileTitles,setProfileTitle} from './profile-titles-service.mjs';
 export const basicProfileCard={id:'wax_beginning',name:'왁스의 시작',rarity:'기본',free:true,image:'images/profile-cards/wax-beginning.png'};
 export function createProfilePreview(store,{int=randomInt}={}){
  const owner=store.players.find(p=>p.id==='local-player'),total=ballIds.length;
@@ -14,17 +15,18 @@ export function createProfilePreview(store,{int=randomInt}={}){
   p.profileDemo={online:i<3,title:titles[i]};if(i)store.players.push(p);return p;
  });
  const ranked=()=>players.filter(p=>!p.ranking_hidden&&!isBanned(p)).sort((a,b)=>b.state.rebirths-a.state.rebirths||(BigInt(a.state.gold)>BigInt(b.state.gold)?-1:BigInt(a.state.gold)<BigInt(b.state.gold)?1:a.nickname.localeCompare(b.nickname)));
- const title=p=>p.profileDemo?.title==='premium'?'프리미엄 후원자':p.profileDemo?.title==='supporter'?'왁뿌볼 후원자':null;
+ const title=p=>profileTitles(p).title;
  const profile=p=>({nickname:p.nickname,title:title(p),rank:ranked().findIndex(x=>x.id===p.id)+1||null,gold:String(p.state.gold),rebirths:p.state.rebirths,discovered_count:p.state.discovered_ball_ids?.length||0,discovery_total:total,online:p.profileDemo?.online===true,card:p.profileCard==='wax_beginning'?basicProfileCard:null});
  return {execute(actor,b){
   if(!actor)throw Object.assign(new Error('로그인 후 확인할 수 있습니다.'),{status:401});
   if('user_id' in b||'target_user_id' in b)throw Object.assign(new Error('다른 계정의 카드를 변경할 수 없습니다.'),{status:403});
-  if(b.action==='rankings')return ranked().map(p=>({nickname:p.nickname,gold:String(p.state.gold),rebirths:p.state.rebirths,online:p.profileDemo.online,supporter:!!title(p),premium_supporter:p.profileDemo.title==='premium',supporter_title_visible:true}));
+  if(b.action==='rankings')return ranked().map(p=>({nickname:p.nickname,gold:String(p.state.gold),rebirths:p.state.rebirths,online:p.profileDemo.online,supporter:!!p.profileDemo.title,premium_supporter:p.profileDemo.title==='premium',supporter_title_visible:true,profile_title:title(p)}));
+  if(b.action==='profile_title')setProfileTitle(actor,b);
   if(b.action==='profile_equip'){
    if(![null,'wax_beginning'].includes(b.card_id))throw Object.assign(new Error('보유하지 않은 프로필 카드입니다.'),{status:400});
    actor.profileCard=b.card_id;
   }
-  if(['profile_status','profile_equip'].includes(b.action))return {owned:['wax_beginning'],equipped:actor.profileCard??null,catalog:[basicProfileCard],nickname:actor.nickname};
+  if(['profile_status','profile_equip','profile_title'].includes(b.action))return {owned:['wax_beginning'],equipped:actor.profileCard??null,catalog:[basicProfileCard],nickname:actor.nickname,...profileTitles(actor)};
   if(b.action==='player_profile'){
    if(typeof b.nickname!=='string'||b.nickname.length>100)throw Object.assign(new Error('잘못된 플레이어입니다.'),{status:400});
    const p=players.find(x=>x.nickname===b.nickname)||(actor.nickname===b.nickname?actor:null);

@@ -12,6 +12,9 @@
   if(card){$('profileInventoryArt').src=safeImage(card);$('profileInventoryName').textContent=card.name;$('profileInventoryRarity').textContent=card.rarity+(card.free?' · 무료 지급':' · 관리자 이용 가능');}
   $('profileCardEquip').textContent=equipped?'장착 중':'장착';$('profileCardEquip').disabled=!ready||equipped||!card;$('profileCardUnequip').disabled=!ready||!data?.equipped;$('profileCardSelf').disabled=!ready;
   $('profileCardState').textContent=equipped?'보유 중 · 현재 장착 중':'보유 중 · 미장착';
+  const titles=$('profileTitleSelect'),catalog=data?.title_catalog||[];
+  titles.replaceChildren(...catalog.map(t=>new Option(t.name,t.id)));titles.value=data?.title_equipped||'auto';titles.disabled=!ready;
+  $('profileTitleSave').disabled=!ready;$('profileEquippedTitle').textContent='현재 칭호: '+(data?.title||'없음');
  }
  async function refresh(){
   const account=read()?.account,seq=++version;if(owner!==account){data=null;owner=account;}renderInventory();if(!account||!read()?.ready)return;
@@ -21,6 +24,13 @@
  async function equip(card_id){
   if(busy||!data||owner!==read()?.account)return;const account=owner;busy=true;++version;renderInventory();
   try{const next=await WakppuAuth.invoke('profile_equip',{card_id});if(account!==read()?.account)return;data=next;$('profileInventoryStatus').textContent=card_id?'프로필 카드를 장착했습니다.':'카드를 해제했습니다. 기본 배경으로 표시됩니다.';}
+  catch(e){if(account===read()?.account)$('profileInventoryStatus').textContent=e.message;}
+  finally{busy=false;renderInventory();}
+ }
+ async function saveTitle(){
+  if(busy||!data||owner!==read()?.account)return;const account=owner,title_id=$('profileTitleSelect').value;
+  busy=true;++version;renderInventory();
+  try{const next=await WakppuAuth.invoke('profile_title',{title_id});if(account!==read()?.account)return;data=next;$('profileInventoryStatus').textContent='칭호 설정을 저장했습니다.';window.WakppuPurchases?.refresh?.();}
   catch(e){if(account===read()?.account)$('profileInventoryStatus').textContent=e.message;}
   finally{busy=false;renderInventory();}
  }
@@ -60,10 +70,12 @@
   const dialog=document.createElement('dialog');dialog.id='playerProfileDialog';dialog.className='profile-dialog';dialog.setAttribute('aria-labelledby','profileDialogTitle');
   dialog.innerHTML=`<header class="profile-dialog-head"><h2 id="profileDialogTitle">플레이어 프로필</h2><button id="profileClose" class="btn small" type="button">닫기</button></header><p id="profileLoading" class="profile-loading" role="status"></p><article id="profileBody" hidden><div class="profile-hero"><img id="profileArt" width="1536" height="1024" decoding="async" alt=""><div class="profile-hero-top"><span id="profileCardBadge" class="profile-card-badge"></span><span id="profilePresence" class="profile-presence" role="status"></span></div><div class="profile-identity"><h3 id="profileNickname"></h3><span id="profileTitle" class="profile-player-title"></span></div></div><p class="profile-caption">왁뿌볼 플레이어 카드</p><dl class="profile-stats"><div><dt>현재 순위</dt><dd id="profileRank"></dd></div><div><dt>보유 Gold</dt><dd id="profileGold" class="profile-gold"></dd></div><div><dt>환생</dt><dd id="profileRebirths"></dd></div><div><dt>도감 발견</dt><dd id="profileDiscoveries"></dd></div></dl><p class="profile-footnote">현재 온라인 여부만 표시합니다. 개인 접속 기록은 공개하지 않습니다.</p></article>`;
   document.body.append(dialog);$('profileClose').onclick=close;dialog.addEventListener('keydown',e=>{if(e.key==='Escape')e.stopPropagation();});dialog.addEventListener('cancel',e=>{e.preventDefault();e.stopPropagation();close();});dialog.addEventListener('click',e=>{if(e.target===dialog&&e.clientX!==0){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close();}});
-  const tabs=$('inventoryItemsTab').parentElement,tab=document.createElement('button');tab.id='inventoryProfileCardsTab';tab.type='button';tab.className='btn small';tab.textContent='프로필 카드';tab.setAttribute('aria-pressed','false');tabs.append(tab);tab.onclick=showCards;
+  const tabs=$('inventoryItemsTab').parentElement,tab=document.createElement('button');tab.id='inventoryProfileCardsTab';tab.type='button';tab.className='btn small';tab.textContent='프로필';tab.setAttribute('aria-pressed','false');tabs.append(tab);tab.onclick=showCards;
   const section=document.createElement('section');section.id='inventoryProfileCardsPage';section.hidden=true;section.innerHTML=`<h3>프로필 카드</h3><p>랭킹에서 플레이어를 누르면 장착한 카드로 프로필을 보여줍니다.</p><article class="profile-inventory-card"><img src="${image}" width="1536" height="1024" loading="lazy" decoding="async" alt="황금빛 왁뿌볼이 놓인 보라색 배경의 기본 카드"><div><small>기본 · 무료 지급</small><h4>왁스의 시작</h4><p id="profileCardState" class="profile-owned"></p><p>처음 만나는 왁뿌볼의 따뜻한 빛.<br>모든 플레이어가 무료로 사용할 수 있습니다.</p><div class="profile-inventory-actions"><button id="profileCardEquip" class="btn">장착</button><button id="profileCardUnequip" class="btn">장착 해제</button><button id="profileCardSelf" class="btn">내 프로필 보기</button></div></div></article><p id="profileInventoryStatus" role="status"></p><p>카드는 외형만 변경합니다. Gold·보상·능력치에는 영향을 주지 않습니다.</p>`;$('itemsModal').querySelector('.sheet').append(section);
   const select=document.createElement('select');select.id='profileCardSelect';select.setAttribute('aria-label','프로필 카드 선택');select.className='btn';section.querySelector('.profile-inventory-actions').before(select);select.onchange=renderInventory;
   const art=section.querySelector('img');art.id='profileInventoryArt';section.querySelector('h4').id='profileInventoryName';section.querySelector('small').id='profileInventoryRarity';
+  art.style.height='auto';art.style.maxWidth='100%';section.querySelector('h3').textContent='프로필';
+  const titleSettings=document.createElement('div');titleSettings.className='profile-title-settings';titleSettings.innerHTML='<label for="profileTitleSelect">칭호 선택</label><p id="profileEquippedTitle"></p><select id="profileTitleSelect"></select><button id="profileTitleSave" type="button" class="btn">칭호 적용</button><p>보유한 칭호만 선택할 수 있습니다. 칭호를 바꿔도 보상 배율은 변하지 않습니다.</p>';section.querySelector('#profileInventoryStatus').before(titleSettings);$('profileTitleSave').onclick=saveTitle;
   $('profileCardEquip').onclick=()=>equip(select.value);$('profileCardUnequip').onclick=()=>equip(null);$('profileCardSelf').onclick=()=>open(data.nickname,$('profileCardSelf'));
   tabs.addEventListener('click',e=>{if(e.target.closest('button')?.id!==tab.id){profileTab=false;section.hidden=true;tab.setAttribute('aria-pressed','false');}});
   const sync=window.WakppuSkins.syncInventory;window.WakppuSkins.syncInventory=()=>{sync();if(profileTab)showCards();};
