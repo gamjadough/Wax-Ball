@@ -16,7 +16,7 @@ declare u uuid;s jsonb;r jsonb;rid uuid:=gen_random_uuid();gold_before numeric;b
  if has_table_privilege('authenticated','public.wakppu_custom_assets','SELECT') then raise exception 'Asset table exposed';end if;
  if(select public from storage.buckets where id='wakppu-custom') is distinct from false then raise exception 'Storage must be private';end if;
  if not exists(select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='wakppu_custom_service_only' and permissive='RESTRICTIVE') then raise exception 'Storage policy missing';end if;
- if(select amount from public.wakppu_purchase_products where id='custom_ball_single')<>30000 or(select amount from public.wakppu_purchase_products where id='custom_ball_all')<>50000 then raise exception 'Product price mismatch';end if;
+ if(select amount from public.wakppu_purchase_products where id='custom_ball_single')<>9900 or(select amount from public.wakppu_purchase_products where id='custom_ball_all')<>29000 then raise exception 'Product price mismatch';end if;
 end $check$;
 rollback;
 select true as custom_production_checks_passed,true as test_changes_rolled_back;
