@@ -4,6 +4,7 @@ const admin='00000000-0000-4000-8000-000000000001',user='00000000-0000-4000-8000
 test('auto rebirth: exact economy, paid grant, OFF default, server threshold, version, replay, refund and moderation',async()=>{
  const f=await customFixture();const {db,add,rpc}=f;try{
  await installAutoRebirth(db);await add(admin,'admin');await add(user);
+ await db.exec(await readFile(new URL('../supabase/migrations/20261023092450_fast_auto_rebirth.sql',import.meta.url),'utf8'));
  const call=(action,body={})=>rpc(user,{action,...body});
  assert.equal((await db.query("select amount from wakppu_purchase_products where id='auto_rebirth'")).rows[0].amount,4000);
  const c=vm.createContext({window:{}});vm.runInContext(await readFile(new URL('../wakppuball/js/balls-data.js',import.meta.url),'utf8')+';window.costs=REBIRTH_COSTS.map(String)',c);
@@ -18,10 +19,10 @@ test('auto rebirth: exact economy, paid grant, OFF default, server threshold, ve
  assert.equal((await run()).performed,false);await call('auto_rebirth_toggle',{enabled:true});
  await db.query('update game_states set gold=1999999 where user_id=$1',[user]);assert.equal((await run()).performed,false);
  await db.query('update game_states set gold=2000000 where user_id=$1',[user]);assert.equal((await call('auto_rebirth_run',{rebirths:0,item_revision:9})).performed,false);
- assert.equal((await run()).performed,true);assert.equal((await run()).performed,false);
+ const done=await run();assert.equal(done.performed,true);assert.equal(done.progress.gold,'0');assert.equal(done.progress.rebirths,1);assert.equal(done.items.revision,1);assert.deepEqual(done.items.effects,{});assert.equal((await run()).performed,false);
  let s=(await db.query('select * from game_states where user_id=$1',[user])).rows[0];assert.equal(s.rebirths,1);assert.equal(String(s.gold),'0');assert.equal(s.item_revision,1);assert.deepEqual(s.unlocked_ball_ids,['yellow']);assert.equal(s.honey_expires_at,null);assert.equal(s.coating_expires_at,null);assert.equal(s.hammer_level,8);assert.deepEqual(s.discovered_ball_ids,['yellow','green']);assert.deepEqual((await db.query('select effects from wakppu_items where user_id=$1',[user])).rows[0].effects,{});
  assert.equal(s.current_clicks,0);assert.equal(s.item_current_clicks,0);assert.equal(s.current_ball_id,'yellow');
- await db.query('update game_states set rebirths=1000,gold=1e500 where user_id=$1',[user]);assert.equal((await call('auto_rebirth_run',{rebirths:1000,item_revision:1})).performed,false);
+ await db.query('update game_states set rebirths=1000,gold=1e500 where user_id=$1',[user]);const max=await call('auto_rebirth_run',{rebirths:1000,item_revision:1});assert.equal(max.performed,false);assert.equal(max.progress.gold,'1'+'0'.repeat(500));
  await db.exec('update test_settings set maintenance=true');await assert.rejects(call('auto_rebirth_status'));await db.exec('update test_settings set maintenance=false');
  await db.query('update players set banned=true where user_id=$1',[user]);await assert.rejects(run());await db.query('update players set banned=false where user_id=$1',[user]);
  const order=(await db.query("select order_id from wakppu_purchase_entitlements where user_id=$1 and product_id='auto_rebirth'",[user])).rows[0].order_id;

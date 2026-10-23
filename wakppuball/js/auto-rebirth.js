@@ -1,6 +1,10 @@
 (() => {
  const $=id=>document.getElementById(id);
- let state=null,owner=null,sequence=0,busy=false,lastAttempt=0;
+ let state=null,owner=null,sequence=0,busy=false,lastAttempt=0,requestTimer=null;
+ function request(){
+  if(requestTimer!==null||document.hidden||busy||!state?.enabled||window.WakppuAutoRebirthGame?.ready?.()===false)return;
+  requestTimer=setTimeout(()=>{requestTimer=null;tick();},0);
+ }
  function render(){
   for(const prefix of ['rebirthAuto','shopAuto']){
    const box=$(prefix);if(!box)continue;box.hidden=!state?.owned;
@@ -10,7 +14,7 @@
  async function refresh(){
   if(busy)return;const account=WakppuItemGame.read().account,version=++sequence;
   if(!account||!WakppuItemGame.read().ready){state=null;owner=null;render();return;}
-  try{const next=await WakppuAuth.invoke('auto_rebirth_status');if(version!==sequence||account!==WakppuItemGame.read().account)return;state=next;owner=account;render();}
+  try{const next=await WakppuAuth.invoke('auto_rebirth_status');if(version!==sequence||account!==WakppuItemGame.read().account)return;state=next;owner=account;render();request();}
   catch{if(version===sequence){state=null;owner=null;render();}}
  }
  async function toggle(){
@@ -23,10 +27,10 @@
   finally{busy=false;render();await refresh();}
  }
  async function tick(){
-  if(document.hidden||busy||!state?.enabled||owner!==WakppuItemGame.read().account||Date.now()-lastAttempt<2000)return;
-  busy=true;render();
-  try{if(await window.WakppuAutoRebirthGame?.run()){$('autoRebirthStatus').textContent='자동 환생을 완료했습니다.';}}
-  catch(e){lastAttempt=Date.now();state=null;$('autoRebirthStatus').textContent=e.message||'연결 후 자동 환생 상태를 다시 확인합니다.';}
+  if(document.hidden||busy||!state?.enabled||owner!==WakppuItemGame.read().account||Date.now()-lastAttempt<2000||window.WakppuAutoRebirthGame?.ready?.()===false)return;
+  const account=owner;busy=true;render();
+  try{if(await window.WakppuAutoRebirthGame?.run()&&account===WakppuItemGame.read().account){$('autoRebirthStatus').textContent='자동 환생을 완료했습니다.';}}
+  catch(e){if(account===WakppuItemGame.read().account){lastAttempt=Date.now();state=null;$('autoRebirthStatus').textContent=e.message||'연결 후 자동 환생 상태를 다시 확인합니다.';}}
   finally{busy=false;render();if(!state)await refresh();}
  }
  document.addEventListener('DOMContentLoaded',()=>{
@@ -37,9 +41,9 @@
    const info=document.createElement('p');info.textContent=help;box.append(button,info);parent.before(box);
   }
   const status=document.createElement('p');status.id='autoRebirthStatus';status.setAttribute('role','status');$('rebirthText').after(status);
-  window.addEventListener('wakppu-account-restored',()=>{state=null;owner=null;++sequence;render();refresh();});
+  window.addEventListener('wakppu-account-restored',()=>{state=null;owner=null;lastAttempt=0;clearTimeout(requestTimer);requestTimer=null;++sequence;render();refresh();});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
   setInterval(()=>{if(!document.hidden)refresh();},15000);setInterval(tick,1000);refresh();
  });
- window.WakppuAutoRebirth={refresh};
+ window.WakppuAutoRebirth={refresh,request};
 })();

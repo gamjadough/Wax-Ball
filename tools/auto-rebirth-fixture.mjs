@@ -9,6 +9,9 @@ export async function installAutoRebirth(db){
  alter function wakppu_api(jsonb) rename to fixture_api_before_rebirth_save;
  revoke all on function fixture_api_before_rebirth_save(jsonb) from public,anon,authenticated;
  create function wakppu_api(b jsonb) returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$begin
+  if b->>'action'='items' then
+   return(select jsonb_build_object('gold',s.gold::text,'revision',s.item_revision,'inventory',coalesce(i.inventory,'{}'::jsonb),'effects',coalesce(i.effects,'{}'::jsonb),'pity',coalesce(i.pity,0),'total',coalesce(i.total,0)) from game_states s left join wakppu_items i on i.user_id=s.user_id where s.user_id=auth.uid());
+  end if;
   if b->>'action'='save_progress' then
    perform fixture_api_before_rebirth_save('{"action":"bootstrap"}');
    update game_states set gold=(b->>'gold')::numeric,rebirths=(b->>'rebirths')::integer,unlocked_ball_ids=b->'unlocked_ball_ids',selected_ball_id=b->>'selected_ball_id',current_clicks=(b->>'current_clicks')::integer,honey_expires_at=(b->>'honey_expires_at')::timestamptz,coating_expires_at=(b->>'coating_expires_at')::timestamptz where user_id=auth.uid();
@@ -16,4 +19,5 @@ export async function installAutoRebirth(db){
   end if;return fixture_api_before_rebirth_save(b);end$$;`);
  await db.exec(await readFile(autoMigration,'utf8'));
  await db.exec(await readFile(new URL('../supabase/migrations/20261022085110_auto_rebirth_progress_reset.sql',import.meta.url),'utf8'));
+ await db.exec(await readFile(new URL('../supabase/migrations/20261023092450_fast_auto_rebirth.sql',import.meta.url),'utf8'));
 }
