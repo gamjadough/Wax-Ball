@@ -20,8 +20,9 @@
  }
  function sync(id,data){if(account!==id)clear();account=id;owned=data?.owned||{};equipped=data?.equipped||null;if(!owned[equipped])equipped=null;render();}
  function hit({final=false}={}){if(!usable()||!companion||reduced()||performance.now()-lastHit<220)return;lastHit=performance.now();const art=companion.firstElementChild;art.getAnimations().forEach(a=>a.cancel());art.animate([{transform:'scale(1)'},{transform:'scale('+ (final?'1.2':'1.08')+') rotate(-5deg)'},{transform:'scale(1)'}],{duration:final?500:260,easing:'ease-out'});}
- window.addEventListener('wakppu-auth-changed',()=>{clear();account=null;equipped=null;owned={};});
+ window.addEventListener('wakppu-auth-changed',event=>{if(event.detail?.user?.id&&event.detail.user.id===account)return;clear();account=null;equipped=null;owned={};});
  window.addEventListener('wakppu-account-restored',render);window.addEventListener('wakppu-settings-changed',()=>{clear();render();});
+ window.addEventListener('wakppu-access-changed',render);
  document.addEventListener('visibilitychange',()=>{if(document.hidden)clear();else render();});window.addEventListener('pagehide',clear);window.addEventListener('pageshow',render);
  window.addEventListener('resize',()=>{clear();render();});
  window.WakppuHalloweenDecor={sync,hit,stop,use:render,spawn:render,timing:base=>WakppuHalloweenDecorData.timing(base,usable()&&owned[equipped]?equipped:null)};
