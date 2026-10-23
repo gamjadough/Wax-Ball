@@ -19,7 +19,15 @@ try:
    rows=page.evaluate('WakppuAuth.invoke("rankings")')
    page.screenshot(path=str(ROOT/f'tools/test-results/profile-ranking-{width}x{height}.png'))
    for i,row in enumerate(rows):
-    button=page.locator('#rankingList .profile-rank-button').nth(i);button.tap();expect(page.locator('#playerProfileDialog')).to_be_visible();expect(page.locator('#profileNickname')).to_have_text(row['nickname']);expect(page.locator('#profilePresence')).to_have_text('온라인' if row['online'] else '오프라인')
+    button=page.locator('#rankingList .profile-rank-button').nth(i)
+    # Entire row, including padding, rank and Gold; native keyboard activation too.
+    if i==0:button.tap(position={'x':8,'y':8})
+    elif i==1:button.locator('b').tap()
+    elif i==2:button.locator('strong').tap()
+    elif i==3:
+     box=button.bounding_box();button.tap(position={'x':box['width']-8,'y':box['height']-8})
+    else:button.focus();page.keyboard.press('Enter')
+    expect(page.locator('#playerProfileDialog')).to_be_visible();expect(page.locator('#profileNickname')).to_have_text(row['nickname']);expect(page.locator('#profilePresence')).to_have_text('온라인' if row['online'] else '오프라인')
     expect(page.locator('#profileRank')).to_have_text(str(i+1)+'위');expect(page.locator('#profileRebirths')).to_have_text(f"{row['rebirths']:,}회")
     assert page.locator('#profileGold').get_attribute('title')==f"{int(row['gold']):,} G"
     text=page.locator('#playerProfileDialog').inner_text();assert '@' not in text and '마지막 접속' not in text
@@ -51,7 +59,7 @@ try:
    page.locator('#inventoryPetsTab').tap();expect(page.locator('#inventoryPetsPage')).to_be_visible();page.locator('#inventoryItemsTab').tap();expect(page.locator('#inventoryItemsPage')).to_be_visible()
    page.locator('#itemsClose').tap();page.reload(wait_until='networkidle');page.wait_for_function('WakppuItemGame.read().ready');assert page.evaluate('WakppuAuth.invoke("profile_status").then(x=>x.equipped)')=='wax_beginning'
    # Escape returns focus, and changing accounts dismisses the old player's dialog.
-   page.locator('#rankingList .profile-rank-button').first.tap();page.keyboard.press('Escape');expect(page.locator('#playerProfileDialog')).to_be_hidden();expect(page.locator('#ranking')).to_be_visible()
+   page.locator('#rankingList .profile-rank-button').first.focus();page.keyboard.press('Space');expect(page.locator('#playerProfileDialog')).to_be_visible();page.keyboard.press('Escape');expect(page.locator('#playerProfileDialog')).to_be_hidden();expect(page.locator('#ranking')).to_be_visible()
    page.locator('#rankingList .profile-rank-button').first.tap();page.evaluate('window.dispatchEvent(new Event("wakppu-account-restored"))');expect(page.locator('#playerProfileDialog')).to_be_hidden()
    assert not errors,errors;ctx.close();print(f'PASS profiles {width}x{height}: 5 players/3 online, all profiles, free equip/reload, privacy, stale replies, tabs, focus, touch layout',flush=True)
   browser.close()

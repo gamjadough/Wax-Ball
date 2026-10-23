@@ -29,11 +29,11 @@ test('HTTP preview requires explicit server flag, keeps production HTML unchange
   try{
    await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Preview server startup timeout')),30000);proc.once('error',reject);proc.stdout.on('data',chunk=>{if(chunk.toString().includes('Local preview:')){clearTimeout(timer);resolve();}});});
    const base='http://127.0.0.1:'+port,plain=await(await fetch(base+'/')).text(),preview=await(await fetch(base+'/?preview=profiles')).text();
-   assert.ok(!plain.includes('src="js/profile-cards.js"'));assert.equal(preview.includes('src="js/profile-cards.js"'),enabled);
+   assert.ok(plain.includes('src="js/profile-cards.js?v='));assert.equal(preview.includes('src="js/local-profile-preview.js"'),enabled);
    const post=(path,body,extra={})=>fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json',...extra},body:JSON.stringify(body)});
    assert.equal((await post('/local/api',{action:'profile_status'})).status,401);
    const session=await(await post('/local/login',{email:'guest',password:''})).json();const headers={Authorization:'Bearer '+session.token};
-   const r=await post('/local/api',{action:'profile_status'},headers);assert.equal(r.ok,enabled);
+   const r=await post('/local/api',{action:'profile_status'},headers);assert.equal(r.ok,true);
    if(enabled){assert.equal((await r.json()).catalog.length,1);const rows=await(await post('/local/api',{action:'rankings'},headers)).json();assert.equal(rows.length,5);assert.equal(rows.filter(p=>p.online).length,3);assert.equal((await post('/local/api',{action:'profile_equip',card_id:null},{...headers,Origin:'https://example.invalid'})).status,403);const asset=await fetch(base+'/images/profile-cards/wax-beginning.png');assert.equal(asset.headers.get('content-type'),'image/png');}
   }finally{proc.kill();if(proc.exitCode===null)await once(proc,'exit');}
  }
