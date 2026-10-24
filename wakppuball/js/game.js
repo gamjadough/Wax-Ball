@@ -381,12 +381,12 @@
   /* ==========================================================================
      2. 왁뿌볼 등장시키기
      ========================================================================== */
-  function spawnBall(animate,preserveHits=false) {
+  function spawnBall(animate) {
     window.WakppuSkinEffects?.reset(svgEl);
     window.WakppuPumpkinSkins?.reset(svgEl);
     adminFade?.cancel();adminFade=null;
     whiteholeEffect?.cancel();whiteholeEffect=null;
-    transcendentEffect?.cancel();transcendentEffect=null;itemAward=null;if(!preserveHits)pendingItemHits.clear();
+    transcendentEffect?.cancel();transcendentEffect=null;itemAward=null;pendingItemHits.clear();
     animationEpoch++;
     clearTimeout(state.respawnTimer);
     const data = currentBall();
@@ -421,7 +421,6 @@
     window.WakppuAutoRebirth?.request();
     if (animate) saveProgress();
     setTimeout(syncBallEvent,0);
-    if(preserveHits)queueMicrotask(()=>{if(!eventRequest&&!state.busy){const next=pendingItemHits.shift();if(next)hitItem(...next);}});
     if (!modal.hidden) renderCollection();
   }
 
@@ -797,6 +796,8 @@
     if(!eventSelected&&!limitedSelected())ordinaryClicks.delete(state.selected);
     const epoch=animationEpoch;
     state.busy = true;
+    // Buffered touches belong only to the ball that just broke, never its successor.
+    pendingItemHits.clear();
     rewardReadyEpoch = -1;
     // WebKit에서 마지막 균열을 한 프레임 이상 그린 뒤에만 SVG를 조각으로 교체합니다.
     svgEl.classList.add('instant');
@@ -804,7 +805,7 @@
     if(data.custom&&window.WakppuCustomBall){
       const visual=WakppuCustomBall.effectBall(data);
       const reward=()=>{if(data.id==='admin-event'){const earned=eventAward;eventAward=null;displayEventReward=0n;rewardReadyEpoch=animationEpoch;updateAll();if(earned!==null){const c=ballCenter();floatText('+'+fmt(earned)+'G',c.x,c.y-wrap.offsetHeight*.32);}}else awardBreakReward(data);};
-      const respawn=()=>{eventClicks=0;wrap.classList.remove('broken','admin-ball-breaking');svgEl.classList.remove('instant');spawnBall(true,true);};
+      const respawn=()=>{eventClicks=0;wrap.classList.remove('broken','admin-ball-breaking');svgEl.classList.remove('instant');spawnBall(true);};
 
       const options={ball:visual,wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,respawnSpeed,reduced:window.WakppuSettings?.reduced()??false,valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,reward,respawn};
       if(visual.grade==='초월'){transcendentEffect=WakppuTranscendent.play(options);return;}
@@ -824,7 +825,7 @@
     }
     if(data.id===window.WakppuLimitedData?.ball.id){
       window.WakppuPurchaseEffects?.shatter({speed});
-      const options={ball:data,wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,respawnSpeed,reduced:window.WakppuSettings?.reduced()??false,valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,reward:()=>awardBreakReward(data),respawn:()=>{svgEl.classList.remove('instant');spawnBall(true,true);}};
+      const options={ball:data,wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,respawnSpeed,reduced:window.WakppuSettings?.reduced()??false,valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,reward:()=>awardBreakReward(data),respawn:()=>{svgEl.classList.remove('instant');spawnBall(true);}};
       transcendentEffect=data.design.pumpkinSkin?WakppuPumpkinSkins.play(options):WakppuHalloweenEffects.play(options);return;
     }
     if(data.id==='admin-event'){
@@ -839,14 +840,14 @@
         displayEventReward=0n;
         rewardReadyEpoch=animationEpoch;
         if(earned!==null){updateAll();const c=ballCenter();floatText('+'+fmt(earned)+'G',c.x,c.y-wrap.offsetHeight*.32);}
-        eventClicks=0;spawnBall(true,true);updateAll();
+        eventClicks=0;spawnBall(true);updateAll();
       },1100/speed+RESPAWN_DELAY_MS/respawnSpeed);return;
     }
     if(data.grade==='초월'){
       transcendentEffect=WakppuTranscendent.play({ball:data,wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,respawnSpeed,
         valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,
         reward:()=>awardBreakReward(data),
-        respawn:()=>{svgEl.classList.remove('instant');spawnBall(true,true);if(!testSnapshot)hintEl.textContent='왁뿌볼을 눌러 깨보세요';}
+        respawn:()=>{svgEl.classList.remove('instant');spawnBall(true);if(!testSnapshot)hintEl.textContent='왁뿌볼을 눌러 깨보세요';}
       });return;
     }
     if(data.id==='whitehole'){
@@ -855,7 +856,7 @@
         valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,
         shatter:()=>{makeShards(SHAPES.circle,speed);wrap.classList.add('broken');},
         reward:()=>awardBreakReward(data),
-        respawn:()=>{wrap.classList.remove('broken');svgEl.classList.remove('instant');spawnBall(true,true);if(!testSnapshot)hintEl.textContent='왁뿌볼을 눌러 깨보세요';}
+        respawn:()=>{wrap.classList.remove('broken');svgEl.classList.remove('instant');spawnBall(true);if(!testSnapshot)hintEl.textContent='왁뿌볼을 눌러 깨보세요';}
       });
       return;
     }
@@ -880,7 +881,7 @@
       if(epoch!==animationEpoch)return;
       wrap.classList.remove('broken');
       svgEl.classList.remove('instant');
-      spawnBall(true,true);
+      spawnBall(true);
     }, 900/speed+RESPAWN_DELAY_MS/respawnSpeed);
   }
 
