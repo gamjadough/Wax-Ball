@@ -16,3 +16,10 @@
 #inventoryProfileCardsPage select{max-width:100%;width:100%;min-height:44px;white-space:normal;background:#302a3b;color:#f2edf7;border:1px solid #776585;border-radius:10px;font:inherit;padding:10px}
 .profile-title-settings{max-width:380px;box-sizing:border-box;margin:18px 0;padding:16px;border:1px solid #ffffff20;border-radius:16px;background:#201d2a}
 .profile-title-settings label{display:block;margin-bottom:8px}.profile-title-settings .btn{min-height:44px;width:100%;margin-top:10px}
+.profile-inventory-card[data-card="golden_champion"]{border-color:#d5aa4d;background:linear-gradient(145deg,#231d13,#181714);box-shadow:inset 0 0 0 1px #f6da8c24}
+.profile-champion-help{padding:12px 14px;max-width:380px;box-sizing:border-box;border:1px solid #b08b444f;border-radius:12px;background:#302516;color:#f2d897!important;font-size:13px}
+.profile-dialog[data-card="golden_champion"]{border-color:#d5aa4d;background:#1a1814}
+.profile-dialog[data-card="golden_champion"] .profile-hero{aspect-ratio:3 / 2;min-height:0}
+.profile-dialog[data-card="golden_champion"] .profile-identity{position:absolute;left:0;bottom:0;max-width:70%;padding:12px 20px 20px}
+.profile-dialog[data-card="golden_champion"] .profile-hero::after{background:linear-gradient(0deg,#1a1814 0%,#1a181400 65%),linear-gradient(90deg,#100d09a0,#100d0900 75%)}
+.profile-dialog[data-card="golden_champion"] .profile-card-badge{color:#ffe4a0}.profile-dialog[data-card="golden_champion"] .profile-identity h3{color:#fff0c8}

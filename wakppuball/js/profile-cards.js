@@ -9,7 +9,13 @@
   const select=$('profileCardSelect'),ids=(data?.catalog||[]).map(c=>c.id);
   if(JSON.stringify(ids)!==select.dataset.ids){const current=select.value;select.replaceChildren(...(data?.catalog||[]).map(c=>new Option(c.name,c.id)));select.dataset.ids=JSON.stringify(ids);select.value=ids.includes(current)?current:(data?.equipped||ids[0]||'');}
   const card=data?.catalog?.find(c=>c.id===select.value),equipped=!!card&&data?.equipped===card.id,ready=!!data&&owner===read()?.account&&!busy&&read()?.ready&&!read()?.blocked;
-  if(card){$('profileInventoryArt').src=safeImage(card);$('profileInventoryName').textContent=card.name;$('profileInventoryRarity').textContent=card.rarity+(card.free?' · 무료 지급':' · 관리자 이용 가능');}
+  if(card){
+   const champion=card.id==='golden_champion';
+   $('profileInventoryArt').src=safeImage(card);$('profileInventoryArt').alt=champion?'황금 왕관과 월계관, 숫자 1이 새겨진 황금빛 왁뿌볼 카드':'황금빛 왁뿌볼이 놓인 보라색 배경의 기본 카드';
+   $('profileInventoryName').textContent=card.name;$('profileInventoryRarity').textContent=card.rarity+(card.free?' · 무료 지급':champion?' · 영구 보관':' · 관리자 이용 가능');
+   $('profileInventoryDescription').textContent=champion?'랭킹의 정점에 오른 플레이어에게 바치는 황금 왕관. 한 번 지급받으면 순위가 내려가도 계속 장착할 수 있습니다.':'처음 만나는 왁뿌볼의 따뜻한 빛. 모든 플레이어가 무료로 사용할 수 있습니다.';
+   $('profileInventoryArt').closest('article').dataset.card=card.id;
+  }
   $('profileCardEquip').textContent=equipped?'장착 중':'장착';$('profileCardEquip').disabled=!ready||equipped||!card;$('profileCardUnequip').disabled=!ready||!data?.equipped;$('profileCardSelf').disabled=!ready;
   $('profileCardState').textContent=equipped?'보유 중 · 현재 장착 중':'보유 중 · 미장착';
   const titles=$('profileTitleSelect'),catalog=data?.title_catalog||[];
@@ -40,6 +46,7 @@
  }
  function close(){++profileVersion;activeNickname=null;const nickname=opener?.dataset.profileNickname;$('playerProfileDialog').close();if(opener?.isConnected)opener.focus();else if(nickname){rankFocusNickname=nickname;pendingRankFocus=nickname;linkRankings();}}
  function paintProfile(p){
+  $('playerProfileDialog').dataset.card=p.card?.id||'';
   $('profileLoading').hidden=true;$('profileBody').hidden=false;
   $('profileNickname').textContent=p.nickname;$('profileTitle').textContent=p.title||'';$('profileTitle').hidden=!p.title;
   $('profilePresence').textContent=p.online?'온라인':'오프라인';$('profilePresence').dataset.online=String(!!p.online);
@@ -74,6 +81,8 @@
   const section=document.createElement('section');section.id='inventoryProfileCardsPage';section.hidden=true;section.innerHTML=`<h3>프로필 카드</h3><p>랭킹에서 플레이어를 누르면 장착한 카드로 프로필을 보여줍니다.</p><article class="profile-inventory-card"><img src="${image}" width="1536" height="1024" loading="lazy" decoding="async" alt="황금빛 왁뿌볼이 놓인 보라색 배경의 기본 카드"><div><small>기본 · 무료 지급</small><h4>왁스의 시작</h4><p id="profileCardState" class="profile-owned"></p><p>처음 만나는 왁뿌볼의 따뜻한 빛.<br>모든 플레이어가 무료로 사용할 수 있습니다.</p><div class="profile-inventory-actions"><button id="profileCardEquip" class="btn">장착</button><button id="profileCardUnequip" class="btn">장착 해제</button><button id="profileCardSelf" class="btn">내 프로필 보기</button></div></div></article><p id="profileInventoryStatus" role="status"></p><p>카드는 외형만 변경합니다. Gold·보상·능력치에는 영향을 주지 않습니다.</p>`;$('itemsModal').querySelector('.sheet').append(section);
   const select=document.createElement('select');select.id='profileCardSelect';select.setAttribute('aria-label','프로필 카드 선택');select.className='btn';section.querySelector('.profile-inventory-actions').before(select);select.onchange=renderInventory;
   const art=section.querySelector('img');art.id='profileInventoryArt';section.querySelector('h4').id='profileInventoryName';section.querySelector('small').id='profileInventoryRarity';
+  section.querySelector('.profile-inventory-card p:not([id])').id='profileInventoryDescription';
+  const championHelp=document.createElement('p');championHelp.className='profile-champion-help';championHelp.textContent='♛ 1위 기념 카드 「황금의 정점」 · 서버 랭킹 1위 달성 시 자동 지급 · 영구 보관';section.querySelector('h3').after(championHelp);
   art.style.height='auto';art.style.maxWidth='100%';section.querySelector('h3').textContent='프로필';
   const titleSettings=document.createElement('div');titleSettings.className='profile-title-settings';titleSettings.innerHTML='<label for="profileTitleSelect">칭호 선택</label><p id="profileEquippedTitle"></p><select id="profileTitleSelect"></select><button id="profileTitleSave" type="button" class="btn">칭호 적용</button><p>보유한 칭호만 선택할 수 있습니다. 칭호를 바꿔도 보상 배율은 변하지 않습니다.</p>';section.querySelector('#profileInventoryStatus').before(titleSettings);$('profileTitleSave').onclick=saveTitle;
   $('profileCardEquip').onclick=()=>equip(select.value);$('profileCardUnequip').onclick=()=>equip(null);$('profileCardSelf').onclick=()=>open(data.nickname,$('profileCardSelf'));
