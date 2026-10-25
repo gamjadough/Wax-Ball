@@ -2,7 +2,7 @@
 (() => {
  const list=[
   {id:'little_ghost',name:'길 잃은 꼬마 유령',kind:'equip',effect:'파괴 골드 +10%',description:'별 조각을 품은 유령. 조용히 떠다니며 파괴 보상을 더 모아줍니다.'},
-  {id:'pumpkin_ember',name:'잭오랜턴의 불씨',kind:'equip',effect:'파괴 모션 시간 10% 단축',description:'작은 호박 정령. 통통 뛰어다니며 파괴 연출을 빠르게 마무리합니다.'},
+  {id:'pumpkin_ember',name:'잭오랜턴의 불씨',kind:'equip',effect:'1초마다 자동 공격',description:'현재 선택한 망치로 대신 공격합니다. 게임 화면이 보이고 메뉴가 닫혀 있을 때만 작동하며 일시정지할 수 있습니다.'},
   {id:'bat_swarm',name:'꼬마 박쥐',kind:'equip',effect:'재생성 대기 시간 10% 단축',description:'달빛 망토를 두른 박쥐. 다음 왁뿌볼을 더 빨리 불러옵니다.'}
  ];let serial=0;
  function art(id,plain=false){
@@ -14,6 +14,6 @@
   return '<svg class="hdecor-art" viewBox="0 0 128 128" aria-hidden="true"><defs><radialGradient id="'+k+'bg"><stop stop-color="#554367"/><stop offset="1" stop-color="#202336"/></radialGradient><linearGradient id="'+k+'ghost" x2=".7" y2="1"><stop stop-color="#fff8e9"/><stop offset=".5" stop-color="#e9e9ff"/><stop offset="1" stop-color="#9b91d8"/></linearGradient><linearGradient id="'+k+'flame" x2="0" y2="1"><stop stop-color="#fff0a7"/><stop offset="1" stop-color="#fa795d"/></linearGradient><radialGradient id="'+k+'pumpkin" cx=".4" cy=".3"><stop stop-color="#ffda90"/><stop offset=".55" stop-color="#ee914b"/><stop offset="1" stop-color="#b65b52"/></radialGradient><linearGradient id="'+k+'wing" x2="0" y2="1"><stop stop-color="#8061a6"/><stop offset="1" stop-color="#423556"/></linearGradient><linearGradient id="'+k+'bat" x2=".5" y2="1"><stop stop-color="#d4c6f5"/><stop offset="1" stop-color="#8069a5"/></linearGradient></defs>'+frame+(id==='little_ghost'?ghost:id==='pumpkin_ember'?ember:bat)+'</svg>';
  }
  // Speed is the inverse of duration: /0.9 gives exactly 10% shorter time, not 9.09%.
- function timing(base,id){return {animation:base.animation/(id==='pumpkin_ember'?.9:1),respawn:base.respawn/(id==='bat_swarm'?.9:1)};}
+ function timing(base,id){return {animation:base.animation,respawn:base.respawn/(id==='bat_swarm'?.9:1)};}
  globalThis.WakppuHalloweenDecorData={list,art,timing,price:100,exchange:3};
 })();

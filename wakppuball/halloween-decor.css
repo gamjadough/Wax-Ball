@@ -1,3 +1,5 @@
+.ember-auto-toggle{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:3;min-height:44px;max-width:calc(100% - 16px);padding:8px 12px;font-size:12px;white-space:normal;background:#352735;border-color:#bf8758}
+@media(max-height:560px){.ember-auto-toggle{left:4px;transform:none;max-width:190px;font-size:11px}}
 .halloween-shop-tabs{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:8px 0 12px;background:var(--panel,#211b2d)}
 .halloween-shop-tabs .btn{min-width:0;min-height:44px;font:inherit;font-weight:700}
 .halloween-shop-tabs .btn[aria-selected="true"]{border-color:#e4b66e;background:#493347;color:#ffe2aa}

@@ -27,7 +27,7 @@ with sync_playwright() as p:
    state=rpc();assert state['tokens']=='400' and state['shards']=='3' and len(state['owned'])==3 and state['opened']=='6';assert state['gold']==gold;expect(shop.locator('.hdecor-result')).to_contain_text('중복 획득')
    fixture('exchange');shop.locator('[data-hdecor-id="pumpkin_ember"]').tap();expect(page.locator('#inventoryPetsPage')).to_be_visible();page.locator('#halloweenDecorInventory [data-hdecor-id="pumpkin_ember"]').tap();page.wait_for_function('!WakppuHalloweenDecorUI.busy');assert rpc()['shards']=='0';page.locator('#itemsClose').tap()
    page.locator('#inventoryBtn').tap();page.locator('#inventoryPetsTab').tap();inventory=page.locator('#halloweenDecorInventory');expect(inventory).to_be_visible();expect(page.locator('#inventorySkinsPage')).to_be_hidden();assert page.locator('#inventorySkinsPage .hdecor-section').count()==0
-   expect(inventory).to_contain_text('골드 +10%');expect(inventory).to_contain_text('파괴 모션 시간 10% 단축');expect(inventory).to_contain_text('재생성 대기 시간 10% 단축');assert page.locator('#inventoryPetsTab').evaluate('e=>parseFloat(getComputedStyle(e).minHeight)>=44')
+   expect(inventory).to_contain_text('골드 +10%');expect(inventory).to_contain_text('1초마다 자동 공격');expect(inventory).to_contain_text('재생성 대기 시간 10% 단축');assert page.locator('#inventoryPetsTab').evaluate('e=>parseFloat(getComputedStyle(e).minHeight)>=44')
    # Finish the remaining acquisition through three real draws; the RNG fixture cycles equally.
    page.locator('#itemsClose').tap();page.locator('#halloweenCurrency').tap()
    for i in range(3):
@@ -41,6 +41,7 @@ with sync_playwright() as p:
     pet=page.locator('.hdecor-companion');expect(pet).to_have_count(1);assert pet.get_attribute('data-pet')==item;assert pet.evaluate("e=>getComputedStyle(e).pointerEvents==='none'")
     start=pet.evaluate('e=>getComputedStyle(e).transform');page.wait_for_timeout(300);after=pet.evaluate('e=>getComputedStyle(e).transform');assert (start==after) if reduced else (start!=after)
     assert pet.evaluate('e=>{const a=e.getBoundingClientRect(),b=document.querySelector("#stage").getBoundingClientRect();return a.left>=b.left-1&&a.right<=b.right+1&&a.top>=b.top-1&&a.bottom<=b.bottom+1}')
+    if item=='pumpkin_ember':page.locator('#emberAutoToggle').tap()
     before=page.evaluate('WakppuItemGame.read().gold')
     for i in range(5):
      page.locator('#ballSvg').tap();page.wait_for_function('!WakppuItemGame.read().busy')

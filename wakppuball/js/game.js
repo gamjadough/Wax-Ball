@@ -673,10 +673,10 @@
   }
 
   let itemBreakTiming=null;
-  async function hitItem(x,y){
+  async function hitItem(x,y,automatic=false){
     if(!state.remoteReady||window.wakppuServerBlocked||window.WakppuGuestExit?.busy){pendingItemHits.clear();return;}
     if(hammerSelectionBusy||state.busy||window.WakppuItems?.busy||window.WakppuLimited?.busy)return;
-    if(eventRequest){pendingItemHits.push([x,y]);return;}
+    if(eventRequest){if(!automatic)pendingItemHits.push([x,y]);return;}
     eventRequest=true;const epoch=animationEpoch;const account=state.account?.id;
     const requestOptions={valid:()=>account===state.account?.id&&epoch===animationEpoch&&!window.wakppuServerBlocked,onRetry:()=>{hintEl.textContent='연결이 지연되어 타격을 다시 확인 중입니다.';hintEl.classList.remove('gone');}};
     try{
@@ -684,7 +684,7 @@
       const timing=WakppuItemData.timing(WakppuItemData.effective(WakppuItems.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt));
       const req={request_id:crypto.randomUUID(),item_revision:itemRevision,...(eventSelected?{event_id:eventId}:{})};let result;
       const action=limitedSelected()?'limited_hit':'item_hit';
-      result=await WakppuHitRequests.send(action,req,requestOptions);
+      result=await WakppuHitRequests.send(automatic?'ember_auto_hit':action,automatic?{...req,hit_action:action}:req,requestOptions);
       if(account!==state.account?.id)return;
       itemBreakTiming=BigInt(result.reward)>0n?WakppuHalloweenDecorData.timing(timing,result.pet_timing?.equipped??null):null;
       if(WakppuItems.accept(result)===false){itemBreakTiming=null;await WakppuHitRequests.run(signal=>restoreAccount({signal}),{attempts:1,valid:()=>account===state.account?.id});return;}
@@ -695,6 +695,7 @@
       if(!eventSelected&&BigInt(result.reward)>0n)itemAward=BigInt(result.reward);
       if(eventSelected){eventAward=BigInt(result.reward);displayEventReward=eventAward;}
       onHit(x,y,result.clicks-state.clicks,activeHammerLevel()>0,true,result.required_clicks);
+      return true;
     }catch(error){if(error.cancelled){pendingItemHits.clear();return;}if(error.status===429){pendingItemHits.clear();hintEl.textContent=error.message;hintEl.classList.remove('gone');return;}try{await WakppuHitRequests.run(signal=>restoreAccount({signal}),{attempts:1,valid:()=>account===state.account?.id});}catch{state.remoteReady=false;pendingItemHits.clear();}hintEl.textContent=error.message;hintEl.classList.remove('gone');}
     finally{eventRequest=false;window.WakppuAutoRebirth?.request();if(!state.busy){updateAll();const next=pendingItemHits.shift();if(next)queueMicrotask(()=>hitItem(...next));}}
 
@@ -1458,6 +1459,10 @@
     // Inventory reads can lag behind unsaved ball rewards. Only transactions replace Gold.
     accept:(data,syncGold=true)=>{if(Number(data.revision)<itemRevision)return false;if(syncGold)state.gold=BigInt(data.gold);itemRevision=Number(data.revision);if(Object.prototype.hasOwnProperty.call(data,'hammer_selected_level'))state.hammerSelectedLevel=data.hammer_selected_level;updateAll();if(!state.busy)updateCracks(state.clicks/currentBall().clicks);return true;},
     restore:restoreAccount
+  };
+  window.WakppuEmberGame={
+    ready:()=>state.remoteReady&&!!state.account&&!testSnapshot&&!state.busy&&!eventRequest&&!pendingItemHits.length&&!hammerSelectionBusy&&!window.wakppuServerBlocked&&!window.WakppuGuestExit?.busy&&!window.WakppuGuestDialog?.busy&&!window.WakppuItems?.busy&&!window.WakppuLimited?.busy&&!window.WakppuSkins?.busy,
+    hit:()=>{const c=ballCenter();return hitItem(c.x,c.y,true);}
   };
   function autoRebirthReady(){
     const cost=nextRebirthCost();

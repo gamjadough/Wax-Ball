@@ -1,11 +1,11 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import vm from 'node:vm';import {createRequire} from 'node:module';
 import {createStore,execute} from './admin-service.mjs';import {decorAction,decorState,ids} from './halloween-decor-service.mjs';import {itemState,itemData} from './items-service.mjs';import {supporterReward} from './supporter-service.mjs';import {equippedPet,petTiming} from './halloween-pet-service.mjs';
 const file=n=>readFile(new URL('../supabase/migrations/'+n,import.meta.url),'utf8');
-test('pet durations shorten exactly 10% after existing item speeds, one permanent selection',async()=>{
+test('ember auto replaces animation bonus; bat keeps exact 10% reduction and one permanent selection',async()=>{
  const api=vm.runInNewContext(await readFile(new URL('../wakppuball/js/halloween-decor-data.js',import.meta.url),'utf8')+';WakppuHalloweenDecorData',{});
  assert.equal(api.list.length,3);assert.ok(api.list.every(d=>d.kind==='equip'));
  const base=itemData.timing(itemData.effective({transcendent_wax_heart:{expires_at:Date.now()+10000}}));assert.equal(base.animation,2.5);assert.equal(base.respawn,4);
- for(const id of ids){const t=api.timing(base,id);assert.ok(Math.abs(900/t.animation-(900/base.animation)*(id==='pumpkin_ember'?.9:1))<1e-8);assert.ok(Math.abs(1000/t.respawn-(1000/base.respawn)*(id==='bat_swarm'?.9:1))<1e-8);}
+ for(const id of ids){const t=api.timing(base,id);assert.ok(Math.abs(900/t.animation-(900/base.animation))<1e-8);assert.ok(Math.abs(1000/t.respawn-(1000/base.respawn)*(id==='bat_swarm'?.9:1))<1e-8);}
  const store=createStore(),p=store.players[1],c=decorState(p);c.owned=Object.fromEntries(ids.map(id=>[id,true]));
  for(const id of [...ids,null]){const s=decorAction(store,p,{action:'halloween_cosmetics'});decorAction(store,p,{action:'halloween_decor_equip',item_id:id,item_revision:s.revision,decor_revision:s.decor_revision,request_id:crypto.randomUUID()});assert.equal(equippedPet(p),id);}
 });

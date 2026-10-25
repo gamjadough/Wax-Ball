@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
 import {createStore} from './admin-service.mjs';
 import {createProfileService} from './profile-service.mjs';
-import {execute} from './blue-gems-service.mjs';
+import {execute} from './ember-auto-service.mjs';
 import {itemData,itemState,snapshot} from './items-service.mjs';
 import {limitedState,limitedSnapshot} from './limited-service.mjs';
 import {decorAction,decorState} from './halloween-decor-service.mjs';

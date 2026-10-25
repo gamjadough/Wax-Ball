@@ -26,7 +26,7 @@ export function execute(store,actor,b){
   const cached=g.accepted.get(b.request_id);if(cached){if(cached.action!==a)fail('요청 ID 충돌');return structuredClone(cached.result);}
   const soft=g.speedUntil>now&&!admin(actor),tokens=Math.min(soft?policy.softBurst:policy.burst,g.tokens+Math.max(0,now-g.tokenAt)*(soft?policy.softRate:policy.rate)/1000);
   if(tokens<1)fail('입력이 너무 빠릅니다. 잠시 쉬었다가 눌러주세요.',429);
-  const result=baseExecute(store,actor,b);g.tokens=tokens-1;g.tokenAt=now;g.hits=g.hits.filter(t=>t>=now-30000);g.hits.push(now);g.hits=g.hits.slice(-512);
+  const result=baseExecute(store,actor,b);g.tokens=tokens-1;g.tokenAt=now;g.hits=g.hits.filter(t=>t>=now-30000);if(b.hit_source!=='ember_auto')g.hits.push(now);g.hits=g.hits.slice(-512);
   g.accepted.set(b.request_id,{action:a,result:structuredClone(result)});if(g.accepted.size>512)g.accepted.delete(g.accepted.keys().next().value);return result;
  }
  if(b.user_id!==undefined)fail('대상 계정을 지정할 수 없습니다.');
