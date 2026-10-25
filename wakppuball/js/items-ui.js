@@ -16,7 +16,7 @@
   // Historic idempotent responses describe their original transaction, not current stock.
   // Rebirth also invalidates transactions from the prior run at the same revision.
   if(!Number.isSafeInteger(revision)||revision<Number(game?.revision||0)||(revision<transactionFloor&&(syncGold||Object.keys(next.effects||{}).length>0)))return false;
-  if(syncGold)++sequence;data=next;window.WakppuItemGame?.accept(next,syncGold);window.WakppuKeepsakeDisplay?.sync(next);render();return true;
+  if(syncGold)++sequence;data=next;window.WakppuItemGame?.accept(next,syncGold);window.WakppuBlueGems?.accept(next.blue_gems);window.WakppuKeepsakeDisplay?.sync(next);render();return true;
  }
  async function refresh(){const seq=++sequence,account=window.WakppuItemGame?.read().account;if(!account){data=null;render();return;}try{const next=await WakppuAuth.invoke('items');if(seq===sequence&&account===window.WakppuItemGame?.read().account)accept(next,false);}catch(e){status(e.message);}}
  function effectText(d,e){if(d.seconds){const left=Math.max(0,Math.ceil((e.expires_at-Date.now())/1000));return Math.floor(left/60)+':'+String(left%60).padStart(2,'0');}return e.remaining+(d.unit==='hit'?'타격':'회 파괴');}
