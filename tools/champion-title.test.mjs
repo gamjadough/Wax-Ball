@@ -1,0 +1,52 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';
+import {bankFixture} from './manual-bank-fixture.mjs';import {installSupporterProfiles} from './supporter-profile-fixture.mjs';
+import {createStore} from './admin-service.mjs';import {createProfileService} from './profile-service.mjs';
+const migration=new URL('../supabase/migrations/20261025061222_champion_title.sql',import.meta.url);
+test('local champion title is current-only, manual/none selection, no admin bypass and no progress edits',()=>{
+ const store=createStore(),a=store.players[0],p=store.players[1],service=createProfileService(store);p.state.rebirths=10;
+ const state=structuredClone(p.state);
+ assert.ok(service.execute(p,{action:'profile_status'}).title_catalog.some(t=>t.id==='champion'));
+ assert.ok(!service.execute(a,{action:'profile_status'}).title_catalog.some(t=>t.id==='champion'));
+ service.execute(p,{action:'profile_title',title_id:'champion'});assert.equal(service.execute(p,{action:'profile_status'}).title,'👑 왁뿌볼의 정점');
+ service.execute(p,{action:'profile_title',title_id:'none'});assert.equal(service.execute(p,{action:'profile_status'}).title,null);
+ service.execute(p,{action:'profile_title',title_id:'champion'});a.state.rebirths=11;
+ assert.equal(service.execute(p,{action:'profile_status'}).title,null);
+ assert.throws(()=>service.execute(p,{action:'profile_title',title_id:'champion',rank:1}),{status:403});
+ assert.deepEqual(p.state,state);
+});
+test('SQL champion title: real API selection/revoke, exact sort/ties, hidden/ban/suspension/guest filters, guards and no data reset',async()=>{
+ const {db,add,rpc}=await bankFixture();const a='00000000-0000-0000-0000-000000000001',p='00000000-0000-0000-0000-000000000002',q='00000000-0000-0000-0000-000000000003';
+ try{
+ await installSupporterProfiles(db);await add(a,'admin');await add(p);await add(q);
+ await db.exec("create table title_guest(id uuid,eligible boolean,hide_at timestamptz);create or replace function wakppu_guest_accounts() returns table(id uuid,eligible boolean,hide_at timestamptz) language sql stable as $$select * from title_guest$$;");
+ await db.exec(await readFile(migration,'utf8'));
+ await db.query('update game_states set rebirths=1000,gold=1e3000 where user_id in ($1,$2)',[p,q]);
+ const before=(await db.query('select * from game_states order by user_id')).rows;
+ let r=await rpc(p,{action:'profile_status'});assert.equal(r.title_equipped,'auto');assert.ok(r.title_catalog.some(t=>t.id==='champion'));
+ assert.ok(!(await rpc(a,{action:'profile_status'})).title_catalog.some(t=>t.id==='champion'));
+ await assert.rejects(rpc(a,{action:'profile_title',title_id:'champion'}),{code:'PT403'});
+ r=await rpc(p,{action:'profile_title',title_id:'champion'});assert.equal(r.title,'👑 왁뿌볼의 정점');assert.equal(r.equipped,'wax_beginning');
+ let profile=await rpc(q,{action:'player_profile',nickname:'유저02'});assert.equal(profile.title,'👑 왁뿌볼의 정점');
+ let rows=await rpc(null,{action:'rankings'});assert.equal(rows.find(r=>r.nickname==='유저02').profile_title,'👑 왁뿌볼의 정점');
+ await rpc(p,{action:'profile_title',title_id:'none'});assert.equal((await rpc(p,{action:'profile_status'})).title,null);
+ await rpc(p,{action:'profile_title',title_id:'champion'});
+ assert.deepEqual((await db.query('select * from game_states order by user_id')).rows,before);
+ await db.query('update game_states set gold=1e3001 where user_id=$1',[q]);
+ assert.equal((await rpc(p,{action:'profile_status'})).title,null);
+ await assert.rejects(rpc(p,{action:'profile_title',title_id:'champion',rank:1,isAdmin:true}),{code:'PT403'});
+ await rpc(q,{action:'profile_title',title_id:'champion'});
+ assert.equal((await rpc(q,{action:'profile_status'})).title,'👑 왁뿌볼의 정점');
+ await db.query('update players set ranking_hidden=true where user_id=$1',[q]);assert.equal((await rpc(p,{action:'profile_status'})).title,'👑 왁뿌볼의 정점');
+ await db.query('update players set ranking_hidden=false where user_id=$1',[q]);
+ await db.query("insert into moderation_cases values($1,'banned',null)",[q]);assert.equal((await rpc(p,{action:'profile_status'})).title,'👑 왁뿌볼의 정점');
+ await db.query("update moderation_cases set status='suspended',suspended_until=now()+interval '1 minute' where user_id=$1",[q]);assert.equal((await rpc(p,{action:'profile_status'})).title,'👑 왁뿌볼의 정점');
+ await db.query("update moderation_cases set suspended_until=now()-interval '1 second' where user_id=$1",[q]);assert.equal((await rpc(p,{action:'profile_status'})).title,null);
+ await db.query("insert into title_guest values($1,true,now()-interval '1 hour')",[q]);assert.equal((await rpc(p,{action:'profile_status'})).title,'👑 왁뿌볼의 정점');
+ await db.exec('delete from title_guest');await db.query('update game_states set gold=1e3000 where user_id=$1',[q]);assert.equal((await rpc(p,{action:'profile_status'})).title,'👑 왁뿌볼의 정점');
+ await assert.rejects(rpc(p,{action:'profile_title',title_id:'champion',user_id:q}),{code:'PT403'});
+ await assert.rejects(rpc(null,{action:'profile_title',title_id:'champion'}),{code:'PT401'});
+ await db.exec('update test_settings set maintenance=true');await assert.rejects(rpc(p,{action:'profile_title',title_id:'champion'}),{code:'PT503'});
+ await db.exec('set role authenticated');await assert.rejects(db.query('select wakppu_current_champion()'),{code:'42501'});
+ await assert.rejects(db.query("select wakppu_profile_title_state('"+p+"')"),{code:'42501'});
+ }finally{await db.close();}
+});

@@ -26,6 +26,7 @@
   const titles=$('profileTitleSelect'),catalog=data?.title_catalog||[];
   titles.replaceChildren(...catalog.map(t=>new Option(t.name,t.id)));titles.value=data?.title_equipped||'auto';titles.disabled=!ready;
   $('profileTitleSave').disabled=!ready;$('profileEquippedTitle').textContent='현재 칭호: '+(data?.title||'없음');
+  $('profileEquippedTitle').classList.toggle('champion-title',data?.title==='👑 왁뿌볼의 정점');
  }
  async function refresh(){
   const account=read()?.account,seq=++version;if(owner!==account){data=null;owner=account;}renderInventory();if(!account||!read()?.ready)return;
@@ -54,6 +55,7 @@
   $('playerProfileDialog').dataset.card=p.card?.id||'';
   $('profileLoading').hidden=true;$('profileBody').hidden=false;
   $('profileNickname').textContent=p.nickname;$('profileTitle').textContent=p.title||'';$('profileTitle').hidden=!p.title;
+  $('profileTitle').classList.toggle('champion-title',p.title==='👑 왁뿌볼의 정점');
   $('profilePresence').textContent=p.online?'온라인':'오프라인';$('profilePresence').dataset.online=String(!!p.online);
   $('profileArt').hidden=!p.card;if(p.card)$('profileArt').src=safeImage(p.card);$('profileCardBadge').textContent=p.card?p.card.name+' · '+p.card.rarity+' 카드':'기본 프로필 · 카드 미장착';
   $('profileRank').textContent=p.rank?`${p.rank}위`:'랭킹 외';$('profileGold').textContent=WakppuGold.compact(p.gold)+' G';$('profileGold').title=WakppuGold.integer(p.gold).toLocaleString('ko-KR')+' G';
@@ -70,6 +72,7 @@
  }
  function linkRankings(){
   for(const span of $('rankingList').querySelectorAll('.ranking-nickname')){
+   const title=span.querySelector('small');if(title)title.classList.toggle('champion-title',title.textContent==='👑 왁뿌볼의 정점');
    if(span.closest('.profile-rank-button'))continue;const copy=span.cloneNode(true);copy.querySelectorAll('i,small').forEach(n=>n.remove());const nickname=copy.textContent.trim();
    const button=document.createElement('button');button.type='button';button.className='profile-rank-button';button.setAttribute('aria-label',nickname+' 프로필 보기');button.dataset.profileNickname=nickname;
    const row=span.closest('li');button.append(...row.childNodes);row.append(button);button.onclick=()=>open(nickname,button);
@@ -96,7 +99,7 @@
   new MutationObserver(linkRankings).observe($('rankingList'),{childList:true});linkRankings();
   document.addEventListener('focusin',e=>{if(!dialog.open){pendingRankFocus=null;rankFocusNickname=e.target.closest?.('.profile-rank-button')?.dataset.profileNickname||null;}});
   window.addEventListener('wakppu-account-restored',()=>{if(dialog.open)close();++version;data=null;owner=null;refresh();});
-  setInterval(()=>{if(activeNickname&&dialog.open&&!document.hidden)loadProfile(activeNickname);},15000);
+  setInterval(()=>{if(document.hidden)return;if(activeNickname&&dialog.open)loadProfile(activeNickname);if(profileTab&&!$('itemsModal').hidden&&!busy)refresh();},15000);
   refresh();
  });
  window.WakppuProfiles={open,refresh};

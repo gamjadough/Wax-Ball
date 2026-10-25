@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
 import {createStore} from './admin-service.mjs';
 import {createProfileService} from './profile-service.mjs';
+import {profileTitles} from './profile-titles-service.mjs';
 import {execute} from './blue-gems-service.mjs';
 import {itemData,itemState,snapshot} from './items-service.mjs';
 import {limitedState,limitedSnapshot} from './limited-service.mjs';
@@ -152,7 +153,9 @@ const server=http.createServer(async(req,res)=>{
       }
       if(body.action==='rankings'&&bankPreview){const result=execute(store,actor,body),supporters=await bankPreview.supporters();return send(200,result.map(row=>{const s=supporters.find(s=>s.nickname===row.nickname);return {...row,supporter:!!s,premium_supporter:s?.bonus===30,supporter_title_visible:s?.title_visible!==false};}));}
       if(bankPreview&&actor){const bonus=await bankPreview.supporterLevel(actor);actor.developerKeepsake=await bankPreview.keepsakeOwned(actor);actor.supporterPack=bonus>=5;actor.premiumSupporterPack=bonus===30;}
-      return send(200,execute(store,actor,body));
+      const result=execute(store,actor,body);
+      if(body.action==='rankings')return send(200,result.map((row,i)=>({...row,profile_title:profileTitles(store.players.find(p=>p.nickname===row.nickname),i===0).title})));
+      return send(200,result);
     }
     const url=new URL(req.url,'http://localhost');let name=decodeURIComponent(url.pathname);
     if(name==='/local-pumpkin-skins'||name.startsWith('/local-pumpkin-skins/')){
