@@ -45,7 +45,7 @@
   finally{busy=false;render();await refresh();}
  }
  document.addEventListener('DOMContentLoaded',()=>{
-  const shop=document.getElementById('shopHalloween'),inventory=document.getElementById('inventorySkinsPage');if(!shop||!inventory)return;
+  const shop=document.getElementById('shopHalloweenSkins'),inventory=document.getElementById('inventorySkinsPage');if(!shop||!inventory)return;
   const section=where=>{const n=document.createElement('section');n.className='pumpkin-skin-section';n.innerHTML='<h3>🎃 잭오랜턴 전용 스킨</h3><p class="pumpkin-skin-balance"></p><p class="pumpkin-skin-note">꾸미기 전용 · 보상·균열 난이도는 동일합니다.<br>교환은 할로윈 기간에만 가능하며, 장착에는 잭오랜턴 해금이 필요합니다.</p><p class="pumpkin-skin-status" role="status"></p><div class="skin-cards pumpkin-skin-cards"></div>';where.append(n);return n;};
   const a=section(shop),b=section(inventory),unequip=document.createElement('button');unequip.id='pumpkinSkinUnequip';unequip.className='btn';unequip.textContent='잭오랜턴 스킨 해제';b.append(unequip);
   const shopUnequip=unequip.cloneNode(true);shopUnequip.id='pumpkinSkinShopUnequip';a.append(shopUnequip);
