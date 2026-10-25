@@ -18,10 +18,10 @@ export function createProfileService(store){
    if(b.card_id!==null&&!catalog.some(c=>c.id===b.card_id))throw Object.assign(Error('보유하지 않은 카드입니다.'),{status:400});
    actor.profileCard=b.card_id;
   }
-  if(b.action==='profile_title')setProfileTitle(actor,b);
-  if(['profile_status','profile_equip','profile_title'].includes(b.action))return {owned:catalog.map(c=>c.id),equipped:Object.hasOwn(actor,'profileCard')?actor.profileCard:'wax_beginning',catalog,nickname:actor.nickname,...profileTitles(actor)};
+  if(b.action==='profile_title')setProfileTitle(actor,b,actor.id===champion?.id);
+  if(['profile_status','profile_equip','profile_title'].includes(b.action))return {owned:catalog.map(c=>c.id),equipped:Object.hasOwn(actor,'profileCard')?actor.profileCard:'wax_beginning',catalog,nickname:actor.nickname,...profileTitles(actor,actor.id===champion?.id)};
   const rank=rows.findIndex(p=>p.nickname===b.nickname),p=store.players.find(p=>p.nickname===b.nickname);
   if(!p||isBanned(p)||(p!==actor&&rank<0))throw Object.assign(Error('프로필을 찾을 수 없습니다.'),{status:404});
-  return {nickname:p.nickname,title:profileTitles(p).title,rank:rank<0?null:rank+1,gold:String(p.state.gold),rebirths:p.state.rebirths,online:rows[rank]?.online===true,discovered_count:new Set((p.state.discovered_ball_ids||[]).filter(id=>ballIds.includes(id))).size,discovery_total:ballIds.length,card:!Object.hasOwn(p,'profileCard')?basicProfileCard:p.profileCard===null?null:available(p).find(c=>c.id===p.profileCard)||basicProfileCard};
+  return {nickname:p.nickname,title:profileTitles(p,p.id===champion?.id).title,rank:rank<0?null:rank+1,gold:String(p.state.gold),rebirths:p.state.rebirths,online:rows[rank]?.online===true,discovered_count:new Set((p.state.discovered_ball_ids||[]).filter(id=>ballIds.includes(id))).size,discovery_total:ballIds.length,card:!Object.hasOwn(p,'profileCard')?basicProfileCard:p.profileCard===null?null:available(p).find(c=>c.id===p.profileCard)||basicProfileCard};
  }};
 }
