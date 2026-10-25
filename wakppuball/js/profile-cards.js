@@ -3,6 +3,11 @@
  const $=id=>document.getElementById(id),read=()=>window.WakppuItemGame?.read();
  let data=null,owner=null,version=0,busy=false,profileVersion=0,activeNickname=null,opener=null,profileTab=false,rankFocusNickname=null,pendingRankFocus=null;
  const image='images/profile-cards/wax-beginning.png';
+ const cardDetails={
+  golden_champion:{note:' · 영구 보관',alt:'황금 왕관과 월계관, 숫자 1이 새겨진 황금빛 왁뿌볼 카드',description:'랭킹의 정점에 오른 플레이어에게 바치는 황금 왕관. 한 번 지급받으면 순위가 내려가도 계속 장착할 수 있습니다.'},
+  supporter_glow:{note:' · 후원팩 보유 혜택',alt:'은은한 호박빛 구체와 작은 별이 빛나는 후원자 카드',description:'따뜻한 응원에 감사하는 은은한 호박빛 별. 응원팩 또는 프리미엄 후원팩 보유 시 사용할 수 있습니다. 환생해도 유지되며, 환불·지급 회수 시 사용 권한도 회수됩니다.'},
+  premium_celestial:{note:' · 프리미엄 보유 혜택',alt:'보석 장식과 찬란한 별빛으로 둘러싸인 프리미엄 구체 카드',description:'찬란한 보석과 성좌가 수놓인 프리미엄 전용 카드. 「따뜻한 응원」 카드도 함께 사용할 수 있습니다. 환생해도 유지되며, 환불·지급 회수 시 해당 사용 권한도 회수됩니다.'}
+ };
  const safeImage=card=>/^images\/profile-cards\/[a-z0-9-]+\.(png|webp)$/.test(card?.image||'')?card.image:image;
  function renderInventory(){
   if(!$('profileCardEquip'))return;
@@ -10,10 +15,10 @@
   if(JSON.stringify(ids)!==select.dataset.ids){const current=select.value;select.replaceChildren(...(data?.catalog||[]).map(c=>new Option(c.name,c.id)));select.dataset.ids=JSON.stringify(ids);select.value=ids.includes(current)?current:(data?.equipped||ids[0]||'');}
   const card=data?.catalog?.find(c=>c.id===select.value),equipped=!!card&&data?.equipped===card.id,ready=!!data&&owner===read()?.account&&!busy&&read()?.ready&&!read()?.blocked;
   if(card){
-   const champion=card.id==='golden_champion';
-   $('profileInventoryArt').src=safeImage(card);$('profileInventoryArt').alt=champion?'황금 왕관과 월계관, 숫자 1이 새겨진 황금빛 왁뿌볼 카드':'황금빛 왁뿌볼이 놓인 보라색 배경의 기본 카드';
-   $('profileInventoryName').textContent=card.name;$('profileInventoryRarity').textContent=card.rarity+(card.free?' · 무료 지급':champion?' · 영구 보관':' · 관리자 이용 가능');
-   $('profileInventoryDescription').textContent=champion?'랭킹의 정점에 오른 플레이어에게 바치는 황금 왕관. 한 번 지급받으면 순위가 내려가도 계속 장착할 수 있습니다.':'처음 만나는 왁뿌볼의 따뜻한 빛. 모든 플레이어가 무료로 사용할 수 있습니다.';
+   const detail=cardDetails[card.id];
+   $('profileInventoryArt').src=safeImage(card);$('profileInventoryArt').alt=detail?.alt||'황금빛 왁뿌볼이 놓인 보라색 배경의 기본 카드';
+   $('profileInventoryName').textContent=card.name;$('profileInventoryRarity').textContent=card.rarity+(card.free?' · 무료 지급':detail?.note||' · 관리자 이용 가능');
+   $('profileInventoryDescription').textContent=detail?.description||'처음 만나는 왁뿌볼의 따뜻한 빛. 모든 플레이어가 무료로 사용할 수 있습니다.';
    $('profileInventoryArt').closest('article').dataset.card=card.id;
   }
   $('profileCardEquip').textContent=equipped?'장착 중':'장착';$('profileCardEquip').disabled=!ready||equipped||!card;$('profileCardUnequip').disabled=!ready||!data?.equipped;$('profileCardSelf').disabled=!ready;

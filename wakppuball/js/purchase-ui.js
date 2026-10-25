@@ -25,6 +25,7 @@
    const starter=p.id==='first_steps_pack',owned=!!data.owned[p.id]||(starter&&!!data.starter_grant)||(p.id==='auto_rebirth'&&data.auto_rebirth?.owned),skin=p.id==='starlight_skin';
    const buy=customAccess?button('커스텀 편집하기',()=>window.WakppuCustomBall?.open(),busy):owned&&skin?equipButton('purchaseCardEquip'):button(covered?'프리미엄에 포함':owned?(starter?'구매 완료 · 재구매 불가':'적용 중'):money(p.amount)+(premium&&p.amount===8900||p.id==='custom_ball_all'&&data.custom?.plan==='single'?' · 업그레이드':' · 주문하기'),()=>order(p.id),busy||!data.enabled||!data.eligible||owned||covered);buy.dataset.purchaseProduct=p.id;
    card.append(icon,node('h3',p.name),node('p',p.description));
+   if(p.id==='supporter_pack'||premium)card.append(node('p',premium?'프로필 카드 2종 포함: 「찬란한 성좌」 + 「따뜻한 응원」 · 기존 구매자도 인벤토리 → 프로필에서 장착':'전용 프로필 카드 「따뜻한 응원」 포함 · 기존 구매자도 인벤토리 → 프로필에서 장착','purchase-profile-benefit'));
    if(custom&&p.id==='custom_ball_single'&&!customAccess&&!covered){const label=node('label','적용 대상 · 구매 후 변경 불가');const select=node('select');select.id='customOrderTarget';const balls=[...WAKPPU_BALLS,ADMIN_EVENT_BALL,WakppuLimitedData.ball].filter(b=>data.custom?.balls.includes(b.id));for(const b of balls)select.add(new Option(b.name,b.id));if(balls.some(b=>b.id===customSelection))select.value=customSelection;label.append(select);card.append(label);}
    if(p.id==='custom_ball_all')card.append(node('p',data.custom?.plan==='single'?`단일 이용권 보유 · 차액 ${money(p.amount)}으로 업그레이드`:`${money(p.amount)} · 보유한 모든 볼과 추후 해금한 볼에 적용`));
    if(premium){card.append(node('p',p.amount===8900?'기존 응원팩 보유 · 차액 8,900원으로 업그레이드':'신규 구매 10,000원 · 기존 응원팩 보유자는 8,900원'));const sample=node('div','♛ 프리미엄 후원자','premium-supporter-sample');sample.setAttribute('aria-label','전용 칭호와 금빛 랭킹 디자인 미리보기');card.append(sample);}
@@ -34,9 +35,9 @@
   }
   if(data?.starter_grant)$('purchaseOwned').append(node('p',data.starter_grant.reclaimed_at?'🎁 첫걸음 성장팩 · 환불 처리 완료':'🎁 첫걸음 성장팩 · 3,000G 및 아이템 지급 완료'));
   if(data?.owned.premium_supporter_pack){
-   $('purchaseOwned').append(node('p','♛ 프리미엄 후원자 · 파괴 골드 +30% 적용 중 (응원팩과 합산하지 않음)'));
+   $('purchaseOwned').append(node('p','♛ 프리미엄 후원자 · 파괴 골드 +30% 적용 중 (응원팩과 합산하지 않음) · 전용 프로필 카드 2종 사용 가능'));
    const title=button(data.title_visible===false?'전용 칭호 표시':'전용 칭호 숨기기',()=>mutate('purchase_title',{visible:data.title_visible===false},'칭호 표시 설정을 저장했습니다.'),busy);title.id='purchaseTitleToggle';title.setAttribute('aria-pressed',String(data.title_visible!==false));$('purchaseOwned').append(title);
-  }else if(data?.owned.supporter_pack)$('purchaseOwned').append(node('p','✦ 후원자 외형 · 파괴 골드 +5% 적용 중'));
+  }else if(data?.owned.supporter_pack)$('purchaseOwned').append(node('p','✦ 후원자 외형 · 파괴 골드 +5% 적용 중 · 「따뜻한 응원」 프로필 카드 사용 가능'));
   const hasPurchases=!!data&&(!!data.starter_grant||!!Object.keys(data.owned).length);
   $('purchaseOwnedSection').hidden=!hasPurchases;
   if(data?.owned.starlight_skin){$('purchaseOwned').append(equipButton('purchaseEquip'));$('purchaseInventoryContent').append(node('p','별빛 오라 스킨 · 모든 왁뿌볼에 적용 · '+(data.equipped?'장착 중':'미장착')),equipButton('purchaseInventoryEquip'));}

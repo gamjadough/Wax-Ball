@@ -138,6 +138,9 @@ const server=http.createServer(async(req,res)=>{
         execute(store,actor,{action:'bootstrap'});return send(200,skinAction(actor,body));
       }
       if(['profile_status','profile_equip','profile_title','player_profile'].includes(body.action)||(profilePreview&&body.action==='rankings')){
+        if(bankPreview&&process.env.WAKPPU_LOCAL_SUPPORTER_PROFILES==='1'){
+          execute(store,actor,{action:'bootstrap'});return send(200,await bankPreview.execute(actor,body,store.players));
+        }
         execute(store,actor,{action:'bootstrap'});return send(200,(profilePreview||profiles).execute(actor,body));
       }
       if(body.action?.startsWith('auto_rebirth_')||body.action?.startsWith('custom_')||body.action?.startsWith('purchase_')||body.action?.startsWith('admin_purchase_')||body.action?.startsWith('admin_paid_')||body.action?.startsWith('admin_keepsake_')){
@@ -146,7 +149,7 @@ const server=http.createServer(async(req,res)=>{
         try{return send(200,await bankPreview.execute(actor,body,store.players));}catch(error){if(/^PT\d{3}$/.test(error.code))error.status=Number(error.code.slice(2));throw error;}
       }
       if(body.action==='rankings'&&bankPreview){const result=execute(store,actor,body),supporters=await bankPreview.supporters();return send(200,result.map(row=>{const s=supporters.find(s=>s.nickname===row.nickname);return {...row,supporter:!!s,premium_supporter:s?.bonus===30,supporter_title_visible:s?.title_visible!==false};}));}
-      if(bankPreview){const bonus=await bankPreview.supporterLevel(actor);actor.developerKeepsake=await bankPreview.keepsakeOwned(actor);actor.supporterPack=bonus>=5;actor.premiumSupporterPack=bonus===30;}
+      if(bankPreview&&actor){const bonus=await bankPreview.supporterLevel(actor);actor.developerKeepsake=await bankPreview.keepsakeOwned(actor);actor.supporterPack=bonus>=5;actor.premiumSupporterPack=bonus===30;}
       return send(200,execute(store,actor,body));
     }
     const url=new URL(req.url,'http://localhost');let name=decodeURIComponent(url.pathname);
