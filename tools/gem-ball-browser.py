@@ -28,7 +28,13 @@ with sync_playwright() as p:
    page.evaluate("SoundManager.play('blue-crystal/break.wav',{pitch:1,volume:.6})");assert page.evaluate('gemMedia.length')==4
    page.locator('#settingsMuted').uncheck();page.locator('#settingsClose').tap()
    page.locator('#collectionBtn').tap();page.locator('#gemCollectionTab').tap()
-   expect(page.locator('#gemCollection')).to_be_visible();page.locator('[data-gem-detail]').tap()
+   expect(page.locator('#gemCollection')).to_be_visible()
+   assert page.evaluate("getComputedStyle(document.querySelector('#gemCollection .collection-name')).color===getComputedStyle(document.querySelector('#collectionGrid .collection-card')).color")
+   page.evaluate("async()=>{const original=WakppuAuth.invoke;WakppuAuth.invoke=async(a,...b)=>{if(a==='gem_balls')throw Error('canceling statement due to statement timeout');return original(a,...b)};try{await WakppuGemBalls.refresh()}finally{WakppuAuth.invoke=original}}")
+   expect(page.locator('#gemCollectionStatus')).to_have_text('서버 응답이 늦어지고 있습니다. 잠시 후 다시 시도해주세요.')
+   page.evaluate('WakppuGemBalls.refresh()');expect(page.locator('#gemCollectionStatus')).to_have_text('')
+   page.locator('[data-gem-detail]').tap()
+   assert page.evaluate("getComputedStyle(document.querySelector('#gemCollection .collection-name')).color===getComputedStyle(document.querySelector('#collectionGrid .collection-card')).color")
    expect(page.locator('[data-gem-buy]')).to_be_enabled();assert page.locator('[data-gem-buy]').bounding_box()['height']>=44
    page.locator('[data-gem-buy]').tap();expect(page.locator('[data-gem-select]')).to_be_enabled();expect(page.locator('#blueGemValue')).to_have_text('0')
    assert page.locator('#gemCollection').evaluate('(e)=>e.scrollWidth<=e.clientWidth')
