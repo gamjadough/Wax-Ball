@@ -6,7 +6,7 @@ const settingsSource=readFileSync(new URL('../wakppuball/js/player-settings.js',
 const audioSource=readFileSync(new URL('../wakppuball/js/sound.js',import.meta.url),'utf8');
 const key='wakppuball:player-settings:v1';
 function fixture(saved=null,{denied=false,audio=true}={}){
- const listeners=new Map(),nodes=new Map(),storage=new Map(saved===null?[]:[[key,saved]]),timers=new Map(),contexts=[],audios=[];
+ const listeners=new Map(),nodes=new Map(),storage=new Map(saved===null?[]:[[key,saved]]),timers=new Map(),timeouts=new Map(),contexts=[],audios=[];
  function target(){return {hidden:false,addEventListener(){},focus(){},querySelectorAll(){return [];},getClientRects(){return [1];},classList:{toggle(){}}};}
  const node=selector=>{if(!nodes.has(selector))nodes.set(selector,target());return nodes.get(selector);};
  const classes=new Set();
@@ -29,10 +29,11 @@ function fixture(saved=null,{denied=false,audio=true}={}){
   CustomEvent:class{constructor(type,options){this.type=type;this.detail=options?.detail;}},Event:class{constructor(type){this.type=type;}},
   addEventListener(name,fn){if(!listeners.has(name))listeners.set(name,[]);listeners.get(name).push(fn);},
   dispatchEvent(event){for(const fn of listeners.get(event.type)||[])fn(event);},
+  setTimeout(fn){timeouts.set(++timerId,fn);return timerId;},clearTimeout(id){timeouts.delete(id);},
   setInterval(fn){timers.set(++timerId,fn);return timerId;},clearInterval(id){timers.delete(id);},
   SOUND_SETTINGS:{folder:'sounds/',extension:'.mp3',poolSize:4,usePlaceholderSound:true}};
  context.window=context;vm.createContext(context);vm.runInContext(settingsSource,context);vm.runInContext(audioSource+';globalThis.sound=SoundManager;',context);
- return {context,settings:context.WakppuSettings,sound:context.sound,storage,timers,contexts,audios,nodes,classes,system,bgm:()=>audios.find(a=>a.src==='sounds/halloween-waltz.mp3'),
+ return {context,settings:context.WakppuSettings,sound:context.sound,storage,timers,timeouts,contexts,audios,nodes,classes,system,bgm:()=>audios.find(a=>a.src==='sounds/halloween-waltz.mp3'),
   event(type){context.dispatchEvent({type});},visibility(hidden){document.hidden=hidden;listeners.get('document:visibilitychange')();}};
 }
 test('defaults, malformed saved data, safe bounds, storage failures and cross-tab updates',()=>{
