@@ -1,5 +1,6 @@
 import vm from 'node:vm';import {readFileSync} from 'node:fs';
 import {execute as baseExecute} from './separate-events-service.mjs';
+import {monthlyRecord} from './monthly-service.mjs';
 const box={};vm.runInNewContext(readFileSync(new URL('../wakppuball/js/input-guard-rules.js',import.meta.url),'utf8'),box);
 export const {policy,analyze}=box.WakppuInputGuardRules;
 const hits=new Set(['item_hit','limited_hit','event_ball_hit']),uuid=x=>/^[a-f0-9-]{36}$/.test(x||'');
@@ -27,6 +28,7 @@ export function execute(store,actor,b){
   const soft=g.speedUntil>now&&!admin(actor),tokens=Math.min(soft?policy.softBurst:policy.burst,g.tokens+Math.max(0,now-g.tokenAt)*(soft?policy.softRate:policy.rate)/1000);
   if(tokens<1)fail('입력이 너무 빠릅니다. 잠시 쉬었다가 눌러주세요.',429);
   const result=baseExecute(store,actor,b);g.tokens=tokens-1;g.tokenAt=now;g.hits=g.hits.filter(t=>t>=now-30000);if(b.hit_source!=='ember_auto')g.hits.push(now);g.hits=g.hits.slice(-512);
+  if(b.hit_source!=='ember_auto')monthlyRecord(store,actor);
   g.accepted.set(b.request_id,{action:a,result:structuredClone(result)});if(g.accepted.size>512)g.accepted.delete(g.accepted.keys().next().value);return result;
  }
  if(b.user_id!==undefined)fail('대상 계정을 지정할 수 없습니다.');

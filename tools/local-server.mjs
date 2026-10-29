@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
 import {createStore} from './admin-service.mjs';
 import {createProfileService} from './profile-service.mjs';
+import {monthlyAction,monthlyBadges,monthlySettle} from './monthly-service.mjs';
 import {profileTitles} from './profile-titles-service.mjs';
 import {execute} from './gem-ball-service.mjs';
 import {itemData,itemState,snapshot} from './items-service.mjs';
@@ -145,6 +146,21 @@ const server=http.createServer(async(req,res)=>{
       if(['skins','skin_draw','skin_exchange','skin_equip'].includes(body.action)){
         execute(store,actor,{action:'bootstrap'});return send(200,skinAction(actor,body));
       }
+      if(req.url==='/local/monthly-demo'&&process.env.WAKPPU_LOCAL_MONTHLY_PREVIEW==='1'){
+        execute(store,actor,{action:'bootstrap'});
+        if(body.mode==='seed'){
+          store.monthly_now_ms=Date.parse('2026-11-30T14:59:58Z');store.monthly=new Map();
+          const counts=new Map();for(let i=1;i<=12;i++){
+            const p=i===1?actor:{...createStore().players[1],id:'monthly-demo-'+i,nickname:'월간도전자'+i};
+            if(i!==1){store.players=store.players.filter(x=>x.id!==p.id);store.players.push(p);}
+            counts.set(p.id,{id:p.id,clicks:BigInt(i===1?1500:i===2?1500:Math.max(50,1400-i*100)),reached:store.monthly_now_ms+i});
+          }
+          store.monthly.set('2026-11',{counts,done:false});
+        }else if(body.mode==='close'){store.monthly_now_ms=Date.parse('2026-11-30T15:00:01Z');monthlySettle(store);for(const p of store.players)if(p.id.startsWith('monthly-demo-')&&p.monthlyCards?.[0])p.profileCard=p.monthlyCards[0].id;}
+        return send(200,{ok:true});
+      }
+      if(body.action==='monthly_rankings'){execute(store,actor,{action:'rankings'});return send(200,monthlyAction(store,actor,body));}
+      if(body.action==='monthly_badge_equip'){execute(store,actor,{action:'bootstrap'});monthlyAction(store,actor,body);return send(200,{...profiles.execute(actor,{action:'profile_status'}),...monthlyBadges(actor)});}
       if(['profile_status','profile_equip','profile_title','player_profile'].includes(body.action)||(profilePreview&&body.action==='rankings')){
         if(bankPreview&&process.env.WAKPPU_LOCAL_SUPPORTER_PROFILES==='1'){
           execute(store,actor,{action:'bootstrap'});return send(200,await bankPreview.execute(actor,body,store.players));
@@ -159,7 +175,7 @@ const server=http.createServer(async(req,res)=>{
       if(body.action==='rankings'&&bankPreview){const result=execute(store,actor,body),supporters=await bankPreview.supporters();return send(200,result.map(row=>{const s=supporters.find(s=>s.nickname===row.nickname);return {...row,supporter:!!s,premium_supporter:s?.bonus===30,supporter_title_visible:s?.title_visible!==false};}));}
       if(bankPreview&&actor){const bonus=await bankPreview.supporterLevel(actor);actor.developerKeepsake=await bankPreview.keepsakeOwned(actor);actor.supporterPack=bonus>=5;actor.premiumSupporterPack=bonus===30;}
       const result=execute(store,actor,body);
-      if(body.action==='rankings')return send(200,result.map((row,i)=>({...row,profile_title:profileTitles(store.players.find(p=>p.nickname===row.nickname),i===0).title})));
+      if(body.action==='rankings')return send(200,result.map((row,i)=>({...row,monthly_badge:monthlyBadges(store.players.find(p=>p.nickname===row.nickname)).monthly_badge,profile_title:profileTitles(store.players.find(p=>p.nickname===row.nickname),i===0).title})));
       return send(200,result);
     }
     const url=new URL(req.url,'http://localhost');let name=decodeURIComponent(url.pathname);

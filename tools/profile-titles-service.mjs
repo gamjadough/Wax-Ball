@@ -5,6 +5,7 @@ export function profileTitles(actor,champion=false){
  if(bonus>=5||adminContentAccess(actor))catalog.push({id:'supporter',name:'왁뿌볼 후원자'});
  if(bonus>=30||adminContentAccess(actor))catalog.push({id:'premium',name:'프리미엄 후원자'});
  if(champion)catalog.push({id:'champion',name:'👑 왁뿌볼의 정점'});
+ for(const r of actor.monthlyRewards||[])if(['champion','top10'].includes(r.kind))catalog.push({id:`monthly_${r.month.replace('-','')}_${r.kind}`,name:r.month.replace('-','년 ')+'월 '+(r.kind==='champion'?'클릭왕':'클릭 TOP 10')});
  let selected=actor.profileTitle||'auto';if(!catalog.some(c=>c.id===selected))selected='none';
  const title=selected==='auto'?(bonus>=30?'프리미엄 후원자':bonus>=5?'왁뿌볼 후원자':null):catalog.find(c=>c.id===selected&&c.id!=='none')?.name||null;
  return {title_catalog:catalog,title_equipped:selected,title};
