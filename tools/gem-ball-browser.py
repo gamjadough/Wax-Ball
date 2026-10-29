@@ -14,11 +14,19 @@ with sync_playwright() as p:
    ctx=browser.new_context(viewport={'width':width,'height':height},has_touch=True,is_mobile=width<900,reduced_motion='reduce' if reduced else 'no-preference')
    ctx.route('**/*',lambda r:r.continue_() if r.request.url.startswith(base) else r.fulfill(status=200,body=''))
    page=ctx.new_page();errors=[];bad=[]
+   page.add_init_script("window.gemMedia=[];const gemPlay=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(...args){if(this.src.includes('/blue-crystal/'))gemMedia.push({src:this.src,ready:this.readyState});return gemPlay.apply(this,args)}")
    page.on('pageerror',lambda e:errors.append(str(e)))
    page.on('response',lambda r:bad.append(r.url) if r.status>=400 and '/sounds/blue-crystal/' in r.url else None)
    page.goto(base,wait_until='networkidle')
    page.evaluate("async()=>{await WakppuAuth.signIn('guest','');await WakppuItemGame.restore();await WakppuItems.refresh();await WakppuLimited.refresh();await WakppuBlueGems.refresh();await WakppuGemBalls.refresh();}")
    gold=page.evaluate('WakppuItemGame.read().gold');expect(page.locator('#blueGemValue')).to_have_text('5K')
+   page.wait_for_function("['tap','crack','split','break'].every(n=>SoundManager.ready('blue-crystal/'+n+'.wav'))")
+   page.keyboard.press('Shift')
+   page.evaluate("for(const n of ['tap','crack','split','break'])SoundManager.play('blue-crystal/'+n+'.wav',{pitch:1,volume:.6,pitchRandom:0,volumeRandom:0})")
+   page.wait_for_function('gemMedia.length===4');assert page.evaluate('gemMedia.every(m=>m.ready>=1)')
+   page.locator('#settingsBtn').tap();page.locator('#settingsMuted').check()
+   page.evaluate("SoundManager.play('blue-crystal/break.wav',{pitch:1,volume:.6})");assert page.evaluate('gemMedia.length')==4
+   page.locator('#settingsMuted').uncheck();page.locator('#settingsClose').tap()
    page.locator('#collectionBtn').tap();page.locator('#gemCollectionTab').tap()
    expect(page.locator('#gemCollection')).to_be_visible();page.locator('[data-gem-detail]').tap()
    expect(page.locator('[data-gem-buy]')).to_be_enabled();assert page.locator('[data-gem-buy]').bounding_box()['height']>=44
