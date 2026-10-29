@@ -1,12 +1,17 @@
 (() => {
  const $=id=>document.getElementById(id),game=()=>window.WakppuItemGame?.read(),ball=WakppuGemBallData.ball;
  let data=null,busy=false,owner=null,seq=0,detail=false;
+ function errorText(error){
+  if(/timeout|timed out|57014/i.test(String(error?.message||'')+' '+String(error?.code||'')))return '서버 응답이 늦어지고 있습니다. 잠시 후 다시 시도해주세요.';
+  if(/[가-힣]/.test(error?.message||''))return error.message;
+  return '요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.';
+ }
  function renderCollection(){
   const panel=$('gemCollection');if(!panel)return;const active=WakppuLimited.tab==='gem';panel.hidden=!active;if(!active)return;
   for(const id of ['collectionGrid','collectionDetail','collectionPager','limitedCollection'])$(id).hidden=true;
   const owned=!!data?.owned.includes(ball.id),available=owned||!!data?.admin_access,selected=data?.selected===ball.id;
   const ready=!!game()?.ready&&!game().busy&&!game().blocked&&!game().test&&!busy;
-  $('gemCollectionBalance').textContent='💎 '+WakppuGold.compact(window.WakppuBlueGems?.data?.balance||'0')+' 푸른젬 · 파괴 보상 5개 · Gold 보상 없음';
+  $('gemCollectionBalance').textContent='💎 '+WakppuGold.compact(window.WakppuBlueGems?.data?.balance||'0')+' 푸른젬 · 파괴 보상 5개 · 골드 보상 없음';
   const thumb='<span class="thumb">'+buildBallThumb(ball)+'</span><span class="collection-name">'+ball.name+'</span>';
   $('gemCollectionCards').innerHTML=detail?'<button class="btn small" data-gem-back>〈 목록으로</button><article class="card limited-detail">'+thumb+'<p>해금: 푸른젬 5K · 영구 보유</p><p>기본 타격량 100 · 망치 적용 · 파괴 시 푸른젬 5개</p><p>재생성 주기는 영겁의 왁스볼과 동일합니다. Gold 배율은 젬 보상에 영향을 주지 않습니다.</p>'+(available?'<button class="btn" data-gem-select '+(!ready||selected?'disabled':'')+'>'+(selected?'사용 중':data.admin_access&&!owned?'관리자 바로 사용':'선택')+'</button>':'<button class="btn" data-gem-buy '+(!ready||BigInt(window.WakppuBlueGems?.data?.balance||0)<5000n?'disabled':'')+'>💎 5K로 해금</button>')+'</article>':'<button type="button" class="card collection-card" data-gem-detail>'+thumb+'<span class="collection-state">'+(selected?'사용 중':owned?'해금 완료':available?'관리자 이용 가능':'💎 5K · 잠김')+'</span></button>';
  }
@@ -17,8 +22,8 @@
  }
  async function refresh(){
   const user=game()?.account,version=++seq;if(owner!==user){data=null;owner=user;}if(!user||!game()?.ready){renderCollection();return;}
-  try{const next=await WakppuAuth.invoke('gem_balls');if(user!==game()?.account||version!==seq)return;accept(next);}
-  catch(e){if($('gemCollectionStatus'))$('gemCollectionStatus').textContent=e.message;}
+  try{const next=await WakppuAuth.invoke('gem_balls');if(user!==game()?.account||version!==seq)return;accept(next);if($('gemCollectionStatus'))$('gemCollectionStatus').textContent='';}
+  catch(e){if(user===game()?.account&&version===seq&&$('gemCollectionStatus'))$('gemCollectionStatus').textContent=errorText(e);}
  }
  async function transact(action,ball_id){
   if(busy||!game()?.ready||game().busy||game().blocked||game().test)return false;
@@ -30,7 +35,7 @@
    if(WakppuItems.accept(r)===false)throw Error('상태를 다시 확인해주세요.');
    if(r.limited)WakppuLimited.accept(r.limited);accept(r.gem_balls);
    $('gemCollectionStatus').textContent=action==='gem_ball_buy'?'푸른 수정 왁뿌볼을 영구 해금했습니다.':'볼을 변경했습니다.';return true;
-  }catch(e){if(user===game()?.account)$('gemCollectionStatus').textContent=e.message;return false;}
+  }catch(e){if(user===game()?.account)$('gemCollectionStatus').textContent=errorText(e);return false;}
   finally{busy=false;renderCollection();}
  }
  document.addEventListener('DOMContentLoaded',()=>{
