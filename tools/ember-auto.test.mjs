@@ -51,7 +51,7 @@ test('real SQL: one-second server cap, exact same-ID recovery, shared cooldown, 
 test('foreground scheduler: one in flight, pause/hidden/menu/focus/page lifecycle never queue catch-up hits',async()=>{
  const source=await readFile(new URL('../wakppuball/js/ember-auto-attack.js',import.meta.url),'utf8');
  const events={},timers=new Map();let id=0,focused=true,modal=false,pet=true,calls=0,run=async()=>true;
- const button={setAttribute(){},hidden:true,textContent:''};const document={hidden:false,hasFocus:()=>focused,querySelector:()=>modal?{}:null,createElement:()=>button,getElementById:()=>({append(){}}),addEventListener:(n,f)=>events[n]=f};
+ const button={setAttribute(){},hidden:true,textContent:''};const document={hidden:false,hasFocus:()=>focused,querySelector:(selector)=>selector.includes('hdecor-actions')?{append:()=>{}}:modal?{}:null,createElement:()=>button,getElementById:()=>({append(){}}),addEventListener:(n,f)=>events[n]=f};
  const window={WakppuItemGame:{read:()=>({account:'a'})},addEventListener:(n,f)=>events[n]=f,WakppuHalloweenDecor:{equipped:()=>pet?'pumpkin_ember':null},WakppuEmberGame:{ready:()=>true,hit:()=>{calls++;return run();}}};
  vm.runInNewContext(source,{window,document,setTimeout:(f,ms)=>{timers.set(++id,{f,ms});return id;},clearTimeout:id=>timers.delete(id)});events.DOMContentLoaded();
  const settle=()=>new Promise(r=>setImmediate(r));const tick=async()=>{const pending=[...timers.values()];timers.clear();for(const {f,ms}of pending){assert.equal(ms,1000);f();}await settle();};

@@ -21,17 +21,27 @@ with sync_playwright() as p:
    page.locator('#inventoryBtn').tap();page.locator('#inventoryPetsTab').tap();ember=page.locator('#halloweenDecorInventory [data-hdecor-id="pumpkin_ember"]')
    ember.tap();page.wait_for_function('!WakppuHalloweenDecorUI.busy');ember.tap();page.wait_for_function("!WakppuHalloweenDecorUI.busy&&WakppuHalloweenDecor.equipped()==='pumpkin_ember'")
    expect(page.locator('#halloweenDecorInventory')).to_contain_text('1초마다 자동 공격');page.locator('#itemsClose').tap()
-   toggle=page.locator('#emberAutoToggle');expect(toggle).to_be_visible();assert toggle.bounding_box()['height']>=44
-   page.wait_for_function('autoIds.length>=2&&!WakppuItemGame.read().busy',timeout=10000);toggle.tap();expect(toggle).to_have_attribute('aria-pressed','false')
+   toggle=page.locator('#emberAutoToggle');expect(toggle).to_be_hidden()
+   assert page.locator('#stage #emberAutoToggle').count()==0
+   def toggle_pet():
+    page.locator('#inventoryBtn').tap();page.locator('#inventoryPetsTab').tap()
+    expect(toggle).to_be_visible();assert toggle.bounding_box()['height']>=44
+    toggle.tap();page.locator('#itemsClose').tap()
+   for badge in ['#blueGemCurrency','#halloweenCurrency']:
+    assert page.locator(badge+' > span').count()==2
+    assert page.locator(badge).get_attribute('aria-label')
+   page.locator('#halloweenCurrency').tap();expect(page.locator('#shopHalloween')).to_be_visible();page.locator('[data-close="shop"]').tap()
+   page.locator('#blueGemCurrency').tap();expect(page.locator('#blueGemShop')).to_be_visible();page.locator('#blueGemClose').tap()
+   page.wait_for_function('autoIds.length>=2&&!WakppuItemGame.read().busy',timeout=10000);toggle_pet();expect(toggle).to_have_attribute('aria-pressed','false')
    count=page.evaluate('autoIds.length');clicks=page.evaluate('WakppuBeginnerRead().clicks');assert clicks>=2
    page.wait_for_timeout(1300);assert page.evaluate('autoIds.length')==count
    assert page.evaluate('autoAt.slice(1).every((t,i)=>t-autoAt[i]>=980)')
    # A real manual touch is still accepted while pet attacks are paused.
    page.locator('#ballSvg').tap();page.wait_for_function('!WakppuItemGame.read().busy');assert page.evaluate('manualHits')==1
    assert page.evaluate('WakppuBeginnerRead().clicks')==clicks+1
-   before=int(page.evaluate('WakppuItemGame.read().gold'));toggle.tap()
+   before=int(page.evaluate('WakppuItemGame.read().gold'));toggle_pet()
    page.wait_for_function('(g)=>BigInt(WakppuItemGame.read().gold)>BigInt(g)&&!WakppuItemGame.read().busy',arg=str(before),timeout=15000)
-   toggle.tap();assert int(page.evaluate('WakppuItemGame.read().gold'))==before+1
+   toggle_pet();assert int(page.evaluate('WakppuItemGame.read().gold'))==before+1
    assert page.evaluate("WakppuAuth.invoke('blue_gems').then(s=>s.balance)")=='1'
    # Menus, hidden tabs and loss of focus stop requests without a catch-up burst.
    page.locator('#inventoryBtn').tap();page.locator('#inventoryPetsTab').tap();page.evaluate('WakppuEmberAuto.toggle()')
@@ -42,14 +52,14 @@ with sync_playwright() as p:
    page.wait_for_timeout(1500);count=page.evaluate('autoIds.length');page.wait_for_timeout(1400);assert page.evaluate('autoIds.length')==count
    page.evaluate("emberHidden=false;document.dispatchEvent(new Event('visibilitychange'));");page.wait_for_timeout(1300);assert page.evaluate('autoIds.length')==count
    page.evaluate("emberFocused=true;window.dispatchEvent(new Event('focus'));");page.wait_for_function('autoIds.length>'+str(count),timeout=6000)
-   page.wait_for_function('!WakppuItemGame.read().busy');toggle.tap()
+   page.wait_for_function('!WakppuItemGame.read().busy');toggle_pet()
    if width==1200:
     # The first request commits, but its response is lost. The retry must reuse its ID.
     lost=[False]
     def drop(route):
      if route.request.post_data_json.get('action')=='ember_auto_hit' and not lost[0]:route.fetch();lost[0]=True;route.abort()
      else:route.continue_()
-    page.route('**/local/api',drop);start=page.evaluate('autoIds.length');toggle.tap();page.wait_for_function('autoIds.length>='+str(start+2)+'&&!WakppuItemGame.read().busy',timeout=15000);toggle.tap()
+    page.route('**/local/api',drop);start=page.evaluate('autoIds.length');toggle_pet();page.wait_for_function('autoIds.length>='+str(start+2)+'&&!WakppuItemGame.read().busy',timeout=15000);toggle_pet()
     ids=page.evaluate('autoIds.slice('+str(start)+')');assert lost[0] and ids[0]==ids[1];page.unroute('**/local/api',drop)
    page.screenshot(path=str(ROOT/f'tools/test-results/ember-auto-{width}x{height}.png'))
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')

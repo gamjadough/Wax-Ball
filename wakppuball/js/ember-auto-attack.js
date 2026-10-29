@@ -7,7 +7,7 @@
  const allowed=()=>foreground()&&!document.querySelector('.modal:not([hidden]),dialog[open]')&&window.WakppuEmberGame?.ready?.();
  function render(){
   if(!button)return;button.hidden=!equipped();button.setAttribute('aria-pressed',String(!paused));
-  button.textContent=paused?'🔥 불씨 자동 공격 · 다시 시작':'🔥 불씨 자동 공격 · 일시정지';
+  button.textContent=paused?'🔥 불씨 자동 공격 · 켜기':'🔥 불씨 자동 공격 · 끄기';
  }
  function stop(){clearTimeout(timer);timer=null;render();}
  function arm(){
@@ -27,7 +27,7 @@
   account();
   button=document.createElement('button');button.id='emberAutoToggle';button.type='button';button.className='btn ember-auto-toggle';button.hidden=true;
   button.title='게임 화면이 보일 때만 현재 망치로 공격합니다. 메뉴·공 파괴 연출·재생성 중에는 대기합니다.';button.onclick=toggle;
-  document.getElementById('stage').append(button);arm();
+  document.querySelector('#halloweenDecorInventory .hdecor-actions').append(button);arm();
  });
  window.addEventListener('wakppu-pet-synced',()=>{stop();arm();});
  window.addEventListener('wakppu-account-restored',()=>{account();stop();arm();});

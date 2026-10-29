@@ -41,7 +41,8 @@ with sync_playwright() as p:
     pet=page.locator('.hdecor-companion');expect(pet).to_have_count(1);assert pet.get_attribute('data-pet')==item;assert pet.evaluate("e=>getComputedStyle(e).pointerEvents==='none'")
     start=pet.evaluate('e=>getComputedStyle(e).transform');page.wait_for_timeout(300);after=pet.evaluate('e=>getComputedStyle(e).transform');assert (start==after) if reduced else (start!=after)
     assert pet.evaluate('e=>{const a=e.getBoundingClientRect(),b=document.querySelector("#stage").getBoundingClientRect();return a.left>=b.left-1&&a.right<=b.right+1&&a.top>=b.top-1&&a.bottom<=b.bottom+1}')
-    if item=='pumpkin_ember':page.locator('#emberAutoToggle').tap()
+    if item=='pumpkin_ember':
+     page.locator('#inventoryBtn').tap();page.locator('#inventoryPetsTab').tap();page.locator('#emberAutoToggle').tap();page.locator('#itemsClose').tap()
     before=page.evaluate('WakppuItemGame.read().gold')
     for i in range(5):
      page.locator('#ballSvg').tap();page.wait_for_function('!WakppuItemGame.read().busy')
