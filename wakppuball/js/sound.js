@@ -4,8 +4,8 @@
    - sounds/ 폴더의 mp3 파일을 불러와서 재생해요. (예: sounds/tap1.mp3)
    - 같은 소리도 재생할 때마다 피치와 볼륨을 아주 조금씩 랜덤으로 바꿔요.
    - 음원 파일이 없어도 오류 없이 실행돼요.
-       · SOUND_SETTINGS.usePlaceholderSound = true  → 임시 합성음이 대신 나요
-       · false                                       → 그냥 조용해요
+       · SOUND_SETTINGS.usePlaceholderSound = true  → 기본 tap/crack/break만 합성음으로 대체해요
+       · 전용 음원은 준비될 때까지 다른 소리로 대체하지 않고, 일시 오류 후 다시 로딩해요
    ========================================================================== */
 
 /* 왁뿌볼 하나의 최종 사운드 설정 (기본값 + 그 볼의 개별 설정) */
@@ -66,32 +66,44 @@ const SoundManager = (() => {
   window.addEventListener('pageshow',()=>{pageActive=true;syncAudio();});
   document.addEventListener('keydown',event=>{if(!event.repeat)unlock();},true);
 
-  /* ---------- 음원 파일 불러오기 ---------- */
-  // names: 사용할 소리 이름 목록 (예: ['tap1', 'tap2', ...])
-  function init(names) {
-    names.forEach((name) => {
-      if(pools[name])return;
-      const src = SOUND_SETTINGS.folder + name + (/\.(?:mp3|wav|ogg)$/i.test(name)?'':SOUND_SETTINGS.extension);
-      const pool = { items: [], next: 0, ok: false };
-      pools[name] = pool;
-
-      // 먼저 1개만 불러서 파일이 있는지 확인해요. (없으면 조용히 포기)
-      const probe = new Audio();
-      probe.preload = 'auto';
-      probe.addEventListener('canplay', () => {
-        if (pool.ok) return;
-        pool.ok = true;
-        pool.items.push(probe);
-        // 파일이 확인되면 겹쳐 재생용으로 나머지를 추가
-        for (let i = 1; i < SOUND_SETTINGS.poolSize; i++) {
-          const a = new Audio(src);
-          a.preload = 'auto';
-          pool.items.push(a);
-        }
+  /* ---------- 음원 로딩 · 일시 오류 복구 ---------- */
+  // These legacy names intentionally use procedural audio when no file exists.
+  // A dedicated asset must never turn into a generic tap while loading or retrying.
+  const placeholderNames=new Set(['tap1','tap2','tap3','crack1','crack2','break']);
+  const playAttempts=new WeakMap();
+  function failed(pool,audio,generation){
+    if(pool.generation!==generation)return;
+    pool.ready.delete(audio);pool.ok=pool.ready.size>0;
+    if(pool.ok)return;
+    clearTimeout(pool.timer);
+    if(pool.state==='error')return;
+    pool.state='error';pool.failures++;
+    pool.retryAt=Date.now()+Math.min(30000,1000*2**Math.min(pool.failures-1,5));
+  }
+  function load(pool){
+    if(pool.state==='loading'||pool.ok||Date.now()<pool.retryAt)return;
+    const generation=++pool.generation;pool.state='loading';
+    for(const audio of pool.items){audio.pause();audio.removeAttribute?.('src');audio.load?.();}
+    pool.items=[];pool.ready.clear();pool.next=0;let expanded=false;
+    function add(probe=false){
+      const audio=new Audio();audio.preload='auto';pool.items.push(audio);
+      audio.addEventListener('canplay',()=>{
+        if(generation!==pool.generation)return;
+        clearTimeout(pool.timer);pool.ready.add(audio);pool.ok=true;pool.state='ready';pool.failures=0;
+        if(probe&&!expanded){expanded=true;for(let i=1;i<SOUND_SETTINGS.poolSize;i++)add();}
       });
-      probe.addEventListener('error', () => { pool.ok = false; });
-      probe.src = src;
-    });
+      audio.addEventListener('error',()=>failed(pool,audio,generation));audio.src=pool.src;return audio;
+    }
+    const probe=add(true);
+    pool.timer=setTimeout(()=>{if(!pool.ok)failed(pool,probe,generation);},10000);
+  }
+  function init(names){
+    for(const name of names){
+      let pool=pools[name];
+      if(!pool){pool=pools[name]={name,src:SOUND_SETTINGS.folder+name+(/\.(?:mp3|wav|ogg)$/i.test(name)?'':SOUND_SETTINGS.extension),items:[],ready:new Set(),next:0,ok:false,state:'idle',retryAt:0,failures:0,generation:0,timer:null};}
+      // Missing legacy samples are expected; avoid repeated 404 requests for them.
+      if(pool.state==='idle'||(!placeholderNames.has(name)&&pool.state==='error'))load(pool);
+    }
   }
 
   /* ---------- 브라우저 정책상 첫 터치 때 오디오를 깨워야 해요 ---------- */
@@ -120,27 +132,24 @@ const SoundManager = (() => {
     const rate = clamp(opts.pitch * (1 + rand(-opts.pitchRandom, opts.pitchRandom)), 0.5, 2);
     const vol = clamp(opts.volume * (1 + rand(-opts.volumeRandom, opts.volumeRandom)), 0, 1);
 
-    const pool = pools[name];
-    if (pool && pool.ok && pool.items.length) {
-      const a = pool.items[pool.next];
-      pool.next = (pool.next + 1) % pool.items.length;
-      try {
-        a.pause();
-        a.currentTime = 0;
-        mediaVolumes.set(a,vol);a.volume = vol*effectLevel();
-        // 재생 속도를 바꿀 때 피치도 같이 변하게 (자연스러운 변화용)
-        a.preservesPitch = false;
-        a.mozPreservesPitch = false;
-        a.webkitPreservesPitch = false;
-        a.playbackRate = rate;
-        const p = a.play();
-        if (p && p.catch) p.catch(() => {});
-      } catch (e) { /* 재생 실패해도 게임은 계속 */ }
-      return;
+    init([name]);const pool=pools[name];
+    if(pool?.ok){
+      const ready=pool.items.filter(audio=>pool.ready.has(audio));
+      if(ready.length){
+        const audio=ready[pool.next++%ready.length],generation=pool.generation,attempt=(playAttempts.get(audio)||0)+1;playAttempts.set(audio,attempt);
+        const rejected=error=>{
+          if(playAttempts.get(audio)!==attempt||error?.name==='AbortError'||error?.name==='NotAllowedError')return;
+          failed(pool,audio,generation);
+        };
+        try{
+          audio.pause();audio.currentTime=0;mediaVolumes.set(audio,vol);audio.volume=vol*effectLevel();
+          audio.preservesPitch=false;audio.mozPreservesPitch=false;audio.webkitPreservesPitch=false;audio.playbackRate=rate;
+          const promise=audio.play();if(promise?.catch)promise.catch(rejected);
+        }catch(error){rejected(error);}
+        return;
+      }
     }
-
-    // 음원 파일이 없을 때
-    if (SOUND_SETTINGS.usePlaceholderSound && opts.fallback !== false) synth(name, rate, vol);
+    if(placeholderNames.has(name)&&SOUND_SETTINGS.usePlaceholderSound&&opts.fallback!==false)synth(name,rate,vol);
   }
 
   /* ======================================================================
