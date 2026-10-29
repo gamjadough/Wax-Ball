@@ -2,6 +2,15 @@ import {test} from 'node:test';import assert from 'node:assert/strict';
 import {monthlyFixture,player,admin} from './monthly-fixture.mjs';
 import {createStore} from './admin-service.mjs';import {execute} from './ember-auto-service.mjs';
 import {monthlyAction,monthlySettle} from './monthly-service.mjs';import {createProfileService} from './profile-service.mjs';
+import vm from 'node:vm';import {readFile} from 'node:fs/promises';
+
+test('public monthly reads use anon transport without creating an account; reward mutations still require login',async()=>{
+ const calls=[],auth={getSession:async()=>({data:{session:null}}),onAuthStateChange:()=>{}},window={WAKPPU_SERVER:{url:'https://example.test',anonKey:'public'},supabase:{createClient:()=>({auth})}};
+ vm.runInNewContext(await readFile(new URL('../wakppuball/js/account.js',import.meta.url),'utf8'),{window,fetch:async(url,options)=>{calls.push(JSON.parse(options.body).b.action);return {ok:true,json:async()=>({rows:[]})};}});
+ await window.WakppuAuth.invoke('monthly_rankings');assert.deepEqual(calls,['monthly_rankings']);
+ for(const action of ['monthly_badge_equip','profile_title','item_hit'])await assert.rejects(window.WakppuAuth.invoke(action),/로그인/);
+ assert.deepEqual(calls,['monthly_rankings']);
+});
 
 test('monthly SQL: accepted manual hit once, hammer independent, real ember excluded, all ball paths and failed hits',async()=>{
  const {db,rpc,clock}=await monthlyFixture();try{

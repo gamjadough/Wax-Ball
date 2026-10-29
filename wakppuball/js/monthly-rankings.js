@@ -14,6 +14,7 @@
   $('monthlySeason').replaceChildren(...options);$('monthlySeason').value=state.month;
   $('monthlyTrial').hidden=!state.trial;
   $('monthlyMe').textContent=(state.eligible?`내 순위 ${state.me.rank?state.me.rank+'위':'집계 전'} · ${number(state.me.clicks)}클릭`:'월간 경쟁 제외 계정')+(state.trial?'':` · 참여 배지 ${number(BigInt(state.me.clicks||0)>1000n?1000:state.me.clicks)} / 1,000`);
+  if(!read()?.account)$('monthlyMe').textContent='로그인하면 내 순위와 클릭 수를 확인할 수 있습니다.';
   const list=$('monthlyList');list.replaceChildren();
   for(const row of state.rows){
    const li=document.createElement('li'),button=document.createElement('button'),rank=document.createElement('b'),name=document.createElement('span'),count=document.createElement('strong');
