@@ -688,7 +688,7 @@
       const action=limitedSelected()?'limited_hit':'item_hit';
       result=await WakppuHitRequests.send(automatic?'ember_auto_hit':action,automatic?{...req,hit_action:action}:req,requestOptions);
       if(account!==state.account?.id)return;
-      itemBreakTiming=result.broken||BigInt(result.reward)>0n?WakppuHalloweenDecorData.timing(timing,result.pet_timing?.equipped??null):null;
+      itemBreakTiming=result.broken||BigInt(result.reward)>0n?WakppuHalloweenGoods.timing(WakppuHalloweenDecorData.timing(timing,result.pet_timing?.equipped??null),result.halloween_goods):null;
       if(WakppuItems.accept(result)===false){itemBreakTiming=null;await WakppuHitRequests.run(signal=>restoreAccount({signal}),{attempts:1,valid:()=>account===state.account?.id});return;}
       state.gold=BigInt(result.gold);itemRevision=result.revision;
       if(result.limited)WakppuLimited.accept(result.limited);

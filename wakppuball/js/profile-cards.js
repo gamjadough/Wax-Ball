@@ -3,7 +3,11 @@
  const $=id=>document.getElementById(id),read=()=>window.WakppuItemGame?.read();
  let data=null,owner=null,version=0,busy=false,profileVersion=0,activeNickname=null,opener=null,profileTab=false,rankFocusNickname=null,pendingRankFocus=null;
  const image='images/profile-cards/wax-beginning.png';
+ const titleTheme=text=>text?.includes('마녀의 계약자')?'witch':text?.includes('유령의 친구')?'ghost':text?.includes('호박불의 수호자')?'pumpkin':'';
  const cardDetails={
+  halloween_witch:{note:' · 할로윈 한정 · 영구 보관',alt:'보랏빛 마법진과 초승달에 둘러싸인 마녀의 구체',description:'마녀의 심야. 초승달 아래 새겨진 비밀스러운 계약을 기념합니다.'},
+  halloween_ghost:{note:' · 할로윈 한정 · 영구 보관',alt:'유령 불빛이 감도는 달빛 아래 오래된 저택',description:'유령의 저택. 안개 너머에서 건네는 창백한 빛을 기념합니다.'},
+  halloween_pumpkin:{note:' · 할로윈 한정 · 영구 보관',alt:'수확의 달 아래 빛나는 잭오랜턴과 가을 불씨',description:'잭오랜턴의 밤. 깊은 밤을 지키는 따뜻한 호박불을 기념합니다.'},
   golden_champion:{note:' · 영구 보관',alt:'황금 왕관과 월계관, 숫자 1이 새겨진 황금빛 왁뿌볼 카드',description:'랭킹의 정점에 오른 플레이어에게 바치는 황금 왕관. 한 번 지급받으면 순위가 내려가도 계속 장착할 수 있습니다.'},
   supporter_glow:{note:' · 후원팩 보유 혜택',alt:'은은한 호박빛 구체와 작은 별이 빛나는 후원자 카드',description:'따뜻한 응원에 감사하는 은은한 호박빛 별. 응원팩 또는 프리미엄 후원팩 보유 시 사용할 수 있습니다. 환생해도 유지되며, 환불·지급 회수 시 사용 권한도 회수됩니다.'},
   premium_celestial:{note:' · 프리미엄 보유 혜택',alt:'보석 장식과 찬란한 별빛으로 둘러싸인 프리미엄 구체 카드',description:'찬란한 보석과 성좌가 수놓인 프리미엄 전용 카드. 「따뜻한 응원」 카드도 함께 사용할 수 있습니다. 환생해도 유지되며, 환불·지급 회수 시 해당 사용 권한도 회수됩니다.'}
@@ -26,6 +30,7 @@
   const titles=$('profileTitleSelect'),catalog=data?.title_catalog||[];
   titles.replaceChildren(...catalog.map(t=>new Option(t.name,t.id)));titles.value=data?.title_equipped||'auto';titles.disabled=!ready;
   $('profileTitleSave').disabled=!ready;$('profileEquippedTitle').textContent='현재 칭호: '+(data?.title||'없음');
+  $('profileEquippedTitle').dataset.halloweenTitle=titleTheme(data?.title);
   $('profileEquippedTitle').classList.toggle('champion-title',data?.title==='👑 왁뿌볼의 정점');
   const badges=$('profileBadgeSelect');badges.replaceChildren(new Option('배지 없음',''),...(data?.badge_catalog||[]).map(b=>new Option(b.name,b.id)));badges.value=data?.badge_equipped||'';badges.disabled=!ready;$('profileBadgeSave').disabled=!ready;
   $('profileBadgeOwned').textContent=data?.badge_catalog?.length?'월간 참여 배지 · 영구 보관':'월간 1,000클릭 달성 후 월말 확정 시 참여 배지를 받습니다.';
@@ -64,6 +69,7 @@
   $('playerProfileDialog').dataset.card=p.card?.id||'';
   $('profileLoading').hidden=true;$('profileBody').hidden=false;
   $('profileNickname').textContent=p.nickname;$('profileTitle').textContent=p.title||'';$('profileTitle').hidden=!p.title;
+  $('profileTitle').dataset.halloweenTitle=titleTheme(p.title);
   $('profileTitle').classList.toggle('champion-title',p.title==='👑 왁뿌볼의 정점');
   $('profileMonthlyBadge').textContent=p.monthly_badge?'🏅 '+p.monthly_badge:'';$('profileMonthlyBadge').hidden=!p.monthly_badge;
   $('profilePresence').textContent=p.online?'온라인':'오프라인';$('profilePresence').dataset.online=String(!!p.online);
@@ -82,7 +88,7 @@
  }
  function linkRankings(){
   for(const span of $('rankingList').querySelectorAll('.ranking-nickname')){
-   const title=span.querySelector('small');if(title)title.classList.toggle('champion-title',title.textContent==='👑 왁뿌볼의 정점');
+   const title=span.querySelector('small');if(title){title.classList.toggle('champion-title',title.textContent==='👑 왁뿌볼의 정점');title.dataset.halloweenTitle=titleTheme(title.textContent);}
    if(span.closest('.profile-rank-button'))continue;const copy=span.cloneNode(true);copy.querySelectorAll('i,small').forEach(n=>n.remove());const nickname=copy.textContent.trim();
    const button=document.createElement('button');button.type='button';button.className='profile-rank-button';button.setAttribute('aria-label',nickname+' 프로필 보기');button.dataset.profileNickname=nickname;
    const row=span.closest('li');button.append(...row.childNodes);row.append(button);button.onclick=()=>open(nickname,button);

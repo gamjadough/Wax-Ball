@@ -16,13 +16,15 @@
   // Historic idempotent responses describe their original transaction, not current stock.
   // Rebirth also invalidates transactions from the prior run at the same revision.
   if(!Number.isSafeInteger(revision)||revision<Number(game?.revision||0)||(revision<transactionFloor&&(syncGold||Object.keys(next.effects||{}).length>0)))return false;
-  if(syncGold)++sequence;data=next;window.WakppuItemGame?.accept(next,syncGold);window.WakppuBlueGems?.accept(next.blue_gems);window.WakppuGemBalls?.accept(next.gem_balls);window.WakppuKeepsakeDisplay?.sync(next);render();return true;
+  if(syncGold)++sequence;data=next;window.WakppuItemGame?.accept(next,syncGold);window.WakppuBlueGems?.accept(next.blue_gems);window.WakppuHalloweenGoods?.accept(next.halloween_goods);window.WakppuGemBalls?.accept(next.gem_balls);window.WakppuKeepsakeDisplay?.sync(next);render();return true;
  }
  async function refresh(){const seq=++sequence,account=window.WakppuItemGame?.read().account;if(!account){data=null;render();return;}try{const next=await WakppuAuth.invoke('items');if(seq===sequence&&account===window.WakppuItemGame?.read().account)accept(next,false);}catch(e){status(e.message);}}
  function effectText(d,e){if(d.seconds){const left=Math.max(0,Math.ceil((e.expires_at-Date.now())/1000));return Math.floor(left/60)+':'+String(left%60).padStart(2,'0');}return e.remaining+(d.unit==='hit'?'타격':'회 파괴');}
  function render(){
   if(!document.querySelector('#itemsGold'))return;
   const game=window.WakppuItemGame?.read();
+  const limited=filter==='limited';if(document.querySelector('#halloweenGoodsInventory'))document.querySelector('#halloweenGoodsInventory').hidden=!limited;
+  for(const id of ['inventoryOrder','inventoryList','inventoryPageInfo','inventoryPrevious','inventoryNext']){const n=document.getElementById(id);if(n)(id==='inventoryOrder'?n.closest('label'):n).hidden=limited;}
   document.querySelector('#itemsGold').textContent='현재 Gold: '+format(game?.gold||'0')+' G';
   document.querySelector('#itemsPity').textContent='초월 천장: '+(data?.pity||0)+' / 100 · 다음 확정까지 '+(100-(data?.pity||0))+'회';
   document.querySelectorAll('[data-pulls]').forEach(b=>b.disabled=busy||!!window.WakppuDrawReveal?.pending||!ready()||BigInt(game?.gold||0)<BigInt(WakppuItemData.prices[b.dataset.pulls]));
@@ -79,7 +81,7 @@
  }
  document.addEventListener('DOMContentLoaded',()=>{
   const modal=document.createElement('div');modal.id='itemsModal';modal.className='modal';modal.hidden=true;
-  modal.innerHTML='<div class="sheet items-sheet" role="dialog" aria-modal="true" aria-labelledby="itemsTitle"><div class="sheet-head"><h2 id="itemsTitle">아이템</h2><button id="itemsClose" class="btn small">닫기</button></div><p id="itemsStatus" role="status"></p><p id="itemsLogin">계정에서 빠른 시작 또는 로그인 후 사용할 수 있습니다.</p><section id="drawPanel"><h3>🎰 아이템 뽑기</h3><p id="itemsGold"></p><p id="itemsPity"></p><p>초월 기본 확률 0.1% · 100번째 확정 (천장 별도)</p><div class="draw-actions">'+[1,3,5].map(n=>'<button class="btn" data-pulls="'+n+'">'+n+'회 — '+format(WakppuItemData.prices[n])+' G</button>').join('')+'</div><details><summary>확률 보기</summary><ul>'+ranks.map(r=>'<li>'+r.name+' '+r.weight/100+'% · 각 아이템 '+(r.weight/100/defs.filter(d=>d.rank===r.id).length).toFixed(r.id==='hero'?4:2)+'%</li>').join('')+'</ul><p>같은 등급 안에서는 균등 확률입니다. 천장 확정은 기본 확률과 별도로 적용합니다. 초월은 천장 포함 장기 평균 약 1.05%입니다.</p></details><div id="drawResults" aria-live="polite"></div></section><section id="inventoryPanel"><h3>🎒 인벤토리</h3><p>같은 계열은 최강 효과 적용 · 횟수형은 적용될 때만 차감<br>환생 후 보유 아이템·천장 유지, 활성 효과 초기화</p><div class="item-filters">'+[{id:'all',name:'전체'},...ranks].map(r=>'<button class="btn small" data-filter="'+r.id+'">'+r.name+'</button>').join('')+'</div><div id="inventoryList"></div></section><section><h3>현재 효과</h3><ul id="itemEffects"></ul><p>같은 아이템은 시간·횟수가 누적됩니다. 시간은 접속하지 않아도 흐릅니다. 연장은 최대 7일입니다.</p></section></div>';
+  modal.innerHTML='<div class="sheet items-sheet" role="dialog" aria-modal="true" aria-labelledby="itemsTitle"><div class="sheet-head"><h2 id="itemsTitle">아이템</h2><button id="itemsClose" class="btn small">닫기</button></div><p id="itemsStatus" role="status"></p><p id="itemsLogin">계정에서 빠른 시작 또는 로그인 후 사용할 수 있습니다.</p><section id="drawPanel"><h3>🎰 아이템 뽑기</h3><p id="itemsGold"></p><p id="itemsPity"></p><p>초월 기본 확률 0.1% · 100번째 확정 (천장 별도)</p><div class="draw-actions">'+[1,3,5].map(n=>'<button class="btn" data-pulls="'+n+'">'+n+'회 — '+format(WakppuItemData.prices[n])+' G</button>').join('')+'</div><details><summary>확률 보기</summary><ul>'+ranks.map(r=>'<li>'+r.name+' '+r.weight/100+'% · 각 아이템 '+(r.weight/100/defs.filter(d=>d.rank===r.id).length).toFixed(r.id==='hero'?4:2)+'%</li>').join('')+'</ul><p>같은 등급 안에서는 균등 확률입니다. 천장 확정은 기본 확률과 별도로 적용합니다. 초월은 천장 포함 장기 평균 약 1.05%입니다.</p></details><div id="drawResults" aria-live="polite"></div></section><section id="inventoryPanel"><h3>🎒 인벤토리</h3><p>같은 계열은 최강 효과 적용 · 횟수형은 적용될 때만 차감<br>환생 후 보유 아이템·천장 유지, 활성 효과 초기화</p><div class="item-filters">'+[{id:'all',name:'전체'},...ranks,{id:'limited',name:'한정'}].map(r=>'<button class="btn small" data-filter="'+r.id+'">'+r.name+'</button>').join('')+'</div><div id="inventoryList"></div></section><section><h3>현재 효과</h3><ul id="itemEffects"></ul><p>같은 아이템은 시간·횟수가 누적됩니다. 시간은 접속하지 않아도 흐릅니다. 연장은 최대 7일입니다.</p></section></div>';
   document.body.append(modal);
   const shop=document.querySelector('#shop'),purchase=document.querySelector('#shopPurchase'),draw=document.querySelector('#shopDraw'),drawPanel=document.querySelector('#drawPanel');
   draw.append(drawPanel);
@@ -114,7 +116,7 @@
   document.querySelector('#inventoryNext').onclick=()=>{page++;render();};
   modal.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();selectedId?back():close();}if(e.key==='Tab'){const nodes=[...modal.querySelectorAll('button:not(:disabled),select:not(:disabled),summary')].filter(n=>n.getClientRects().length);if(!nodes.length)return;const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
   modal.addEventListener('click',e=>{
-   const f=e.target.closest('[data-filter]');if(f){filter=f.dataset.filter;page=0;render();}
+   const f=e.target.closest('[data-filter]');if(f){filter=f.dataset.filter;selectedId=null;page=0;render();}
    const card=e.target.closest('[data-item]');if(card){selectedId=card.dataset.item;render();document.querySelector('#inventoryBack').focus();}
    const use=e.target.closest('[data-use]');if(use){
     const d=defs.find(d=>d.id===use.dataset.use),game=window.WakppuItemGame.read(),effective=WakppuItemData.effective(data.effects,game.honey,game.coating);

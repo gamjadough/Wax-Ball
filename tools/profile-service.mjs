@@ -4,9 +4,10 @@ import {basicProfileCard} from './profile-preview-service.mjs';
 import {profileTitles,setProfileTitle} from './profile-titles-service.mjs';
 import {adminContentAccess} from './admin-content.mjs';
 import {monthlyBadges} from './monthly-service.mjs';
+import {goodsCatalog,goodsOwned} from './halloween-goods-data.mjs';
 export const championProfileCard={id:'golden_champion',name:'황금의 정점',rarity:'1위 기념',free:false,image:'images/profile-cards/golden-champion.webp'};
 export const supporterProfileCards=[{id:'supporter_glow',name:'따뜻한 응원',rarity:'후원자 전용',free:false,image:'images/profile-cards/supporter-glow.webp'},{id:'premium_celestial',name:'찬란한 성좌',rarity:'프리미엄 전용',free:false,image:'images/profile-cards/premium-celestial.webp'}];
-const available=p=>[basicProfileCard,...(p.championCardOwned||adminContentAccess(p)?[championProfileCard]:[]),...supporterProfileCards.filter((c,i)=>adminContentAccess(p)||p.premiumSupporterPack||i===0&&p.supporterPack),...(p.monthlyCards||[])];
+const available=p=>[basicProfileCard,...(p.championCardOwned||adminContentAccess(p)?[championProfileCard]:[]),...supporterProfileCards.filter((c,i)=>adminContentAccess(p)||p.premiumSupporterPack||i===0&&p.supporterPack),...(p.monthlyCards||[]),...goodsCatalog.filter(d=>d.kind==='card'&&goodsOwned(p,d.id)).map(d=>({...d,rarity:'할로윈 한정',free:false}))];
 export function createProfileService(store){
  return {execute(actor,b){
   if(!actor)throw Object.assign(Error('로그인이 필요합니다.'),{status:401});
