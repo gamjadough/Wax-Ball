@@ -17,6 +17,7 @@
     legendary:{kind:'time',colors:['#ffe6a0','#c1954b'],duration:2100},
     transcendent:{kind:'void',colors:['#c4a2ff','#8ae9ff','#e5d5ff'],duration:2100}
   };
+  profiles.blue_crystal={kind:'crystals',colors:['#61cfff','#2377ca','#b6efff'],duration:profiles.eternity.duration};
   function play({ball,wrap,svg,effects,center,radius,valid,reward,respawn,speed=1,respawnSpeed=1}){
     const profile=(ball.id==='eternity'&&skinProfiles[ball.design.skin])||profiles[ball.design.motif],reduced=window.WakppuSettings?.reduced()??matchMedia('(prefers-reduced-motion: reduce)').matches;
     const timers=[],nodes=[],animations=[];let stopped=false,paid=false;

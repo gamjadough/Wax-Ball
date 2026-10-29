@@ -10,7 +10,7 @@ test('breaking a ball discards buffered input; no respawn path preserves or drai
  const game=readFileSync(new URL('../wakppuball/js/game.js',import.meta.url),'utf8');
  const start=game.indexOf('  function breakBall(data) {'),end=game.indexOf('// WebKit',start);
  const queue=fixture().createQueue();for(let i=0;i<20;i++)queue.push([1,2]);
- const timing={animation:1,respawn:1},context={itemBreakTiming:timing,window:{WakppuHalloweenDecor:{timing:()=>timing}},eventSelected:false,limitedSelected:()=>false,ordinaryClicks:new Map([[0,5]]),state:{selected:0,busy:false},animationEpoch:1,pendingItemHits:queue,rewardReadyEpoch:1};
+ const timing={animation:1,respawn:1},context={itemBreakTiming:timing,window:{WakppuHalloweenDecor:{timing:()=>timing}},eventSelected:false,limitedSelected:()=>false,gemSelected:()=>false,ordinaryClicks:new Map([[0,5]]),state:{selected:0,busy:false},animationEpoch:1,pendingItemHits:queue,rewardReadyEpoch:1};
  vm.runInNewContext(game.slice(start,end)+'}\nbreakBall({});',context);
  assert.equal(queue.length,0);assert.equal(context.state.busy,true);assert.equal(context.rewardReadyEpoch,-1);
  assert.doesNotMatch(game,/preserveHits|spawnBall\(true,true\)/);

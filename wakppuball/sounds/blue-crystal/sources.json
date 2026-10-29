@@ -1,0 +1,31 @@
+{
+  "license": "CC0-1.0",
+  "source": "Original mathematical synthesis; no third-party recordings",
+  "generator": "tools/build-blue-crystal-sounds.py",
+  "outputs": [
+    {
+      "file": "tap.wav",
+      "duration": 0.22,
+      "peak": 0.48,
+      "sha256": "51ca3ebfde4f3bf47216061733f868fad7c18ea18d5a09e3395d08e4a0ff74a0"
+    },
+    {
+      "file": "crack.wav",
+      "duration": 0.34,
+      "peak": 0.48,
+      "sha256": "f520dc7d4a7f4ca0dec17f6ddd3a5dd5268e2dae0046bec3c871a02e56615120"
+    },
+    {
+      "file": "split.wav",
+      "duration": 0.46,
+      "peak": 0.48,
+      "sha256": "ea3b20c9cda319f44e8bee34190e3d3b7120da98742ee5ab89b8968117334b35"
+    },
+    {
+      "file": "break.wav",
+      "duration": 0.95,
+      "peak": 0.48,
+      "sha256": "0f7261bb55b4335d422e6cfdc9f57febe95b3e049d23e2b945182c63a5f49fdf"
+    }
+  ]
+}

@@ -6,7 +6,7 @@ import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
 import {createStore} from './admin-service.mjs';
 import {createProfileService} from './profile-service.mjs';
 import {profileTitles} from './profile-titles-service.mjs';
-import {execute} from './ember-auto-service.mjs';
+import {execute} from './gem-ball-service.mjs';
 import {itemData,itemState,snapshot} from './items-service.mjs';
 import {limitedState,limitedSnapshot} from './limited-service.mjs';
 import {decorAction,decorState} from './halloween-decor-service.mjs';
@@ -18,6 +18,11 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../wakppub
 const store=createStore(),sessions=new Map();
 // Isolated browser-test seed only; never enabled by production HTML.
 if(process.env.WAKPPU_LOCAL_BLUE_GEM_PREVIEW==='1')(await import('./blue-gem-data.mjs')).gemState(store.players.find(p=>p.id==='local-player')).balance=999n;
+if(process.env.WAKPPU_LOCAL_GEM_BALL_PREVIEW==='1'){
+ const actor=store.players.find(p=>p.id==='local-player');
+ (await import('./blue-gem-data.mjs')).gemState(actor).balance=5000n;
+ actor.state.hammer_owned=true;actor.state.hammer_level=10;
+}
 const profiles=createProfileService(store);
 const profilePreview=process.env.WAKPPU_LOCAL_PROFILE_PREVIEW==='1'?(await import('./profile-preview-service.mjs')).createProfilePreview(store):null;
 // Opt-in, isolated onboarding preview. Never changes production or other previews.

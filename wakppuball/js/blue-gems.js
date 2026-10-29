@@ -37,5 +37,5 @@
   window.addEventListener('wakppu-account-restored',()=>{if(owner!==game()?.account&&dialog.open)close();data=null;owner=null;refresh();});
   setInterval(()=>{if(!document.hidden&&game()?.ready&&!game().busy&&!busy)refresh();},15000);refresh();
  });
- window.WakppuBlueGems={accept,refresh};
+ window.WakppuBlueGems={accept,refresh,get data(){return data;}};
 })();

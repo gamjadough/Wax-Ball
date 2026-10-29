@@ -1,0 +1,2 @@
+.collection-tabs{flex-wrap:wrap}
+#gemCollection{min-width:0}#gemCollection p{font-size:13px;line-height:1.7;overflow-wrap:anywhere}#gemCollectionCards{display:grid;gap:12px}#gemCollectionCards .card{min-width:0}#gemCollectionCards .btn{min-height:44px}#gemCollectionTab[aria-selected="true"]{border-color:#74d8ff;color:#c0f0ff}#gemCollectionBalance{color:#98dfff}#gemCollection .collection-card{width:100%;max-width:320px;min-height:160px}#gemCollection .limited-detail{max-width:420px}#gemCollection .thumb{margin:0 auto}

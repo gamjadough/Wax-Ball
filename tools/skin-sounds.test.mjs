@@ -29,5 +29,5 @@ test('silver preserves original eternity idle animation and hero uses custom pho
   if(rank==='common')assert.ok(svg.includes('skin-common transcendent-idle eternity'));
   else{assert.ok(svg.includes('data-skin-flame="phoenix"'));assert.ok(svg.includes('id="unique-skin-flame"'));assert.ok(svg.includes('url(#unique-skin-fire-core)'));}
  }
- const html=read('wakppuball/index.html');for(const [f,version] of [['ball-art','20261020-pumpkin-skins1'],['transcendent-effects','20261019-shatter4']])assert.ok(html.includes('js/'+f+'.js?v='+version));
+ const html=read('wakppuball/index.html');for(const f of ['ball-art','transcendent-effects'])assert.ok(html.includes('js/'+f+'.js?v=20261029-crystal1'));
 });

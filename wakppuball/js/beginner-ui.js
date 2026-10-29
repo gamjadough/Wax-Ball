@@ -9,7 +9,7 @@
   const s=window.WakppuBeginnerRead?.();if(!s)return;
   const left=Math.max(0,s.required-s.clicks);
   text('ballProgressText',s.busy?'파괴 연출 중 · 곧 새 볼이 나와요':`균열 ${s.clicks.toLocaleString()} / ${s.required.toLocaleString()} · ${left.toLocaleString()} 남음`);
-  text('ballRewardText',`파괴 기본 보상 +${fmt(s.baseReward)}G`);
+  text('ballRewardText',s.gemReward?`파괴 보상 💎 +${fmt(s.gemReward)} · Gold 없음`:`파괴 기본 보상 +${fmt(s.baseReward)}G`);
   $('ballProgressBar').max=s.required;$('ballProgressBar').value=s.clicks;
   $('beginnerGuide').hidden=!s.early;document.querySelector('#game').classList.toggle('has-beginner-guide',s.early);
   const gold=BigInt(s.gold);goalAction='help';let title,note;

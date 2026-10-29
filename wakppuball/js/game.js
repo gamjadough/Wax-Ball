@@ -125,8 +125,9 @@
   function adminBallAlwaysAvailable(){return accountRole==='admin'&&state.account&&!state.account.is_anonymous&&WakppuAdminBallEvent.alwaysAvailable();}
   function eventActive(){return !!adminBallAlwaysAvailable()||WakppuAdminBallEvent.current().phase==='active';}
   function eventBaseReward(){return WAKPPU_BALLS.reduce((best,b,i)=>state.unlocked[i]&&BigInt(b.reward)>best?BigInt(b.reward):best,1n)*10n;}
-  function limitedSelected(){return !testSnapshot&&!eventSelected&&!!window.WakppuLimited?.data?.selected;}
-  function currentBall(){const base=eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:limitedSelected()?{...WakppuLimitedData.ball,reward:BigInt(WakppuLimitedData.ball.reward)}:WAKPPU_BALLS[state.selected];const equipped=window.WakppuSkins?.equippedRank(base.id);const ordinary=window.WakppuSkinSounds?.appearance(equipped?{...base,skinId:equipped}:base)||base;const pumpkin=window.WakppuPumpkinInventory?.equipped();const originalBall=pumpkin&&base.id===WakppuLimitedData.ball.id?WakppuPumpkinSkins.appearance(ordinary,pumpkin):ordinary;const ball=window.WakppuCustomBall?.appearance(originalBall)||originalBall;const e=window.WakppuItemData?.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt);return {...ball,clicks:e?WakppuItemData.required(ball.clicks,e,coatingActive()):ball.clicks*(coatingActive()?2:1)};}
+  function gemSelected(){return !testSnapshot&&!eventSelected&&!!window.WakppuGemBalls?.data?.selected;}
+  function limitedSelected(){return !testSnapshot&&!eventSelected&&!gemSelected()&&!!window.WakppuLimited?.data?.selected;}
+  function currentBall(){const base=eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:gemSelected()?WakppuGemBallData.ball:limitedSelected()?{...WakppuLimitedData.ball,reward:BigInt(WakppuLimitedData.ball.reward)}:WAKPPU_BALLS[state.selected];const equipped=window.WakppuSkins?.equippedRank(base.id);const ordinary=window.WakppuSkinSounds?.appearance(equipped?{...base,skinId:equipped}:base)||base;const pumpkin=window.WakppuPumpkinInventory?.equipped();const originalBall=pumpkin&&base.id===WakppuLimitedData.ball.id?WakppuPumpkinSkins.appearance(ordinary,pumpkin):ordinary;const ball=window.WakppuCustomBall?.appearance(originalBall)||originalBall;const e=window.WakppuItemData?.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt);return {...ball,clicks:ball.id===window.WakppuGemBallData?.ball.id?ball.clicks:e?WakppuItemData.required(ball.clicks,e,coatingActive()):ball.clicks*(coatingActive()?2:1)};}
   function eventPreferenceKey(){return SAVE_KEY+':event-choice:'+state.account?.id;}
   function switchEvent(use,remember=true){
     if(use&&(!eventActive()||testSnapshot||!state.remoteReady||eventRequest))return;
@@ -137,7 +138,7 @@
     if(remember)try{localStorage.setItem(eventPreferenceKey(),JSON.stringify({id:eventId,use}));}catch(_){}
   }
   function syncBallEvent(){
-    if(limitedSelected())return;
+    if(limitedSelected()||gemSelected())return;
     const s=WakppuAdminBallEvent.current();
     if(adminBallAlwaysAvailable()&&state.remoteReady&&!testSnapshot){
       if(eventRequest||(state.busy&&!eventSelected))return;
@@ -178,7 +179,7 @@
   }
 
   function saveProgress() {
-    if(window.WakppuSkins?.busy)return;
+    if(window.WakppuSkins?.busy||window.WakppuGemBalls?.busy)return;
     if (testSnapshot || eventRequest || (eventSelected && state.busy) || window.wakppuServerBlocked) return;
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify({
@@ -436,7 +437,7 @@
       discovered_ball_ids: state.discovered,
       selected_ball_id: ballIdAt(state.selected),
       current_ball_id: ballIdAt(state.selected),
-      current_clicks: eventSelected||limitedSelected()?(ordinaryClicks.get(state.selected)||0):state.clicks,
+      current_clicks: eventSelected||limitedSelected()||gemSelected()?(ordinaryClicks.get(state.selected)||0):state.clicks,
       hammer_owned: state.hammerOwned,
       hammer_level: state.hammerLevel,
       honey_expires_at: honeyActive() ? new Date(state.honeyExpiresAt).toISOString() : null,
@@ -473,7 +474,7 @@
   }
   async function restoreAccount({signal}={}) {
     if(window.WakppuGuestExit?.busy)return;
-    window.WakppuLimited?.clear();
+    window.WakppuLimited?.clear();window.WakppuGemBalls?.clear();
     if (!window.WakppuAuth) return;
     if(eventSelected)switchEvent(false,false);eventSeen=null;eventId=null;ordinaryClicks.clear();
     if(testSnapshot) window.WakppuGameTest.end();
@@ -500,6 +501,7 @@
         window.dispatchEvent(new Event('wakppu-account-restored'));
         return;
       }
+      window.WakppuGemBalls?.accept(data.gem_balls,false);
       applySavedProgress(saved);
       state.remoteReady = true;
       spawnBall(false);
@@ -629,7 +631,7 @@
   let petEffectFailed=false;
   function onHit(clientX, clientY, damage = null, isHammer = activeHammerLevel()>0, authorizedEvent=false,requiredTotal=null) {
     if(window.WakppuGuestExit?.busy||window.WakppuGuestDialog?.busy)return;
-    if(window.WakppuSkins?.busy)return;
+    if(window.WakppuSkins?.busy||window.WakppuGemBalls?.busy)return;
     if(!authorizedEvent&&!testSnapshot&&state.account&&!state.remoteReady)return;
     if (hammerSelectionBusy || state.busy || window.wakppuServerBlocked || window.WakppuItems?.busy || window.WakppuLimited?.busy) return;
     if(!authorizedEvent&&!testSnapshot&&state.remoteReady){hitItem(clientX,clientY);return;}
@@ -639,7 +641,7 @@
     damage = damage ?? (state.hammerOwned ? (HAMMERS[activeHammerLevel() - 1]?.cracks||1) : 1);
 
     state.clicks = Math.min(data.clicks, state.clicks + damage);
-    if(!eventSelected&&!limitedSelected()&&ordinaryClicks.has(state.selected))ordinaryClicks.set(state.selected,state.clicks);
+    if(!eventSelected&&!limitedSelected()&&!gemSelected()&&ordinaryClicks.has(state.selected))ordinaryClicks.set(state.selected,state.clicks);
     const total = data.clicks;
     const isFinal = state.clicks >= total;
     const v = state.clicks / total;      // 진행도 (화면엔 표시 안 함)
@@ -661,7 +663,7 @@
   }
 
   function buyOrUpgradeHammer() {
-    if(window.WakppuSkins?.busy)return;
+    if(window.WakppuSkins?.busy||window.WakppuGemBalls?.busy)return;
     if(hammerSelectionBusy||eventRequest||state.busy||window.wakppuServerBlocked||window.WakppuItems?.busy||window.WakppuLimited?.busy)return;
     const nextLevel = state.hammerOwned ? state.hammerLevel + 1 : 1;
     const next = HAMMERS[nextLevel - 1];
@@ -675,7 +677,7 @@
   let itemBreakTiming=null;
   async function hitItem(x,y,automatic=false){
     if(!state.remoteReady||window.wakppuServerBlocked||window.WakppuGuestExit?.busy){pendingItemHits.clear();return;}
-    if(hammerSelectionBusy||state.busy||window.WakppuItems?.busy||window.WakppuLimited?.busy)return;
+    if(hammerSelectionBusy||state.busy||window.WakppuItems?.busy||window.WakppuLimited?.busy||window.WakppuGemBalls?.busy)return;
     if(eventRequest){if(!automatic)pendingItemHits.push([x,y]);return;}
     eventRequest=true;const epoch=animationEpoch;const account=state.account?.id;
     const requestOptions={valid:()=>account===state.account?.id&&epoch===animationEpoch&&!window.wakppuServerBlocked,onRetry:()=>{hintEl.textContent='연결이 지연되어 타격을 다시 확인 중입니다.';hintEl.classList.remove('gone');}};
@@ -686,7 +688,7 @@
       const action=limitedSelected()?'limited_hit':'item_hit';
       result=await WakppuHitRequests.send(automatic?'ember_auto_hit':action,automatic?{...req,hit_action:action}:req,requestOptions);
       if(account!==state.account?.id)return;
-      itemBreakTiming=BigInt(result.reward)>0n?WakppuHalloweenDecorData.timing(timing,result.pet_timing?.equipped??null):null;
+      itemBreakTiming=result.broken||BigInt(result.reward)>0n?WakppuHalloweenDecorData.timing(timing,result.pet_timing?.equipped??null):null;
       if(WakppuItems.accept(result)===false){itemBreakTiming=null;await WakppuHitRequests.run(signal=>restoreAccount({signal}),{attempts:1,valid:()=>account===state.account?.id});return;}
       state.gold=BigInt(result.gold);itemRevision=result.revision;
       if(result.limited)WakppuLimited.accept(result.limited);
@@ -726,7 +728,7 @@
   function coatingActive(){return state.coatingExpiresAt>Date.now();}
   function coatingMultiplier(){return coatingActive()?3:1;}
   function buyCoating(){
-    if(window.WakppuSkins?.busy)return;
+    if(window.WakppuSkins?.busy||window.WakppuGemBalls?.busy)return;
     if(testSnapshot||hammerSelectionBusy||eventRequest||state.busy||window.wakppuServerBlocked||window.WakppuItems?.busy||window.WakppuLimited?.busy||coatingActive()||state.gold<COATING_COST)return;
     state.gold-=COATING_COST;state.coatingExpiresAt=Date.now()+15*60*1000;
     updateCracks(state.clicks/currentBall().clicks);updateAll();
@@ -734,7 +736,7 @@
   function coatingTime(){const seconds=Math.max(0,Math.ceil((state.coatingExpiresAt-Date.now())/1000));return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;}
   function honeyMultiplier() { return honeyActive() ? 2 : 1; }
   function buyHoney() {
-    if(window.WakppuSkins?.busy)return;
+    if(window.WakppuSkins?.busy||window.WakppuGemBalls?.busy)return;
     if(hammerSelectionBusy||eventRequest||state.busy||window.wakppuServerBlocked||window.WakppuItems?.busy||window.WakppuLimited?.busy)return;
     if (state.gold < HONEY_COST) return;
     state.gold -= HONEY_COST;
@@ -794,7 +796,7 @@
     const timing=itemBreakTiming||window.WakppuHalloweenDecor.timing(WakppuItemData.timing(WakppuItemData.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt)));
     itemBreakTiming=null;
     const speed=timing.animation,respawnSpeed=timing.respawn;
-    if(!eventSelected&&!limitedSelected())ordinaryClicks.delete(state.selected);
+    if(!eventSelected&&!limitedSelected()&&!gemSelected())ordinaryClicks.delete(state.selected);
     const epoch=animationEpoch;
     state.busy = true;
     // Buffered touches belong only to the ball that just broke, never its successor.
@@ -844,7 +846,7 @@
         eventClicks=0;spawnBall(true);updateAll();
       },1100/speed+RESPAWN_DELAY_MS/respawnSpeed);return;
     }
-    if(data.grade==='초월'){
+    if(data.grade==='초월'||data.id===window.WakppuGemBallData?.ball.id){
       transcendentEffect=WakppuTranscendent.play({ball:data,wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,respawnSpeed,
         valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,
         reward:()=>awardBreakReward(data),
@@ -888,6 +890,7 @@
 
   function awardBreakReward(data){
     const center=ballCenter();
+    if(data.id===window.WakppuGemBallData?.ball.id){itemAward=null;rewardReadyEpoch=animationEpoch;updateAll();floatText('💎 +5',center.x,center.y-wrap.offsetHeight*.32);return;}
     const reward=BigInt(data.reward)*rebirthMultiplier(state.rebirths)*BigInt(honeyMultiplier())*BigInt(coatingMultiplier())*BigInt(window.WakppuGoldEvent?.multiplier()||1);
     if(!testSnapshot&&itemAward===null)state.gold+=reward;
     const displayed=itemAward??reward;itemAward=null;
@@ -1044,6 +1047,7 @@
   }
 
   async function selectBall(index) {
+    if(gemSelected()&&!await WakppuGemBalls.select(null))return;
     if(window.WakppuLimited?.data?.selected){if(!await WakppuLimited.select(null))return;}
     if(state.busy || eventRequest || window.wakppuServerBlocked)return;
     if (!state.unlocked[index]) return;
@@ -1079,7 +1083,7 @@
     rebirthModal.hidden = false;
   }
   function doRebirth() {
-    if(window.WakppuSkins?.busy)return;
+    if(window.WakppuSkins?.busy||window.WakppuGemBalls?.busy)return;
     if(hammerSelectionBusy||eventRequest||state.busy||window.wakppuServerBlocked||window.WakppuItems?.busy||window.WakppuLimited?.busy)return;
     const cost = nextRebirthCost();
     if (cost === null || state.gold < cost) return;
@@ -1190,6 +1194,7 @@
 
   /* ---------- 도감 ---------- */
   function renderCollection() {
+    if(window.WakppuLimited?.tab==='gem'){WakppuGemBalls.renderCollection();return;}
     if(window.WakppuLimited?.tab==='limited'){WakppuLimited.renderCollection();return;}
     const entries = [...WAKPPU_BALLS, {...ADMIN_EVENT_BALL, reward:eventBaseReward()}];
     const pageCount = Math.ceil(entries.length / COLLECTION_PAGE_SIZE);
@@ -1199,7 +1204,7 @@
       const i = start + offset;
       const event = i === WAKPPU_BALLS.length;
       const open = event ? eventActive() : state.unlocked[i];
-      const current = event ? eventSelected : !eventSelected && !limitedSelected() && state.selected === i;
+      const current = event ? eventSelected : !eventSelected && !limitedSelected() && !gemSelected() && state.selected === i;
       const status = current ? '사용 중' : event ? (adminBallAlwaysAvailable() ? '관리자 상시 이용' : open ? '이벤트 진행 중' : '이벤트 전용') : open ? '해금 완료' : '잠김';
       return `<button type="button" class="card collection-card ${open ? '' : 'locked'} ${current ? 'current' : ''}" data-detail="${i}" aria-label="${b.name} · ${status} · 상세 보기">
         <span class="thumb" aria-hidden="true">${buildBallThumb(b)}</span>
@@ -1228,7 +1233,7 @@
       if (event) {
         action = `<button class="btn small" data-action="event" ${!open || eventSelected || state.busy || !state.remoteReady ? 'disabled' : ''}>${eventSelected ? '사용 중' : adminBallAlwaysAvailable() ? '관리자 볼 선택' : open ? '이벤트 볼 선택' : '이벤트 종료'}</button>`;
       } else if (open) {
-        action = !eventSelected && !limitedSelected() && state.selected === i
+        action = !eventSelected && !limitedSelected() && !gemSelected() && state.selected === i
           ? '<button class="btn small" disabled>사용 중</button>'
           : `<button class="btn small primary" data-action="select" data-index="${i}" ${state.busy ? 'disabled' : ''}>선택</button>`;
       } else if (i === ni) {
@@ -1250,7 +1255,7 @@
   }
 
   function openCollection() {
-    window.WakppuLimited?.showTab(limitedSelected()?'limited':'normal',false);
+    window.WakppuLimited?.showTab(gemSelected()?'gem':limitedSelected()?'limited':'normal',false);
     collectionPage = Math.floor((eventSelected ? WAKPPU_BALLS.length : state.selected) / COLLECTION_PAGE_SIZE);
     collectionDetailIndex = null;
     renderCollection();
@@ -1359,7 +1364,7 @@
     }
     const btn = e.target.closest('button[data-action]');
     if (!btn || btn.disabled) return;
-    if(btn.dataset.action==='event'){if(window.WakppuLimited?.data?.selected){WakppuLimited.select(null).then(ok=>{if(ok){switchEvent(true);closeCollection();}});return;}switchEvent(true);closeCollection();return;}
+    if(btn.dataset.action==='event'){if(gemSelected()){WakppuGemBalls.select(null).then(ok=>{if(ok){switchEvent(true);closeCollection();}});return;}if(window.WakppuLimited?.data?.selected){WakppuLimited.select(null).then(ok=>{if(ok){switchEvent(true);closeCollection();}});return;}switchEvent(true);closeCollection();return;}
     const index = Number(btn.dataset.index);
     if (btn.dataset.action === 'select') selectBall(index);
     if (btn.dataset.action === 'unlock') unlockBall(index);
@@ -1371,7 +1376,7 @@
      ========================================================================== */
   // 사용할 소리 이름을 모두 모아서 미리 불러오기
   const soundNames = new Set();
-  [...WAKPPU_BALLS,...(typeof ADMIN_EVENT_BALL!=="undefined"?[ADMIN_EVENT_BALL]:[]),...(window.WakppuLimitedData?[WakppuLimitedData.ball]:[])].forEach((b) => {
+  [...WAKPPU_BALLS,...(typeof ADMIN_EVENT_BALL!=="undefined"?[ADMIN_EVENT_BALL]:[]),...(window.WakppuLimitedData?[WakppuLimitedData.ball]:[]),...(window.WakppuGemBallData?[WakppuGemBallData.ball]:[])].forEach((b) => {
     const cfg = getSoundConfig(b);
     ['early', 'mid', 'late', 'final', 'sequence'].forEach((k) => (cfg[k]||[]).forEach((n) => soundNames.add(n)));
   });
@@ -1495,6 +1500,7 @@
           if(eventSelected)eventSelected=false;
           eventClicks=0;eventAward=null;displayEventReward=0n;ordinaryClicks.clear();
           if(WakppuLimited.data)WakppuLimited.accept({...WakppuLimited.data,selected:null,clicks:0});
+          window.WakppuGemBalls?.accept(result.gem_balls,false);
           applySavedProgress(saved);
           if(WakppuItems.accept(result.items)===false)throw new Error('환생 상태를 다시 확인합니다.');
           wrap.classList.remove('broken','admin-ball-breaking');svgEl.classList.remove('instant');
@@ -1514,17 +1520,20 @@
       }}
     }
   };
-  window.WakppuGuestGame={discarded:()=>{clearTimeout(remoteSaveTimer);animationEpoch++;window.WakppuLimited?.clear();state.account=null;state.accountNickname='';state.remoteReady=false;accountRole=null;itemRevision=0;state.gold=0n;state.rebirths=0;state.unlocked=WAKPPU_BALLS.map((_,i)=>i===0);state.discovered=['yellow'];state.selected=0;state.hammerOwned=false;state.hammerLevel=0;state.hammerSelectedLevel=null;state.honeyExpiresAt=0;state.coatingExpiresAt=0;ordinaryClicks.clear();eventSelected=false;testSnapshot=null;state.busy=false;spawnBall(false);updateAll();renderAccount();localStorage.removeItem(SAVE_KEY);}};
+  window.WakppuGuestGame={discarded:()=>{clearTimeout(remoteSaveTimer);animationEpoch++;window.WakppuLimited?.clear();window.WakppuGemBalls?.clear();state.account=null;state.accountNickname='';state.remoteReady=false;accountRole=null;itemRevision=0;state.gold=0n;state.rebirths=0;state.unlocked=WAKPPU_BALLS.map((_,i)=>i===0);state.discovered=['yellow'];state.selected=0;state.hammerOwned=false;state.hammerLevel=0;state.hammerSelectedLevel=null;state.honeyExpiresAt=0;state.coatingExpiresAt=0;ordinaryClicks.clear();eventSelected=false;testSnapshot=null;state.busy=false;spawnBall(false);updateAll();renderAccount();localStorage.removeItem(SAVE_KEY);}};
   window.WakppuCustomGame={current:()=>currentBall().id,select:async id=>{
     if(!state.remoteReady||state.busy||eventRequest||window.wakppuServerBlocked)return false;
     if(id===currentBall().id)return true;
+    if(id===window.WakppuGemBallData?.ball.id)return await WakppuGemBalls.select(id);
+    if(gemSelected()&&!await WakppuGemBalls.select(null))return false;
     if(id===window.WakppuLimitedData?.ball.id){if(eventSelected)switchEvent(false);return await WakppuLimited.select(id);}
     if(id==='admin-event'){if(!eventActive())return false;if(limitedSelected()&&!await WakppuLimited.select(null))return false;switchEvent(true);return eventSelected;}
     const index=WAKPPU_BALLS.findIndex(b=>b.id===id);if(index<0||!state.unlocked[index])return false;await selectBall(index);return currentBall().id===id;
   }};
   window.WakppuSkinGame={refresh:()=>{if(state.busy)return;const clicks=state.clicks;spawnBall(false);state.clicks=Math.min(clicks,currentBall().clicks-1);updateCracks(state.clicks/currentBall().clicks);updateAll();}};
-  window.WakppuBeginnerRead=()=>{const b=currentBall(),ni=nextLockedIndex(),advanced=state.unlocked.some((open,i)=>open&&i>=WAKPPU_BALLS.findIndex(x=>x.id==='planet'));return {gold:String(state.gold),clicks:Math.min(state.clicks,b.clicks),required:b.clicks,damage:HAMMERS[activeHammerLevel()-1]?.cracks||1,busy:state.busy,baseReward:String(b.reward),green:!!state.unlocked[1],hammer:state.hammerOwned,early:state.rebirths===0&&!advanced&&accountRole!=='admin'&&!testSnapshot,ready:state.remoteReady,next:ni<0?null:{name:WAKPPU_BALLS[ni].name,price:String(WAKPPU_BALLS[ni].price),reward:String(WAKPPU_BALLS[ni].reward),clicks:WAKPPU_BALLS[ni].clicks}};};
-  window.WakppuLimitedGame={render:renderCollection,resetCollection:()=>{collectionDetailIndex=null;renderCollection();},sync:(selected,clicks=0)=>{if(eventSelected)switchEvent(false);if(selected)ordinaryClicks.set(state.selected,state.clicks);wrap.classList.remove('broken');spawnBall(true);state.clicks=selected?clicks:(ordinaryClicks.get(state.selected)||0);updateCracks(state.clicks/currentBall().clicks);updateAll();},test:()=>!!testSnapshot};
+  window.WakppuBeginnerRead=()=>{const b=currentBall(),ni=nextLockedIndex(),advanced=state.unlocked.some((open,i)=>open&&i>=WAKPPU_BALLS.findIndex(x=>x.id==='planet'));return {gold:String(state.gold),clicks:Math.min(state.clicks,b.clicks),required:b.clicks,damage:HAMMERS[activeHammerLevel()-1]?.cracks||1,busy:state.busy,baseReward:String(b.reward),gemReward:b.gemReward||0,green:!!state.unlocked[1],hammer:state.hammerOwned,early:state.rebirths===0&&!advanced&&accountRole!=='admin'&&!testSnapshot&&!gemSelected(),ready:state.remoteReady,next:ni<0?null:{name:WAKPPU_BALLS[ni].name,price:String(WAKPPU_BALLS[ni].price),reward:String(WAKPPU_BALLS[ni].reward),clicks:WAKPPU_BALLS[ni].clicks}};};
+  window.WakppuGemBallGame={sync:(selected,clicks=0,previous=false)=>{if(selected&&!previous&&!eventSelected&&!window.WakppuLimited?.data?.selected)ordinaryClicks.set(state.selected,state.clicks);if(eventSelected)switchEvent(false);wrap.classList.remove('broken','admin-ball-breaking');svgEl.classList.remove('instant');spawnBall(true);state.clicks=selected?clicks:(ordinaryClicks.get(state.selected)||0);updateCracks(state.clicks/currentBall().clicks);updateAll();}};
+  window.WakppuLimitedGame={render:renderCollection,resetCollection:()=>{collectionDetailIndex=null;renderCollection();},sync:(selected,clicks=0)=>{if(!selected&&gemSelected())return WakppuGemBallGame.sync(true,WakppuGemBalls.data.clicks,true);if(eventSelected)switchEvent(false);if(selected)ordinaryClicks.set(state.selected,state.clicks);wrap.classList.remove('broken');spawnBall(true);state.clicks=selected?clicks:(ordinaryClicks.get(state.selected)||0);updateCracks(state.clicks/currentBall().clicks);updateAll();},test:()=>!!testSnapshot};
   restoreAccount();
   let coatingWasActive=coatingActive();
   setInterval(() => {const coated=coatingActive(),expired=!coated&&state.coatingExpiresAt!==0;if(coated!==coatingWasActive){coatingWasActive=coated;if(!state.busy)updateCracks(state.clicks/currentBall().clicks);}if(expired)state.coatingExpiresAt=0;if(coated||expired||honeyActive()||!shopModal.hidden)updateAll();}, 1000);

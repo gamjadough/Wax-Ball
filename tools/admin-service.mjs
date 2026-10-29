@@ -1,4 +1,5 @@
 import {supporterReward} from './supporter-service.mjs';
+import {gemBallHit,gemBallUsable} from './gem-ball-data.mjs';
 import {unlockAdminBalls} from './admin-content.mjs';
 import {hammerDamage} from './hammer-catalog.mjs';
 import {weeklyRows,refreshWeekly,skipWeekly} from './weekly-service.mjs';
@@ -100,6 +101,7 @@ export function execute(store, actor, body) {
   }
   if(['items','item_draw','item_use'].includes(action))return itemAction(actor,body);
   if(action==='item_hit'){
+    if(!body.event_id&&gemBallUsable(actor))return gemBallHit(actor,body);
     const inv=itemState(actor),cached=inv.requests.get(body.request_id);if(cached){if(cached.action!==action)error('요청 ID 충돌');return structuredClone(cached.result);}
     if(!/^[a-f0-9-]{36}$/.test(body.request_id||''))error('잘못된 요청입니다.');
     if(body.item_revision!==inv.revision)error('아이템 상태를 다시 불러옵니다.',409);
