@@ -1,12 +1,14 @@
-# Friday recurring events (Asia/Seoul)
+# Tuesday and Friday recurring events (Asia/Seoul)
 
-| Start every Friday | Admin ball | Gold multiplier |
+| Weekly start | Admin ball | Gold multiplier |
 | --- | --- | --- |
-| 07:00 | 600 seconds | x10, 600 seconds |
-| 21:30 | 900 seconds | x100, 600 seconds |
+| Friday 07:00 | 600 seconds | x10, 600 seconds |
+| Friday 21:30 | 900 seconds | x100, 600 seconds |
+| Tuesday 21:30 | 900 seconds | x100, 600 seconds |
 
 - `20261020_weekly_events.sql` creates disabled presets. Enable with the authenticated administrator API `admin_weekly_events`, mode `enable`; mode `disable` stops only weekly windows and presets. `list` is read-only.
-- The admin panel contains **매주 금요일 반복 이벤트** with enable/disable controls and KST dates.
+- The admin panel contains **매주 화요일·금요일 반복 이벤트** with enable/disable controls and KST dates.
+- `20261104102433_tuesday_evening_weekly_event.sql` adds Tuesday 21:30, copying the existing Friday evening duration, multiplier and enabled state. Reapplying preserves later administrator edits. Existing Friday rows, skipped dates and manual events are preserved.
 - A protected server helper prepares the current/next window. Exact timestamps are used by all existing reward APIs; timestamps never shift to the time of login or cron execution.
 - pg_cron refreshes windows every minute even with nobody online. Every game API also refreshes before handling a request. SQL helpers and schedule tables cannot be called or edited by players.
 - Gold ends at 21:40; admin ball remains through 21:45. Intervals are start-inclusive, end-exclusive. New occurrences get distinct stable IDs, and duplicate refresh/hit requests do not repeat rewards.
