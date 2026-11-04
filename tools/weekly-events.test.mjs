@@ -8,12 +8,12 @@ test('local weekly schedule matches KST boundaries and preserves manual events',
  for(const time of ['21:00:00','21:29:59','21:30:00'])assert.equal(Date.parse(weeklyCandidate(rows,'gold',at('2026-10-16T'+time)).starts_at),at('2026-10-16T21:30:00'));
  assert.equal(rows.find(r=>r.id==='friday-evening').local_time,'21:30:00');
  assert.equal(weeklyCandidate(rows,'gold',at('2026-10-16T07:10:00')).multiplier,100);
- assert.equal(weeklyCandidate(rows,'gold',at('2026-10-16T21:40:00')).multiplier,10);
+ assert.equal(weeklyCandidate(rows,'gold',at('2026-10-16T21:40:00')).schedule_id,'tuesday-evening');
  assert.equal(Date.parse(weeklyCandidate(rows,'ball',at('2026-10-16T21:40:00')).ends_at),at('2026-10-16T21:45:00'));
- assert.equal(Date.parse(weeklyCandidate(rows,'ball',at('2026-10-16T21:45:00')).starts_at),at('2026-10-23T07:00:00'));
+ assert.equal(Date.parse(weeklyCandidate(rows,'ball',at('2026-10-16T21:45:00')).starts_at),at('2026-10-20T21:30:00'));
  s.gold_event={id:'manual',ends_at:new Date(Date.now()+86400000).toISOString()};refreshWeekly(s);assert.equal(s.gold_event.id,'manual');
  assert.throws(()=>execute(s,s.players[1],{action:'admin_weekly_events',mode:'enable'}),{status:403});
  assert.throws(()=>execute(s,{...s.players[0],is_anonymous:true},{action:'admin_weekly_events',mode:'enable'}),{status:403});
- const enabled=execute(s,s.players[0],{action:'admin_weekly_events',mode:'enable'});assert.equal(enabled.weekly_events.filter(r=>r.enabled).length,2);
+ const enabled=execute(s,s.players[0],{action:'admin_weekly_events',mode:'enable'});assert.equal(enabled.weekly_events.filter(r=>r.enabled).length,3);
  execute(s,s.players[0],{action:'admin_weekly_events',mode:'disable'});assert.equal(s.gold_event.id,'manual');assert.equal(s.admin_ball_event,null);
 });

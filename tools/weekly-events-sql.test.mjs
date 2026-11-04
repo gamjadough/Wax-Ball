@@ -70,5 +70,24 @@ test('PostgreSQL weekly windows: KST, exact boundaries, rollover, manual precede
   assert.equal((await db.query('select gold from game_states where user_id=$1',[player])).rows[0].gold,11000);
   for(const fn of ['wakppu_api_before_weekly_events(jsonb)','wakppu_weekly_candidate(text,timestamptz)','wakppu_refresh_weekly_events(timestamptz)'])assert.equal((await db.query("select has_function_privilege('authenticated',$1,'execute') as allowed",['public.'+fn])).rows[0].allowed,false);
   await db.exec('set role authenticated');await assert.rejects(db.exec('select * from wakppu_weekly_events'));await assert.rejects(db.exec('update wakppu_weekly_events set enabled=true'));await db.exec('reset role');
+  // New Tuesday entry reuses Friday evening settings and does not overwrite either row.
+  await db.exec("update wakppu_weekly_events set weekday=5,local_time=case when id='friday-morning' then '07:00:00'::time else '21:30:00'::time end,ball_seconds=case when id='friday-morning' then 600 else 900 end,gold_seconds=600,multiplier=case when id='friday-morning' then 10 else 100 end,enabled=true,skip_gold=null,skip_ball=null;");
+  const beforeTuesday=(await db.query('select * from wakppu_weekly_events order by id')).rows;
+  const tuesday=await readFile(new URL('../supabase/migrations/20261104102433_tuesday_evening_weekly_event.sql',import.meta.url),'utf8');
+  await db.exec(tuesday);await db.exec(tuesday);
+  assert.deepEqual((await db.query("select * from wakppu_weekly_events where id like 'friday-%' order by id")).rows,beforeTuesday);
+  assert.equal((await db.query("select count(*)::int n from wakppu_weekly_events")).rows[0].n,3);
+  for(const time of ['21:29:59','21:30:00','21:39:59']){
+   e=await candidate('gold','2026-11-10T'+time+'+09:00');assert.equal(e.schedule_id,'tuesday-evening');assert.equal(e.multiplier,100);
+   assert.equal(Date.parse(e.starts_at),Date.parse('2026-11-10T21:30:00+09:00'));
+   assert.equal(Date.parse(e.ends_at),Date.parse('2026-11-10T21:40:00+09:00'));
+  }
+  e=await candidate('gold','2026-11-10T21:40:00+09:00');assert.equal(e.schedule_id,'friday-morning');
+  e=await candidate('ball','2026-11-10T21:44:59+09:00');assert.equal(e.schedule_id,'tuesday-evening');assert.equal(Date.parse(e.ends_at),Date.parse('2026-11-10T21:45:00+09:00'));
+  e=await candidate('ball','2026-11-10T21:45:00+09:00');assert.equal(e.schedule_id,'friday-morning');
+  e=await candidate('gold','2026-11-06T21:45:00+09:00');assert.equal(e.schedule_id,'tuesday-evening');
+  await db.exec("update wakppu_weekly_events set enabled=false,skip_gold='2026-11-10' where id='tuesday-evening'");await db.exec(tuesday);
+  assert.equal((await db.query("select enabled from wakppu_weekly_events where id='tuesday-evening'")).rows[0].enabled,false);
+  assert.equal((await candidate('gold','2026-11-10T21:30:00+09:00')).schedule_id,'friday-morning');
  }finally{await db.close();}
 });

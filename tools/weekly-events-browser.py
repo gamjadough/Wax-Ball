@@ -31,7 +31,7 @@ try:
             if page.locator('#weeklyDisable').is_enabled():page.locator('#weeklyDisable').click();expect(page.locator('#weeklyList')).to_contain_text('꺼짐')
             page.locator('#weeklyEnable').click();expect(page.locator('#weeklyStatus')).to_contain_text('켰습니다')
             expect(page.locator('#weeklyList')).to_contain_text('07:00');expect(page.locator('#weeklyList')).to_contain_text('21:30');expect(page.locator('#adminWeeklyEvents')).to_contain_text('오후 21:30')
-            expect(page.locator('#weeklyList')).to_contain_text('Gold ×100 10분');expect(page.locator('#weeklyList')).to_contain_text('관리자 볼 15분')
+            expect(page.locator('#weeklyList')).to_contain_text('매주 화요일 21:30');expect(page.locator('#weeklyList')).to_contain_text('매주 금요일 07:00');expect(page.locator('#weeklyList')).to_contain_text('매주 금요일 21:30');expect(page.locator('#weeklyEnable')).to_be_disabled();expect(page.locator('#weeklyList')).to_contain_text('Gold ×100 10분');expect(page.locator('#weeklyList')).to_contain_text('관리자 볼 15분')
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
             out=ROOT/'tools/test-results';out.mkdir(exist_ok=True)
             page.screenshot(path=str(out/f'weekly-events-{width}.png'))
