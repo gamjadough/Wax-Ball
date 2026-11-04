@@ -33,7 +33,7 @@
   $('profileEquippedTitle').dataset.halloweenTitle=titleTheme(data?.title);
   $('profileEquippedTitle').classList.toggle('champion-title',data?.title==='👑 왁뿌볼의 정점');
   const badges=$('profileBadgeSelect');badges.replaceChildren(new Option('배지 없음',''),...(data?.badge_catalog||[]).map(b=>new Option(b.name,b.id)));badges.value=data?.badge_equipped||'';badges.disabled=!ready;$('profileBadgeSave').disabled=!ready;
-  $('profileBadgeOwned').textContent=data?.badge_catalog?.length?'월간 참여 배지 · 영구 보관':'월간 1,000클릭 달성 후 월말 확정 시 참여 배지를 받습니다.';
+  $('profileBadgeOwned').textContent=data?.badge_catalog?.length?'보유 배지 · 영구 보관':'10월 시험 집계에 1클릭 이상 참여하면 테스터 배지, 정식 시즌에는 1,000클릭 달성 후 월말 확정 시 참여 배지를 받습니다.';
  }
  async function refresh(){
   const account=read()?.account,seq=++version;if(owner!==account){data=null;owner=account;}renderInventory();if(!account||!read()?.ready)return;
@@ -71,7 +71,7 @@
   $('profileNickname').textContent=p.nickname;$('profileTitle').textContent=p.title||'';$('profileTitle').hidden=!p.title;
   $('profileTitle').dataset.halloweenTitle=titleTheme(p.title);
   $('profileTitle').classList.toggle('champion-title',p.title==='👑 왁뿌볼의 정점');
-  $('profileMonthlyBadge').textContent=p.monthly_badge?'🏅 '+p.monthly_badge:'';$('profileMonthlyBadge').hidden=!p.monthly_badge;
+  WakppuBadges.paint($('profileMonthlyBadge'),p.monthly_badge);
   $('profilePresence').textContent=p.online?'온라인':'오프라인';$('profilePresence').dataset.online=String(!!p.online);
   $('profileArt').hidden=!p.card;if(p.card)$('profileArt').src=safeImage(p.card);$('profileCardBadge').textContent=p.card?p.card.name+' · '+p.card.rarity+(p.card.id.startsWith('monthly_')?'':' 카드'):'기본 프로필 · 카드 미장착';
   $('profileRank').textContent=p.rank?`${p.rank}위`:'랭킹 외';$('profileGold').textContent=WakppuGold.compact(p.gold)+' G';$('profileGold').title=WakppuGold.integer(p.gold).toLocaleString('ko-KR')+' G';
@@ -110,7 +110,7 @@
   const championHelp=document.createElement('p');championHelp.className='profile-champion-help';championHelp.textContent='♛ 1위 기념 카드 「황금의 정점」 · 서버 랭킹 1위 달성 시 자동 지급 · 영구 보관';section.querySelector('h3').after(championHelp);
   art.style.height='auto';art.style.maxWidth='100%';section.querySelector('h3').textContent='프로필';
   const titleSettings=document.createElement('div');titleSettings.className='profile-title-settings';titleSettings.innerHTML='<label for="profileTitleSelect">칭호 선택</label><p id="profileEquippedTitle"></p><select id="profileTitleSelect"></select><button id="profileTitleSave" type="button" class="btn">칭호 적용</button><p>보유한 칭호만 선택할 수 있습니다. 칭호를 바꿔도 보상 배율은 변하지 않습니다.</p>';section.querySelector('#profileInventoryStatus').before(titleSettings);$('profileTitleSave').onclick=saveTitle;
-  const badgeSettings=document.createElement('div');badgeSettings.className='profile-badge-settings';badgeSettings.innerHTML='<label for="profileBadgeSelect">월간 참여 배지</label><p id="profileBadgeOwned"></p><select id="profileBadgeSelect"></select><button id="profileBadgeSave" type="button" class="btn">배지 적용</button>';section.querySelector('#profileInventoryStatus').before(badgeSettings);$('profileBadgeSave').onclick=saveBadge;
+  const badgeSettings=document.createElement('div');badgeSettings.className='profile-badge-settings';badgeSettings.innerHTML='<label for="profileBadgeSelect">배지 선택</label><p id="profileBadgeOwned"></p><select id="profileBadgeSelect"></select><button id="profileBadgeSave" type="button" class="btn">배지 적용</button>';section.querySelector('#profileInventoryStatus').before(badgeSettings);$('profileBadgeSave').onclick=saveBadge;
   $('profileCardEquip').onclick=()=>equip(select.value);$('profileCardUnequip').onclick=()=>equip(null);$('profileCardSelf').onclick=()=>open(data.nickname,$('profileCardSelf'));
   tabs.addEventListener('click',e=>{if(e.target.closest('button')?.id!==tab.id){profileTab=false;section.hidden=true;tab.setAttribute('aria-pressed','false');}});
   const sync=window.WakppuSkins.syncInventory;window.WakppuSkins.syncInventory=()=>{sync();if(profileTab)showCards();};

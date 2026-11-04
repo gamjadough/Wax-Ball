@@ -149,7 +149,8 @@ const server=http.createServer(async(req,res)=>{
       }
       if(req.url==='/local/monthly-demo'&&process.env.WAKPPU_LOCAL_MONTHLY_PREVIEW==='1'){
         execute(store,actor,{action:'bootstrap'});
-        if(body.mode==='seed'){
+        if(body.mode==='october_tester'){store.monthly_now_ms=Date.parse('2026-11-04T03:00:00Z');store.monthly=new Map([['2026-10',{counts:new Map([[actor.id,{id:actor.id,clicks:1n,reached:Date.parse('2026-10-30T03:00:00Z')}]]),done:false}]]);monthlySettle(store);actor.monthlyRewards.push({month:'2026-11',kind:'top10'});actor.profileTitle='monthly_202611_top10';
+        }else if(body.mode==='seed'){
           store.monthly_now_ms=Date.parse('2026-11-30T14:59:58Z');store.monthly=new Map();
           const counts=new Map();for(let i=1;i<=12;i++){
             const p=i===1?actor:{...createStore().players[1],id:'monthly-demo-'+i,nickname:'월간도전자'+i};

@@ -13,3 +13,7 @@
 .profile-dialog[data-card^="monthly_"][data-card$="_bronze"]{border-color:#cc9864;background:#211915}
 .profile-dialog[data-card^="monthly_"][data-card$="_bronze"] .profile-card-badge{color:#ffd3ad}
 @media(max-width:400px){.profile-dialog[data-card^="monthly_"] .profile-identity{padding:8px 14px 12px;max-width:68%}.profile-dialog[data-card^="monthly_"] .profile-identity h3{font-size:1.15rem}.profile-dialog[data-card^="monthly_"] .profile-player-title{font-size:10px;padding:3px 6px}.profile-dialog[data-card^="monthly_"] .monthly-badge{font-size:10px}.profile-dialog[data-card^="monthly_"] .profile-hero-top{padding:10px 12px}.profile-dialog[data-card^="monthly_"] .profile-card-badge{font-size:9px}.profile-dialog[data-card^="monthly_"] .profile-presence{font-size:10px;padding:4px 7px}}
+
+/* A quiet, cool silver trial souvenir; no gold emoji or animation. */
+.tester-badge,.monthly-name small.tester-badge{display:inline-flex;align-items:center;gap:6px;max-width:100%;width:fit-content;padding:4px 8px;border:1px solid #aab0ba88;border-radius:7px;background:linear-gradient(135deg,#444b56,#252b35);color:#e0e3e9;font-size:.72rem;font-weight:700;line-height:1.5;white-space:normal;overflow-wrap:anywhere;vertical-align:middle;text-shadow:0 1px 1px #0007}
+.tester-badge::before{content:"✦";display:grid;place-items:center;flex:0 0 22px;width:22px;height:24px;color:#434b59;background:linear-gradient(145deg,#eef0f3,#a5aab3 52%,#d4d8df);clip-path:polygon(50% 0,91% 21%,91% 71%,50% 100%,9% 71%,9% 21%);font-size:15px;text-shadow:none}

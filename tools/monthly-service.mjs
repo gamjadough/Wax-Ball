@@ -12,14 +12,14 @@ export function monthlyRecord(store,p){
 const ranked=(store,s)=>[...s.counts.values()].filter(c=>monthlyEligible(store.players.find(p=>p.id===c.id),now(store))).sort((a,b)=>a.clicks===b.clicks?a.reached-b.reached||a.id.localeCompare(b.id):a.clicks>b.clicks?-1:1).map((c,i)=>({...c,rank:i+1,nickname:store.players.find(p=>p.id===c.id).nickname}));
 export function monthlySettle(store){
  for(const [m,s] of seasons(store))if(!s.done&&m<month(now(store))){
-  s.rows=ranked(store,s);s.done=true;if(m<'2026-11')continue;
+  s.rows=ranked(store,s);s.done=true;if(m==='2026-10'){for(const c of s.counts.values()){const p=store.players.find(p=>p.id===c.id);if(p&&c.clicks>0n){p.monthlyRewards||=[];if(!p.monthlyRewards.some(r=>r.month===m&&r.kind==='participant'))p.monthlyRewards.push({month:m,kind:'participant'});}}continue;}if(m<'2026-11')continue;
   for(const row of s.rows){const p=store.players.find(p=>p.id===row.id);p.monthlyRewards||=[];
    if(row.rank===1)p.monthlyRewards.push({month:m,kind:'champion'});if(row.rank<=10)p.monthlyRewards.push({month:m,kind:'top10'});if(row.clicks>=1000n)p.monthlyRewards.push({month:m,kind:'participant'});
    if(row.rank<=3){p.monthlyCards||=[];const metal=['gold','silver','bronze'][row.rank-1];p.monthlyCards.push({id:`monthly_${m.replace('-','')}_${metal}`,name:m.replace('-','년 ')+'월 '+['클릭왕','은빛 도전자','동빛 도전자'][row.rank-1],rarity:`월간 ${row.rank}위`,free:false,image:`images/profile-cards/monthly-${metal}.webp`});}
   }
  }
 }
-export function monthlyBadges(p){const catalog=(p.monthlyRewards||[]).filter(r=>r.kind==='participant').map(r=>({id:`monthly_${r.month.replace('-','')}_participant`,name:r.month.replace('-','년 ')+'월 참여 배지'}));return {badge_catalog:catalog,badge_equipped:p.monthlyBadge||null,monthly_badge:catalog.find(c=>c.id===p.monthlyBadge)?.name||null};}
+export function monthlyBadges(p){const catalog=(p.monthlyRewards||[]).filter(r=>r.kind==='participant').map(r=>({id:`monthly_${r.month.replace('-','')}_participant`,name:r.month==='2026-10'?'2026년 10월 테스터 배지':r.month.replace('-','년 ')+'월 참여 배지'}));return {badge_catalog:catalog,badge_equipped:p.monthlyBadge||null,monthly_badge:catalog.find(c=>c.id===p.monthlyBadge)?.name||null};}
 export function monthlyAction(store,p,b){
  if('user_id' in b||'target_user_id' in b)fail(403,'본인 계정만 변경할 수 있습니다.');
  if(b.action==='monthly_badge_equip'){
