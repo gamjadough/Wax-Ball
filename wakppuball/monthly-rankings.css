@@ -17,3 +17,12 @@
 /* A quiet, cool silver trial souvenir; no gold emoji or animation. */
 .tester-badge,.monthly-name small.tester-badge{display:inline-flex;align-items:center;gap:6px;max-width:100%;width:fit-content;padding:4px 8px;border:1px solid #aab0ba88;border-radius:7px;background:linear-gradient(135deg,#444b56,#252b35);color:#e0e3e9;font-size:.72rem;font-weight:700;line-height:1.5;white-space:normal;overflow-wrap:anywhere;vertical-align:middle;text-shadow:0 1px 1px #0007}
 .tester-badge::before{content:"✦";display:grid;place-items:center;flex:0 0 22px;width:22px;height:24px;color:#434b59;background:linear-gradient(145deg,#eef0f3,#a5aab3 52%,#d4d8df);clip-path:polygon(50% 0,91% 21%,91% 71%,50% 100%,9% 71%,9% 21%);font-size:15px;text-shadow:none}
+
+/* Identity labels use the same type scale and box metrics within each surface. */
+#playerProfileDialog{--identity-label-font:12px;--identity-label-padding:5px 9px;--identity-label-height:30px;--identity-icon-width:16px;--identity-icon-height:18px}
+#playerProfileDialog .profile-player-title,#playerProfileDialog .monthly-badge{display:inline-flex;align-items:center;box-sizing:border-box;max-width:100%;min-height:var(--identity-label-height);padding:var(--identity-label-padding);margin:5px 0 0;font-size:var(--identity-label-font);font-weight:700;line-height:1.4;vertical-align:middle;overflow-wrap:anywhere}
+#playerProfileDialog .tester-badge::before{flex-basis:var(--identity-icon-width);width:var(--identity-icon-width);height:var(--identity-icon-height);font-size:12px}
+.ranking-nickname .ranking-premium-title,.ranking-nickname .monthly-badge,.monthly-name small.monthly-badge{display:flex;align-items:center;box-sizing:border-box;width:fit-content;max-width:100%;min-height:24px;padding:2px 6px;font-size:10px;font-weight:600;line-height:1.4;letter-spacing:normal;margin-top:4px}
+.ranking-nickname .tester-badge::before,.monthly-name .tester-badge::before{flex-basis:14px;width:14px;height:16px;font-size:11px}
+@media(max-width:520px){.ranking-nickname .ranking-premium-title,.ranking-nickname .monthly-badge,.monthly-name small.monthly-badge{font-size:9px}}
+@media(max-width:400px){#playerProfileDialog[data-card^="monthly_"]{--identity-label-font:10px;--identity-label-padding:3px 6px;--identity-label-height:26px;--identity-icon-width:14px;--identity-icon-height:16px}}
