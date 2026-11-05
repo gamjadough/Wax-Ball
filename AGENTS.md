@@ -32,3 +32,9 @@ The user has authorized automatically deploying future completed changes in this
 - Validate affected flows with touch-enabled phone emulation, including narrow portrait and landscape layouts. Check viewport overflow, reachable controls, safe areas and scrolling; keep touch targets at least 44px where practical.
 - Avoid unnecessary concurrent image decoding and excessive effects on small screens. Preserve mute, reduced motion, gameplay rewards and lifecycle cleanup.
 - Report browser emulation accurately; do not claim physical-device testing unless performed. Scale regression checks to the change.
+
+## User workflow preference (2026-11-05)
+
+- For requested changes in this project, run appropriate tests before deployment even when the user does not repeat that instruction.
+- When validation passes, proceed with deployment without requiring a separate deployment request. Verify the production result and report validation and deployment outcomes.
+- If validation fails, resolve the failure or report the blocker before deploying.
