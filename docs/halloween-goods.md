@@ -1,7 +1,8 @@
 # Halloween limited goods
 
-Purchase through the candy badge → Halloween shop. Use/equip/unequip through
-Inventory → Items → **한정**, immediately after the **초월** rarity filter.
+Purchase through the candy badge → Halloween shop. Use potions through Inventory → Items → **한정**, immediately after the **초월** rarity filter.
+Equip or remove profile cards and titles through Inventory → **프로필**; these cosmetics
+are not listed in the limited-items inventory.
 
 | Goods | Candy | Effect |
 |---|---:|---|

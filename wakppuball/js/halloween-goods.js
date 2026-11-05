@@ -23,7 +23,7 @@
    for(const section of document.querySelectorAll('.hgoods-section')){
     const shop=section.id==='halloweenGoodsShop';
     section.querySelector('.hgoods-balance').textContent='🍬 '+(data?.tokens||'0')+'캔디'+(data?.admin_access?' · 관리자 상시 이용':'');
-    section.querySelector('.hgoods-grid').innerHTML=(data?.catalog||[]).filter(d=>shop||data.admin_access||Number(data.stock[d.id])>0||d.kind==='potion'&&data.expires[d.id]>now()).map(d=>{
+    section.querySelector('.hgoods-grid').innerHTML=(data?.catalog||[]).filter(d=>shop||d.kind==='potion'&&(data.admin_access||Number(data.stock[d.id])>0||data.expires[d.id]>now())).map(d=>{
      const [icon,description,theme]=details[d.id]||['✦',d.name,'witch'],owned=data.admin_access||Number(data.stock[d.id])>0;
      const selected=d.kind==='card'?profile?.equipped===d.id:d.kind==='title'?profile?.title_equipped===d.id:false;
      const action=shop?'buy':d.kind==='potion'?'use':selected?'unequip':'equip';
@@ -65,7 +65,7 @@
  document.addEventListener('DOMContentLoaded',()=>{
   for(const [id,parent] of [['halloweenGoodsInventory',$('inventoryBrowse')],['halloweenGoodsShop',$('shopHalloween')]]){
    const section=document.createElement('section');section.id=id;section.className='hgoods-section';section.hidden=id==='halloweenGoodsInventory';
-   section.innerHTML='<h3>🎃 할로윈 한정 아이템</h3><p class="hgoods-balance"></p><p>포션은 기존 아이템·펫·환생·후원 효과와 별도로 중첩됩니다. 서로 다른 포션은 동시 사용, 같은 포션은 시간만 추가됩니다. 최대 7일 · 미접속 중에도 시간 경과 · 환생 후 유지.</p><p>카드·칭호는 영구 보유합니다. 판매 종료 후에도 이곳에서 사용할 수 있습니다.</p><p class="hgoods-status" role="status" aria-live="polite"></p><div class="hgoods-grid"></div>';
+   section.innerHTML='<h3>🎃 할로윈 한정 아이템</h3><p class="hgoods-balance"></p><p>포션은 기존 아이템·펫·환생·후원 효과와 별도로 중첩됩니다. 서로 다른 포션은 동시 사용, 같은 포션은 시간만 추가됩니다. 최대 7일 · 미접속 중에도 시간 경과 · 환생 후 유지.</p><p>보유 포션은 판매 종료 후에도 이곳에서 사용할 수 있습니다. 카드·칭호는 인벤토리 → 프로필에서 장착합니다.</p><p class="hgoods-status" role="status" aria-live="polite"></p><div class="hgoods-grid"></div>';
    if(id==='halloweenGoodsInventory')parent.querySelector('.item-filters').after(section);else parent.append(section);
    section.addEventListener('click',e=>{const b=e.target.closest('[data-goods-action]');if(b)transact(b.dataset.goodsAction,b.dataset.goodsId);});
   }
