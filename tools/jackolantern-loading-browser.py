@@ -19,7 +19,7 @@ with sync_playwright() as p:
   assert page.evaluate('audio')==0
   expect(page.locator('.jackolantern-scare')).to_have_count(0)
   if mode=='slow':
-   pending[0].fulfill(content_type='image/png',body=(ROOT/'wakppuball/images/scares/jackolantern.png').read_bytes())
+   pending[0].fulfill(content_type='image/webp',body=(ROOT/'wakppuball/images/scares/jackolantern.webp').read_bytes())
    expect(page.locator('.jackolantern-scare')).to_be_visible()
    assert page.evaluate('audio')==1
    assert page.evaluate('spawned')==0
@@ -28,12 +28,12 @@ with sync_playwright() as p:
   elif mode=='failure':pending[0].abort()
   elif mode=='cancel':
    page.evaluate('run.cancel()')
-   pending[0].fulfill(content_type='image/png',body=(ROOT/'wakppuball/images/scares/jackolantern.png').read_bytes())
+   pending[0].fulfill(content_type='image/webp',body=(ROOT/'wakppuball/images/scares/jackolantern.webp').read_bytes())
    page.wait_for_timeout(100)
    assert page.evaluate('spawned===0&&audio===0')
   if mode!='cancel':page.wait_for_function('spawned===1',timeout=4000)
   if mode=='timeout':
-   pending[0].fulfill(content_type='image/png',body=(ROOT/'wakppuball/images/scares/jackolantern.png').read_bytes())
+   pending[0].fulfill(content_type='image/webp',body=(ROOT/'wakppuball/images/scares/jackolantern.webp').read_bytes())
    page.wait_for_timeout(100)
    assert page.evaluate('audio')==0
   expect(page.locator('.jackolantern-scare')).to_have_count(0)

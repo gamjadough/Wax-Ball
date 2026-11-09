@@ -20,6 +20,7 @@
   const effects = $('effects');
   const flashEl = $('flash');
   const hintEl = $('hint');
+  const reconnectBtn = $('reconnectGame');
   const goldEl = $('goldValue');
   const nameEl = $('ballName');
   const gradeEl = $('ballGrade');
@@ -109,6 +110,10 @@
   const SAVE_KEY = window.WakppuAuth?.local ? 'wax-ball:wakppuball:local-test-save' : 'wax-ball:wakppuball:save';
   const SAVE_VERSION = 3;
   let remoteSaveTimer = null;
+  let savedProgressKey = null;
+  let restoreGeneration = 0;
+  let restoringAccount = false;
+  let connectionFailed = false;
   let testSnapshot = null;
   let animationEpoch = 0;
   let rewardReadyEpoch = -1;
@@ -391,7 +396,9 @@
     animationEpoch++;
     clearTimeout(state.respawnTimer);
     const data = currentBall();
-    if(data.id==='halloween-pumpkin-2026')window.WakppuHalloweenEffects?.prepare();
+    const sound = getSoundConfig(data);
+    SoundManager.init(['early', 'mid', 'late', 'final', 'sequence'].flatMap(key => sound[key] || []));
+    if(data.id==='halloween-pumpkin-2026')SoundManager.init(['jackolantern-sting.wav']);
     const shape = SHAPES[data.design.shape] || SHAPES.circle;
     const uid = makeUid();
 
@@ -444,16 +451,49 @@
       coating_expires_at: coatingActive() ? new Date(state.coatingExpiresAt).toISOString() : null,
     };
   }
+  // Hits already persist click counts and item revisions on the server.
+  function progressKey({current_clicks, item_revision, ...progress}) {
+    return JSON.stringify(progress);
+  }
+
+  async function flushRemoteProgress(options={}) {
+    if(!options.signal)return WakppuHitRequests.run(signal=>flushRemoteProgress({signal}),{attempts:1});
+    clearTimeout(remoteSaveTimer);
+    const generation = restoreGeneration;
+    const account = state.account?.id;
+    const save = remoteInFlight.catch(()=>{}).then(async()=>{
+      if(options.signal?.aborted || generation!==restoreGeneration || account!==state.account?.id || !state.remoteReady || window.wakppuServerBlocked)return;
+      const payload = remotePayload();
+      const key = progressKey(payload);
+      if(key===savedProgressKey)return;
+      await WakppuAuth.invoke('save_progress',payload,options);
+      if(!options.signal?.aborted && generation===restoreGeneration && account===state.account?.id)savedProgressKey=key;
+    });
+    remoteInFlight = save;
+    return save;
+  }
+
   function queueRemoteSave() {
     if (!state.remoteReady || !window.WakppuAuth || state.busy || window.WakppuItems?.busy || window.WakppuLimited?.busy || window.wakppuServerBlocked) return;
     clearTimeout(remoteSaveTimer);
+    if(progressKey(remotePayload())===savedProgressKey)return;
+    const generation = restoreGeneration;
     remoteSaveTimer = setTimeout(() => {
-      if(window.wakppuServerBlocked)return;
-      const payload=remotePayload();remoteInFlight=remoteInFlight.catch(()=>{}).then(()=>window.WakppuAuth.invoke('save_progress',payload));remoteInFlight.catch((error) => {
-        if(error.status===409) restoreAccount();
-        else if(error.status===503||error.status===403) {state.remoteReady=false;window.dispatchEvent(new Event('wakppu-account-restored'));}
+      WakppuHitRequests.run(signal=>flushRemoteProgress({signal}),{attempts:1,valid:()=>generation===restoreGeneration}).catch(error=>{
+        if(error.cancelled||generation!==restoreGeneration)return;
+        if(error.status===409)restoreAccount();
+        else if(error.status===503||error.status===403){showConnectionFailure();window.dispatchEvent(new Event('wakppu-account-restored'));}
       });
     }, 500);
+  }
+
+  function showConnectionFailure() {
+    state.remoteReady=false;
+    pendingItemHits.clear();
+    connectionFailed=true;
+    hintEl.textContent='계정에 연결하지 못했습니다. 다시 연결을 눌러주세요.';
+    hintEl.classList.remove('gone');
+    reconnectBtn.hidden=false;
   }
 
   function applySavedProgress(saved){
@@ -472,47 +512,94 @@
     state.honeyExpiresAt = saved.honey_expires_at && new Date(saved.honey_expires_at).getTime() > Date.now() ? new Date(saved.honey_expires_at).getTime() : 0;
     state.coatingExpiresAt = saved.coating_expires_at && new Date(saved.coating_expires_at).getTime() > Date.now() ? new Date(saved.coating_expires_at).getTime() : 0;
   }
-  async function restoreAccount({signal}={}) {
-    if(window.WakppuGuestExit?.busy)return;
-    window.WakppuLimited?.clear();window.WakppuGemBalls?.clear();
-    if (!window.WakppuAuth) return;
-    if(eventSelected)switchEvent(false,false);eventSeen=null;eventId=null;ordinaryClicks.clear();
-    if(testSnapshot) window.WakppuGameTest.end();
-    state.remoteReady = false;accountRole=null;adminSeenEvent=null;
+  function resetAccountConnection() {
+    restoreGeneration++;
     clearTimeout(remoteSaveTimer);
-    const { data: { session } } = await window.WakppuAuth.session();
-    if(signal?.aborted)return;
-    state.account = session?.user ?? null;
-    if (!state.account) { renderAccount(); window.dispatchEvent(new Event('wakppu-account-restored')); return; }
+    pendingItemHits.clear();
+    savedProgressKey=null;
+    restoringAccount=false;
+    if(connectionFailed)hintEl.textContent='왁뿌볼을 눌러 깨보세요';
+    connectionFailed=false;
+    reconnectBtn.disabled=false;
+    reconnectBtn.hidden=true;
+  }
+
+  async function restoreAccount({signal}={}) {
+    if(window.WakppuGuestExit?.busy || !window.WakppuAuth)return;
+    const generation = ++restoreGeneration;
+    const wasRecovering = connectionFailed || restoringAccount;
+    const valid = () => generation===restoreGeneration && !signal?.aborted;
+    restoringAccount=true;
+    state.remoteReady=false;
+    savedProgressKey=null;
+    pendingItemHits.clear();
+    reconnectBtn.disabled=true;
+    reconnectBtn.hidden=true;
+    if(wasRecovering){
+      hintEl.textContent='계정에 다시 연결하는 중입니다.';
+      hintEl.classList.remove('gone');
+    }
+    window.WakppuLimited?.clear();
+    window.WakppuGemBalls?.clear();
+    if(eventSelected)switchEvent(false,false);
+    eventSeen=null;eventId=null;ordinaryClicks.clear();
+    if(testSnapshot)window.WakppuGameTest.end();
+    accountRole=null;adminSeenEvent=null;
+    clearTimeout(remoteSaveTimer);
+
     try {
-      const local = remotePayload();
-      const data = await window.WakppuAuth.invoke('bootstrap',{}, {signal});
-      if(signal?.aborted)return;
-      state.accountNickname = data.player?.nickname || '';
-      const saved = data.state;
-      accountRole=data.player?.role||null;
-      state.adminRevision = saved.admin_revision || 0;itemRevision=Number(saved.item_revision||0);
-      // 계정 도입 전의 이 기기 저장 데이터는 첫 로그인 때 한 번만 서버 계정으로 옮깁니다.
-      if (!saved.progress_imported_at && !saved.admin_revision && !window.WakppuGuestExit?.skipImport(state.account.id)) {
-        await window.WakppuAuth.invoke('save_progress', local,{signal});
-        state.remoteReady = true;
+      await WakppuHitRequests.run(async attemptSignal=>{
+        const {data:{session},error} = await WakppuAuth.session();
+        if(error)throw error;
+        if(!valid()||attemptSignal.aborted)return;
+        state.account=session?.user??null;
+        if(!state.account)return;
+        await remoteInFlight.catch(()=>{});
+        if(!valid()||attemptSignal.aborted)return;
+        const local=remotePayload();
+        const data=await WakppuAuth.invoke('bootstrap',{}, {signal:attemptSignal});
+        if(!valid()||attemptSignal.aborted)return;
+        const saved=data.state;
+        state.accountNickname=data.player?.nickname||'';
+        accountRole=data.player?.role||null;
+        state.adminRevision=saved.admin_revision||0;
+        itemRevision=Number(saved.item_revision||0);
+        if(!saved.progress_imported_at&&!saved.admin_revision&&!window.WakppuGuestExit?.skipImport(state.account.id)){
+          await WakppuAuth.invoke('save_progress',local,{signal:attemptSignal});
+          if(!valid()||attemptSignal.aborted)return;
+        }else{
+          window.WakppuGemBalls?.accept(data.gem_balls,false);
+          applySavedProgress(saved);
+          spawnBall(false);
+          if(!limitedSelected()&&!gemSelected()){
+            state.clicks=Number(saved.item_current_clicks??saved.current_clicks??0)||0;
+            updateCracks(state.clicks/currentBall().clicks);
+          }
+        }
+        savedProgressKey=progressKey(remotePayload());
+        state.remoteReady=true;
         updateAll();
+        if(data.player?.nickname?.startsWith('Player_'))accountStatus.textContent='닉네임을 정하면 랭킹에 표시됩니다.';
+      },{attempts:1,valid});
+      if(valid()){
+        connectionFailed=false;
+        if(wasRecovering)hintEl.textContent='왁뿌볼을 눌러 깨보세요';
+      }
+    }catch(error){
+      if(generation===restoreGeneration)showConnectionFailure();
+    }finally{
+      if(generation===restoreGeneration){
+        restoringAccount=false;
+        reconnectBtn.disabled=false;
+        if(signal?.aborted)showConnectionFailure();
         renderAccount();
         window.dispatchEvent(new Event('wakppu-account-restored'));
-        return;
       }
-      window.WakppuGemBalls?.accept(data.gem_balls,false);
-      applySavedProgress(saved);
-      state.remoteReady = true;
-      spawnBall(false);
-      updateAll();
-      if (data.player?.nickname?.startsWith('Player_')) accountStatus.textContent = '닉네임을 정하면 랭킹에 표시됩니다.';
-    } catch (_) {
-      state.remoteReady = false;
     }
-    renderAccount();
-    window.dispatchEvent(new Event('wakppu-account-restored'));
   }
+
+  reconnectBtn.onclick=()=>restoreAccount();
+  window.addEventListener('online',()=>{if(connectionFailed&&!restoringAccount)restoreAccount();});
 
   function renderAccount() {
     const loggedIn = !!state.account;
@@ -632,7 +719,7 @@
   function onHit(clientX, clientY, damage = null, isHammer = activeHammerLevel()>0, authorizedEvent=false,requiredTotal=null) {
     if(window.WakppuGuestExit?.busy||window.WakppuGuestDialog?.busy)return;
     if(window.WakppuSkins?.busy||window.WakppuGemBalls?.busy)return;
-    if(!authorizedEvent&&!testSnapshot&&state.account&&!state.remoteReady)return;
+    if(!authorizedEvent&&!testSnapshot&&(restoringAccount||connectionFailed||state.account&&!state.remoteReady))return;
     if (hammerSelectionBusy || state.busy || window.wakppuServerBlocked || window.WakppuItems?.busy || window.WakppuLimited?.busy) return;
     if(!authorizedEvent&&!testSnapshot&&state.remoteReady){hitItem(clientX,clientY);return;}
     if(eventSelected&&!authorizedEvent){hitEvent(clientX,clientY);return;}
@@ -679,8 +766,8 @@
     if(!state.remoteReady||window.wakppuServerBlocked||window.WakppuGuestExit?.busy){pendingItemHits.clear();return;}
     if(hammerSelectionBusy||state.busy||window.WakppuItems?.busy||window.WakppuLimited?.busy||window.WakppuGemBalls?.busy)return;
     if(eventRequest){if(!automatic)pendingItemHits.push([x,y]);return;}
-    eventRequest=true;const epoch=animationEpoch;const account=state.account?.id;
-    const requestOptions={valid:()=>account===state.account?.id&&epoch===animationEpoch&&!window.wakppuServerBlocked,onRetry:()=>{hintEl.textContent='연결이 지연되어 타격을 다시 확인 중입니다.';hintEl.classList.remove('gone');}};
+    eventRequest=true;const epoch=animationEpoch;const account=state.account?.id;const generation=restoreGeneration;
+    const requestOptions={valid:()=>generation===restoreGeneration&&state.remoteReady&&account===state.account?.id&&epoch===animationEpoch&&!window.wakppuServerBlocked,onRetry:()=>{hintEl.textContent='연결이 지연되어 타격을 다시 확인 중입니다.';hintEl.classList.remove('gone');}};
     try{
       await WakppuHitRequests.run(signal=>window.WakppuItemGame.flush({signal}),requestOptions);
       const timing=WakppuItemData.timing(WakppuItemData.effective(WakppuItems.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt));
@@ -689,7 +776,9 @@
       result=await WakppuHitRequests.send(automatic?'ember_auto_hit':action,automatic?{...req,hit_action:action}:req,requestOptions);
       if(account!==state.account?.id)return;
       itemBreakTiming=result.broken||BigInt(result.reward)>0n?WakppuHalloweenGoods.timing(WakppuHalloweenDecorData.timing(timing,result.pet_timing?.equipped??null),result.halloween_goods):null;
+      const confirmedKey=progressKey({...remotePayload(),gold:String(result.gold)});
       if(WakppuItems.accept(result)===false){itemBreakTiming=null;await WakppuHitRequests.run(signal=>restoreAccount({signal}),{attempts:1,valid:()=>account===state.account?.id});return;}
+      savedProgressKey=confirmedKey;
       state.gold=BigInt(result.gold);itemRevision=result.revision;
       if(result.limited)WakppuLimited.accept(result.limited);
       if(result.candy_drop)floatText('🍬 사탕 +1',ballCenter().x,ballCenter().y-70);
@@ -698,7 +787,7 @@
       if(eventSelected){eventAward=BigInt(result.reward);displayEventReward=eventAward;}
       onHit(x,y,result.clicks-state.clicks,activeHammerLevel()>0,true,result.required_clicks);
       return true;
-    }catch(error){if(error.cancelled){pendingItemHits.clear();return;}if(error.status===429){pendingItemHits.clear();hintEl.textContent=error.message;hintEl.classList.remove('gone');return;}try{await WakppuHitRequests.run(signal=>restoreAccount({signal}),{attempts:1,valid:()=>account===state.account?.id});}catch{state.remoteReady=false;pendingItemHits.clear();}hintEl.textContent=error.message;hintEl.classList.remove('gone');}
+    }catch(error){if(error.cancelled){pendingItemHits.clear();return;}if(error.status===429){pendingItemHits.clear();hintEl.textContent=error.message;hintEl.classList.remove('gone');return;}try{await WakppuHitRequests.run(signal=>restoreAccount({signal}),{attempts:1,valid:()=>account===state.account?.id});}catch{showConnectionFailure();}if(!connectionFailed){hintEl.textContent=error.message;hintEl.classList.remove('gone');}}
     finally{eventRequest=false;window.WakppuAutoRebirth?.request();if(!state.busy){updateAll();const next=pendingItemHits.shift();if(next)queueMicrotask(()=>hitItem(...next));}}
 
   }
@@ -1135,10 +1224,13 @@
   function updateAll() {
     const data = currentBall();
 
-    goldEl.textContent = fmt(state.gold-(eventSelected&&state.busy?displayEventReward:0n));
-    goldEl.classList.remove('bump');
-    void goldEl.offsetWidth;                 // 애니메이션 다시 시작용
-    goldEl.classList.add('bump');
+    const displayGold = fmt(state.gold-(eventSelected&&state.busy?displayEventReward:0n));
+    if(goldEl.textContent!==displayGold){
+      goldEl.textContent=displayGold;
+      goldEl.classList.remove('bump');
+      void goldEl.offsetWidth;
+      goldEl.classList.add('bump');
+    }
 
     nameEl.textContent = data.name;
     gradeEl.textContent = data.grade;
@@ -1325,6 +1417,7 @@
     window.WakppuGameTest.end();
     const result = await window.WakppuAuth?.signOut();
     if (result?.error) return accountMessage(result.error.message);
+    resetAccountConnection();
     state.account = null; state.accountNickname = ''; state.remoteReady = false;
     renderAccount(); accountModal.hidden = true;
     window.dispatchEvent(new Event('wakppu-account-restored'));
@@ -1378,15 +1471,6 @@
   /* ==========================================================================
      9. 시작!
      ========================================================================== */
-  // 사용할 소리 이름을 모두 모아서 미리 불러오기
-  const soundNames = new Set();
-  [...WAKPPU_BALLS,...(typeof ADMIN_EVENT_BALL!=="undefined"?[ADMIN_EVENT_BALL]:[]),...(window.WakppuLimitedData?[WakppuLimitedData.ball]:[]),...(window.WakppuGemBallData?[WakppuGemBallData.ball]:[])].forEach((b) => {
-    const cfg = getSoundConfig(b);
-    ['early', 'mid', 'late', 'final', 'sequence'].forEach((k) => (cfg[k]||[]).forEach((n) => soundNames.add(n)));
-  });
-  soundNames.add('jackolantern-sting.wav');
-  SoundManager.init(Array.from(soundNames));
-
   loadProgress();
   window.WakppuGameTest = {
     selectLocalAdminBall(){if(window.WakppuAuth?.local)switchEvent(true);},
@@ -1464,7 +1548,7 @@
   });
   window.WakppuItemGame={
     read:()=>({gold:String(state.gold),revision:itemRevision,ready:state.remoteReady,account:state.account?.id,test:!!testSnapshot,busy:hammerSelectionBusy||state.busy||eventRequest||pendingItemHits.length>0,blocked:!!window.wakppuServerBlocked||!!window.WakppuGuestExit?.busy||!!window.WakppuGuestDialog?.busy,honey:state.honeyExpiresAt,coating:state.coatingExpiresAt}),
-    flush:async(options={})=>{clearTimeout(remoteSaveTimer);await remoteInFlight.catch(()=>{});if(state.remoteReady)await WakppuAuth.invoke('save_progress',remotePayload(),options);},
+    flush:flushRemoteProgress,
     // Inventory reads can lag behind unsaved ball rewards. Only transactions replace Gold.
     accept:(data,syncGold=true)=>{if(Number(data.revision)<itemRevision)return false;if(syncGold)state.gold=BigInt(data.gold);itemRevision=Number(data.revision);if(Object.prototype.hasOwnProperty.call(data,'hammer_selected_level'))state.hammerSelectedLevel=data.hammer_selected_level;updateAll();if(!state.busy)updateCracks(state.clicks/currentBall().clicks);return true;},
     restore:restoreAccount
@@ -1524,7 +1608,7 @@
       }}
     }
   };
-  window.WakppuGuestGame={discarded:()=>{clearTimeout(remoteSaveTimer);animationEpoch++;window.WakppuLimited?.clear();window.WakppuGemBalls?.clear();state.account=null;state.accountNickname='';state.remoteReady=false;accountRole=null;itemRevision=0;state.gold=0n;state.rebirths=0;state.unlocked=WAKPPU_BALLS.map((_,i)=>i===0);state.discovered=['yellow'];state.selected=0;state.hammerOwned=false;state.hammerLevel=0;state.hammerSelectedLevel=null;state.honeyExpiresAt=0;state.coatingExpiresAt=0;ordinaryClicks.clear();eventSelected=false;testSnapshot=null;state.busy=false;spawnBall(false);updateAll();renderAccount();localStorage.removeItem(SAVE_KEY);}};
+  window.WakppuGuestGame={discarded:()=>{resetAccountConnection();animationEpoch++;window.WakppuLimited?.clear();window.WakppuGemBalls?.clear();state.account=null;state.accountNickname='';state.remoteReady=false;accountRole=null;itemRevision=0;state.gold=0n;state.rebirths=0;state.unlocked=WAKPPU_BALLS.map((_,i)=>i===0);state.discovered=['yellow'];state.selected=0;state.hammerOwned=false;state.hammerLevel=0;state.hammerSelectedLevel=null;state.honeyExpiresAt=0;state.coatingExpiresAt=0;ordinaryClicks.clear();eventSelected=false;testSnapshot=null;state.busy=false;spawnBall(false);updateAll();renderAccount();localStorage.removeItem(SAVE_KEY);}};
   window.WakppuCustomGame={current:()=>currentBall().id,select:async id=>{
     if(!state.remoteReady||state.busy||eventRequest||window.wakppuServerBlocked)return false;
     if(id===currentBall().id)return true;

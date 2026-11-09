@@ -1,7 +1,5 @@
 (() => {
-const images=['images/scares/jackolantern.png','images/scares/ghost.png','images/scares/witch.png'];
-let prepared=false;
-function prepare(){if(prepared)return;prepared=true;void (async()=>{for(const src of images){const img=new Image();img.src=src;try{await img.decode();}catch{}}})();}
+const images=['images/scares/jackolantern.webp','images/scares/ghost.webp','images/scares/witch.webp'];
 function chooseScare(random=Math.random){return random()<.3?Math.min(2,Math.floor(random()*images.length)):null;}
 function showScare(index,valid,theme){
  const overlay=document.createElement('div');overlay.className='jackolantern-scare';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','잭오랜턴 깜짝 연출');
@@ -19,7 +17,7 @@ function showScare(index,valid,theme){
  image.decode().then(()=>{if(closed)return;if(!valid()||document.hidden||window.wakppuServerBlocked){cancel();return;}clearTimeout(timer);started=true;document.body.append(overlay);close.focus({preventScroll:true});SoundManager.play('jackolantern-sting.wav',{pitch:theme==='eclipse'?.82:1,pitchRandom:0,volume:theme==='eclipse'?.85:1,volumeRandom:0});timer=setTimeout(cancel,1100);}).catch(cancel);return {cancel,done};
 }
 function startScare({valid,random=Math.random,theme}){if(!valid()||window.WakppuPumpkinInventory?.scareAllowed?.()===false)return null;const choice=chooseScare(random);return choice===null?null:showScare(choice,valid,theme);}
-window.WakppuHalloweenEffects={prepare,chooseScare,startScare,play({wrap,svg,effects,center,valid,reward,respawn,speed=1,respawnSpeed=1,random=Math.random}){
+window.WakppuHalloweenEffects={chooseScare,startScare,play({wrap,svg,effects,center,valid,reward,respawn,speed=1,respawnSpeed=1,random=Math.random}){
  const nodes=[],animations=[],timers=[];let stopped=false,paid=false;const reduced=window.WakppuSettings?.reduced()??matchMedia('(prefers-reduced-motion: reduce)').matches;
  const scare=startScare({valid,random});
  function cancel(){stopped=true;scare?.cancel();timers.forEach(clearTimeout);animations.forEach(a=>a.cancel());nodes.forEach(n=>n.remove());delete wrap.dataset.halloweenPhase;}
