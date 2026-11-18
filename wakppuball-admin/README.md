@@ -18,6 +18,13 @@ material was transferred in memory only, never added to this repository. Numeric
 gold is serialized as a string to preserve values beyond JavaScript's range.
 Old sessions and project signing secrets were not copied.
 
+Auth imports must explicitly preserve both `auth.users.created_at` and
+`auth.users.updated_at`, as well as email-identity timestamps. The managed schema
+permits a null `updated_at`, but GoTrue's password login scanner rejects it with
+HTTP 500 before checking the password. Run
+`tools/admin-auth-production-check.sql` and verify the real Auth endpoint after
+an import; local RPC/role tests alone do not validate password login.
+
 The page reuses the existing administrator event, moderation, grant, lifecycle,
 input-record and purchase controls. `tools/build-admin-site.mjs` generates HTML
 and the administrator-only purchase module from the shared source. It does not
