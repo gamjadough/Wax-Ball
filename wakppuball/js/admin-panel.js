@@ -107,7 +107,7 @@
   }
   let pending=false;
   async function call(action,payload={}){if(pending)return null;const version=selectionVersion;pending=true;syncSelection();try{const result=await window.WakppuAuth.invoke(action,payload);if(result.target&&version===selectionVersion&&result.target.id===target)info(result.target);status('완료했습니다.');return result;}catch(e){status(e.message);return null;}finally{pending=false;syncSelection();}}
-  let refreshing=false,lastServerStatus=null,serverInstant=0,serverAnchor=0;
+  let refreshing=false,lastServerStatus=null,serverInstant=0,serverAnchor=0,previewHandled=false;
   function currentSleep(){return lastServerStatus?.sleep_hours?(Number.isFinite(serverInstant)?WakppuSleepHours.at(serverInstant+Math.max(0,performance.now()-serverAnchor)):lastServerStatus.sleep_hours):null;}
   function renderAccess(result){
     const previousBlocked=window.wakppuServerBlocked;
@@ -139,13 +139,25 @@
       window.WakppuAdminBallEvent.update(result);
       window.WakppuEventSchedule?.update(result);
       $('adminBtn').hidden=result.role!=='admin';
+      if(window.WAKPPU_ADMIN_SITE){
+        window.WakppuAdminSite.accept(result);
+        $('adminClearAnnouncement').disabled=!result.announcement;
+        return;
+      }
       if($('adminBtn').hidden){$('admin').hidden=true;clearSelection();}
       const wasBlocked=window.wakppuServerBlocked;
       renderAccess(result);
       renderAnnouncement(result.announcement);
       $('adminClearAnnouncement').disabled=!result.announcement;
       if(!window.wakppuServerBlocked&&(wasBlocked||(result.admin_revision!=null&&result.admin_revision!==WakppuGameTest.revision())))await WakppuGameTest.restoreAccount();
-    }catch(_){$('adminBtn').hidden=true;$('admin').hidden=true;clearSelection();}
+      if(!previewHandled&&result.role==='admin'){
+        previewHandled=true;const params=new URLSearchParams(location.search),mode=params.get('admin-preview');
+        if(['ball','last','break','honey','end'].includes(mode)){
+          if(mode==='end')WakppuGameTest.end();
+          else{const ball=params.get('ball')||'yellow',test=await WakppuAuth.invoke('admin_test',{ball_id:ball});WakppuGameTest.run(mode,test.ball_id,Math.max(0,Math.min(600,Number(params.get('honey'))||600)));}
+        }
+      }
+    }catch(_){$('adminBtn').hidden=true;$('admin').hidden=true;clearSelection();window.WakppuAdminSite?.lock('관리 서버에 연결하지 못했습니다. 다시 로그인하거나 새로고침해주세요.');}
     finally{refreshing=false;}
   }
   $('adminBallEventStart').onclick=async()=>{
@@ -170,7 +182,7 @@
     const result=await call('admin_search',{query:$('adminQuery').value.trim()});
     if(result&&version===searchVersion)render(result);
   }
-  $('adminBtn').onclick=async()=>{if(pending)return;$('adminQuery').value='';$('admin').hidden=false;await search();};
+  $('adminBtn').onclick=async()=>{if(!window.WAKPPU_ADMIN_SITE){location.href='../wakppuball-admin/?server='+(window.WAKPPU_SERVER?.id==='public'?'public':'friends');return;}if(pending)return;$('adminQuery').value='';$('admin').hidden=false;await search();};
   $('adminQuery').addEventListener('input',()=>{invalidateSearch();status('검색을 눌러 목록을 갱신하세요.');});
   $('adminQuery').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();search();}});
   $('adminSearch').onclick=search;
@@ -213,16 +225,18 @@
     await refresh();
   };
   for(const [id,action,mode] of [['adminUnlock','admin_unlock','one'],['adminUnlockAll','admin_unlock','all'],['adminDiscover','admin_discovery','one'],['adminDiscoverAll','admin_discovery','all'],['adminResetOne','admin_discovery','reset_one'],['adminResetAll','admin_discovery','reset_all']])bind(id,action,()=>({mode,ball_id:$('adminBall').value}),mode==='reset_all'?'선택한 플레이어의 전체 도감 발견 상태를 초기화하시겠습니까?':null);
-  async function test(mode){const result=await call('admin_test',{ball_id:$('adminBall').value});if(result){window.WakppuGameTest.run(mode,result.ball_id,Number($('adminHoneySeconds').value));$('admin').hidden=true;}}
-  $('adminTestBall').onclick=()=>test('ball');$('adminTestLast').onclick=()=>test('last');$('adminTestBreak').onclick=()=>test('break');$('adminTestHoney').onclick=()=>test('honey');$('adminEndTest').onclick=()=>{window.WakppuGameTest.end();status('실제 진행도를 복원했습니다.');};
+  async function test(mode){const result=await call('admin_test',{ball_id:$('adminBall').value});if(result){if(window.WAKPPU_ADMIN_SITE)return WakppuAdminSite.preview(mode,result.ball_id,Number($('adminHoneySeconds').value));window.WakppuGameTest.run(mode,result.ball_id,Number($('adminHoneySeconds').value));$('admin').hidden=true;}}
+  $('adminTestBall').onclick=()=>test('ball');$('adminTestLast').onclick=()=>test('last');$('adminTestBreak').onclick=()=>test('break');$('adminTestHoney').onclick=()=>test('honey');$('adminEndTest').onclick=()=>{if(window.WAKPPU_ADMIN_SITE)return WakppuAdminSite.preview('end');window.WakppuGameTest.end();status('실제 진행도를 복원했습니다.');};
   $('adminLoadLogs').onclick=async()=>{const logs=await call('admin_logs');if(logs)$('adminLogs').textContent=JSON.stringify(logs,null,2);};
   clearSelection();
   window.addEventListener('wakppu-auth-changed',invalidateSearch);
+  window.addEventListener('wakppu-admin-locked',invalidateSearch);
   window.addEventListener('wakppu-auth-changed',()=>{lastServerStatus=null;refresh();});
   window.addEventListener('wakppu-account-restored',refresh);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
   window.addEventListener('focus',refresh);setInterval(refresh,3000);refresh();
   setInterval(()=>{
+    if(window.WAKPPU_ADMIN_SITE)return;
     if(!lastServerStatus?.sleep_hours||lastServerStatus.role==='admin')return;
     const sleeping=currentSleep().active;
     if(sleeping&&!window.wakppuServerBlocked){renderAccess(lastServerStatus);refresh();}

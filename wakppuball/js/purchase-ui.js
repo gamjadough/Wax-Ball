@@ -130,5 +130,5 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
   setInterval(()=>{if(!document.hidden&&!$('shopPremium').hidden&&!$('shop').hidden)refresh();},15000);refresh();render();
  });
- window.WakppuPurchases={refresh,openNotice:async id=>{if($('adminBtn').hidden||adminBusy)return;adminNoticeId=id;adminOffset=0;$('admin').hidden=false;await adminLoad();$('purchaseAdmin').scrollIntoView({block:'start'});},serverHits:()=>!!game()?.account&&(owner!==game()?.account||!data||!!data.owned?.supporter_pack||!!data.owned?.premium_supporter_pack||data.orders?.some(o=>o.product_id==='first_steps_pack'&&['pending','claimed'].includes(o.status)))};
+ window.WakppuPurchases={refresh,openNotice:async id=>{if($('adminBtn').hidden||adminBusy)return;location.href='../wakppuball-admin/?server='+(window.WAKPPU_SERVER?.id==='public'?'public':'friends')+'&order='+encodeURIComponent(id);},serverHits:()=>!!game()?.account&&(owner!==game()?.account||!data||!!data.owned?.supporter_pack||!!data.owned?.premium_supporter_pack||data.orders?.some(o=>o.product_id==='first_steps_pack'&&['pending','claimed'].includes(o.status)))};
 })();

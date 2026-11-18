@@ -6,6 +6,7 @@
   let page=0,busy=false,epoch=0;
   function clear(){epoch++;page=0;document.getElementById('inputGuardRows').replaceChildren();document.getElementById('inputGuardStatus').textContent='';}
   window.addEventListener('wakppu-auth-changed',clear);window.addEventListener('wakppu-account-restored',clear);
+  window.addEventListener('wakppu-admin-locked',clear);
   async function refresh(){
    if(busy)return;const version=epoch,user=window.WakppuItemGame?.read().account;busy=true;section.querySelectorAll('button').forEach(b=>b.disabled=true);
    try{
