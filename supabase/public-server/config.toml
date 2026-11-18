@@ -1,0 +1,4 @@
+# Public project only; handler performs Auth getUser validation itself.
+project_id = "wax-ball-public"
+[functions.custom-ball-image]
+verify_jwt = false

@@ -107,7 +107,7 @@
   const HAMMERS = window.WakppuHammers;
 
   /* ---------- 브라우저 자동 저장 ---------- */
-  const SAVE_KEY = window.WakppuAuth?.local ? 'wax-ball:wakppuball:local-test-save' : 'wax-ball:wakppuball:save';
+  const SAVE_KEY = window.WakppuAuth?.local ? 'wax-ball:wakppuball:local-test-save' : (window.WAKPPU_SERVER?.saveKey || 'wax-ball:wakppuball:save');
   const SAVE_VERSION = 3;
   let remoteSaveTimer = null;
   let savedProgressKey = null;

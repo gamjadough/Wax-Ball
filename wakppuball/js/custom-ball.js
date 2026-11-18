@@ -3,7 +3,7 @@
  if(!window.WakppuAuth||WakppuAuth.local&&!document.body.hasAttribute('data-custom-live-local'))return;
  const $=id=>document.getElementById(id),stages=['early','mid','late','final'];
  let owner=null,record={plan:'none',target:null,profiles:{},global:null,presets:[],balls:[],revision:0},draft=null,bitmap=null,uploadSequence=0,imageController=null,saving=false,decoding=false,imageDirty=false,previousFocus=null,auditionSequence=0;const auditionNames=new Set();let refreshSequence=0,stateSignature="",urlsAt=0,urls={},lastRefresh=0;
- const sources=new Map(),catalog=[...WAKPPU_BALLS,ADMIN_EVENT_BALL,WakppuLimitedData.ball];
+ const sources=new Map(),catalog=[...WAKPPU_BALLS,ADMIN_EVENT_BALL,...(window.WAKPPU_SERVER?.id==='public'?[]:[WakppuLimitedData.ball])];
  for(const ball of catalog)sources.set(ball.id,{id:ball.id,name:ball.name,ball,owned:()=>true});
  for(const p of WakppuSkinSounds.profiles)sources.set('skin:'+p.id,{id:'skin:'+p.id,name:p.name+' · 보유 스킨',ball:WakppuSkinSounds.appearance({...WAKPPU_BALLS.find(b=>b.id==='eternity'),skinId:p.id}),owned:()=>record.presets.includes('skin:'+p.id)});
  for(const p of WakppuPumpkinSkins.profiles)sources.set('pumpkin:'+p.id,{id:'pumpkin:'+p.id,name:p.name+' · 한정 스킨',ball:WakppuPumpkinSkins.appearance(WakppuLimitedData.ball,p.id),owned:()=>record.presets.includes('pumpkin:'+p.id)});

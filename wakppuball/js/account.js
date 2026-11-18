@@ -38,7 +38,7 @@
     if (error) return {error};
     if (!data.user?.is_anonymous) return {error: new Error('빠른 시작 계정에서 이메일을 연결해주세요.')};
     return client.auth.updateUser({email, data: {wakppu_email_link_pending: true}}, {
-      emailRedirectTo: 'https://gamjadough.github.io/Wax-Ball/wakppuball/',
+      emailRedirectTo: config.redirectUrl || 'https://gamjadough.github.io/Wax-Ball/wakppuball/',
     });
   }
   async function completeEmailLink(password) {
@@ -78,7 +78,7 @@
     signUp: (email, password) => client.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: 'https://gamjadough.github.io/Wax-Ball/wakppuball/' },
+      options: { emailRedirectTo: config.redirectUrl || 'https://gamjadough.github.io/Wax-Ball/wakppuball/' },
     }),
     signIn: (email, password) => client.auth.signInWithPassword({ email, password }),
     signInAnonymously: startGuest,

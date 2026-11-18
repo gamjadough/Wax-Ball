@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>왁뿌볼 · 공개 서버</title>
+  <base href="../wakppuball/">
+  <link rel="stylesheet" href="style.css?v=d4cb83909969">
+  <link rel="stylesheet" href="input-guard.css?v=e5d84cb6b3e9">
+  <link rel="stylesheet" href="blue-gems.css?v=df95ac489e0a">
+  <link rel="stylesheet" href="gem-balls.css?v=8036475b58b6">
+  <link rel="stylesheet" href="event-notice.css?v=cc429f0d12e7">
+  <link rel="stylesheet" href="guest-lifecycle.css?v=df044faa19ac">
+  <link rel="stylesheet" href="whitehole.css?v=e432a6813c58">
+  <link rel="stylesheet" href="purchases.css?v=f0890f30cc63">
+  <link rel="stylesheet" href="purchase-notices.css?v=ba2fee489e2e">
+  <link rel="stylesheet" href="keepsake.css?v=7da203144373">
+  <link rel="stylesheet" href="items.css?v=b4cf82814050">
+  <link rel="stylesheet" href="limited.css?v=4d968247e7a1">
+  <link rel="stylesheet" href="transcendent.css?v=2d8cab0d2f11">
+  <link rel="stylesheet" href="skin-cutscene.css?v=b9406c004bd6">
+  <link rel="stylesheet" href="skins.css?v=6e35d521f8cd">
+  <link rel="stylesheet" href="guest-exit.css?v=18013ac39628">
+  <link rel="stylesheet" href="admin-selection.css?v=d9089fda5ba6">
+  <link rel="stylesheet" href="admin-ball.css?v=94c031dabf13">
+  <link rel="stylesheet" href="player-settings.css?v=b2c157de0d93">
+  <link rel="stylesheet" href="profile-cards.css?v=4208e774307f">
+  <link rel="stylesheet" href="beginner.css?v=489d0393db45">
+<link rel="stylesheet" href="custom.css?v=e0a6961a6c74">
+  <link rel="stylesheet" href="monthly-rankings.css?v=4073a0843d46">
+  <style>.public-server-label{position:fixed;top:max(8px,env(safe-area-inset-top));left:12px;font-size:12px;color:#a9bfd5;pointer-events:none;z-index:2}#halloweenCurrency,#inventoryPetsTab,[data-filter="limited"]{display:none!important}</style>
+</head>
+<body data-server="public">
+  <div class="public-server-label">공개 서버</div>
+  <section id="maintenance" class="maintenance" aria-labelledby="maintenanceTitle" hidden>
+    <div class="maintenance-card">
+      <span class="maintenance-icon" aria-hidden="true">🔧</span>
+      <h1 id="maintenanceTitle">왁뿌볼 패치 중</h1>
+      <p id="maintenanceDescription">현재 게임이 업데이트 중입니다.<br>잠시 후 다시 접속해주세요.</p>
+      <p class="maintenance-note">새로운 상점과 모바일 파괴 안정화 기능을 적용하고 있습니다.</p>
+      <button id="maintenanceRanking" class="btn" type="button">랭킹 보기</button>
+      <button id="maintenanceLogin" class="btn" type="button">관리자 로그인</button>
+    </div>
+  </section>
+  <main id="game">
+
+    <!-- 상단: 현재 골드 -->
+    <header class="top">
+      <div class="gold" aria-label="보유 골드">
+        <span class="coin" aria-hidden="true"></span>
+        <span id="goldValue" class="gold-value">0</span>
+        <span class="gold-unit">G</span>
+      </div>
+      <button id="halloweenCurrency" class="season-currency" type="button" hidden aria-label="할로윈 사탕 · 할로윈 상점 열기" aria-haspopup="dialog" aria-controls="shop"><span aria-hidden="true">🍬</span><span id="halloweenCurrencyValue">0</span></button>
+      <button id="shopBtn" class="btn top-btn" type="button">🛒 상점</button>
+      <button id="rebirthBtn" class="btn top-btn" type="button">환생</button>
+      <div class="account-tools">
+        <button id="accountBtn" class="btn top-btn" type="button">계정</button>
+        <button id="settingsBtn" class="btn top-btn" type="button" aria-haspopup="dialog" aria-controls="playerSettings">⚙️ 설정</button>
+      </div>
+      <button id="adminBtn" class="btn top-btn" type="button" hidden>관리자 패널</button>
+      <div id="goldEventBanner" class="gold-event-banner" hidden role="status"></div>
+    </header>
+    <section id="beginnerGuide" class="beginner-guide" aria-label="초반 성장 가이드" hidden>
+      <div><strong id="beginnerGoal"></strong><p id="beginnerGoalNote"></p></div>
+      <button id="beginnerGoalAction" class="btn small" type="button">게임 방법</button>
+    </section>
+
+    <!-- 중앙: 왁뿌볼 -->
+    <section id="stage" class="stage">
+      <div class="spot" aria-hidden="true"></div>
+      <div class="ball-shadow" aria-hidden="true"></div>
+      <div id="ballWrap" class="ball-wrap">
+        <svg id="ballSvg" viewBox="0 0 200 200" role="img" aria-label="왁뿌볼"></svg>
+      </div>
+      <div id="flash" class="flash" aria-hidden="true"></div>
+      <div id="effects" class="effects" aria-hidden="true"></div>
+      <button id="reconnectGame" class="btn small reconnect-game" type="button" hidden>다시 연결</button>
+      <p id="hint" class="hint" aria-live="polite">왁뿌볼을 눌러 깨보세요</p>
+    </section>
+
+    <!-- 하단: 이름 · 등급 · 버튼 -->
+    <footer class="bottom">
+      <div id="ballProgress" class="ball-progress">
+        <span id="ballProgressText"></span><span id="ballRewardText"></span>
+        <progress id="ballProgressBar" max="5" value="0" aria-label="왁뿌볼 파괴 진행"></progress>
+      </div>
+      <div class="info">
+        <span id="ballGrade" class="grade"></span>
+        <h1 id="ballName" class="name"></h1>
+      </div>
+      <div class="actions">
+        <button id="unlockBtn" class="btn primary" type="button"></button>
+        <button id="inventoryBtn" class="btn" type="button">🎒 인벤토리</button>
+        <button id="collectionBtn" class="btn" type="button">도감</button>
+        <button id="rankingBtn" class="btn" type="button">랭킹</button>
+      </div>
+    </footer>
+  </main>
+  <div id="beginnerHelp" class="modal" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="beginnerHelpTitle">
+      <div class="sheet-head"><h2 id="beginnerHelpTitle">처음이라면 이렇게!</h2><button id="beginnerHelpClose" class="btn small" type="button">닫기</button></div>
+      <ol><li>공을 눌러 깨면 Gold를 받아요. 노란 볼은 5번 눌러 1G!</li><li>10G를 모아 초록 볼을 해금하세요. 기본 보상이 1G에서 10G로 늘어요.</li><li>상점에서 100G 나무 망치를 사세요. 초록 볼을 8번 대신 3번에 깰 수 있어요.</li></ol>
+      <p>망치는 자동으로 적용되고 환생해도 유지돼요. 가격·보상은 기존과 같아요.</p>
+      <p>계정 없이도 이 기기에서 연습할 수 있어요. 닉네임으로 빠른 시작하면 서버 저장·랭킹·이벤트 재화도 사용할 수 있어요. 다른 기기에서 이어 하려면 이메일을 연결하세요.</p>
+      <button id="beginnerStart" class="btn primary" type="button">닉네임으로 빠른 시작 / 계정</button>
+    </div>
+  </div>
+
+  <div id="playerSettings" class="modal" hidden>
+    <div class="sheet settings-sheet" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="sheet-head"><h2 id="settingsTitle">⚙️ 설정</h2><button id="settingsClose" class="btn small" type="button">닫기</button></div>
+      <p class="settings-note">설정은 이 기기와 브라우저에 저장됩니다.</p>
+      <fieldset><legend>사운드</legend>
+        <label class="setting-check"><input id="settingsMuted" type="checkbox" data-setting="muted">전체 음소거</label>
+        <label class="setting-check"><input id="settingsSfx" type="checkbox" data-setting="sfx">효과음</label>
+        <label class="setting-volume" for="settingsSfxVolume"><span>효과음 음량</span><output for="settingsSfxVolume" data-setting-output="sfxVolume">70%</output><input id="settingsSfxVolume" type="range" min="0" max="100" step="1" value="70" data-setting="sfxVolume"></label>
+        <button id="settingsSoundPreview" class="btn small" type="button">효과음 들어보기</button>
+        <label class="setting-check"><input id="settingsMusic" type="checkbox" data-setting="music">배경음악</label>
+        <label class="setting-volume" for="settingsMusicVolume"><span>배경음악 음량</span><output for="settingsMusicVolume" data-setting-output="musicVolume">25%</output><input id="settingsMusicVolume" type="range" min="0" max="100" step="1" value="25" data-setting="musicVolume"></label>
+        <p id="settingsMusicNote" class="settings-note">할로윈 왈츠 · 다른 탭이나 잠금 화면에서는 음악이 멈춰요.</p>
+      </fieldset>
+      <fieldset><legend>게임 화면</legend>
+        <label class="setting-check"><input id="settingsRemainingHits" type="checkbox" data-setting="showRemainingHits" aria-describedby="settingsRemainingHitsNote">남은 타격량 표시</label>
+        <p id="settingsRemainingHitsNote" class="settings-note">공 아래 타격량·기본 보상·진행 막대 영역 전체를 표시하거나 숨깁니다.</p>
+      </fieldset>
+      <fieldset><legend>화면 효과</legend>
+        <label class="setting-check"><input id="settingsReduce" type="checkbox" data-setting="reduceEffects">화면 효과 줄이기</label>
+        <p class="settings-note">움직임·반짝임·파편을 줄여요. 기기의 동작 줄이기 설정도 함께 적용됩니다.</p>
+        <label class="setting-check"><input id="settingsFlashes" type="checkbox" data-setting="flashes">섬광 효과</label>
+      </fieldset>
+      <button id="settingsReset" class="btn small" type="button">기본 설정으로 복원</button>
+      <p id="settingsStorageStatus" class="settings-note" role="status"></p>
+    </div>
+  </div>
+
+  <!-- 도감 (선택 / 해금) -->
+  <div id="collection" class="modal" hidden>
+    <div class="sheet collection-sheet" role="dialog" aria-modal="true" aria-labelledby="collectionTitle">
+      <div class="sheet-head">
+        <h2 id="collectionTitle">왁뿌볼 도감</h2>
+        <button id="collectionClose" class="btn small" type="button" aria-label="닫기">닫기</button>
+      </div>
+      <div id="collectionGrid" class="grid"></div>
+      <nav id="collectionPager" class="collection-pager" aria-label="도감 페이지">
+        <button id="collectionPrev" class="btn small" type="button">〈 이전</button>
+        <span id="collectionPage" role="status" aria-live="polite" aria-atomic="true"></span>
+        <button id="collectionNext" class="btn small" type="button">다음 〉</button>
+      </nav>
+      <section id="collectionDetail" class="collection-detail" aria-label="왁뿌볼 상세 정보" hidden></section>
+    </div>
+  </div>
+
+  <div id="rebirth" class="modal" hidden>
+    <div class="sheet compact" role="dialog" aria-modal="true" aria-labelledby="rebirthTitle">
+      <div class="sheet-head"><h2 id="rebirthTitle">환생</h2><button data-close="rebirth" class="btn small" type="button">닫기</button></div>
+      <p id="rebirthText" class="dialog-text"></p>
+      <button id="rebirthConfirm" class="btn primary" type="button">환생하기</button>
+    </div>
+  </div>
+
+  <div id="ranking" class="modal" hidden>
+    <div class="sheet compact" role="dialog" aria-modal="true" aria-labelledby="rankingTitle">
+      <div class="sheet-head"><h2 id="rankingTitle">온라인 랭킹</h2><button data-close="ranking" class="btn small" type="button">닫기</button></div>
+      <p id="rankingStatus" class="dialog-text">랭킹을 불러오는 중…</p>
+      <ol id="rankingList" class="ranking-list"></ol>
+    </div>
+  </div>
+
+  <div id="shop" class="modal" hidden>
+    <div class="sheet compact" role="dialog" aria-modal="true" aria-labelledby="shopTitle">
+      <div class="sheet-head"><h2 id="shopTitle">🛒 상점</h2><button data-close="shop" class="btn small" type="button">닫기</button></div>
+      <div class="shop-tabs" role="tablist" aria-label="상점 메뉴"><button id="shopPurchaseTab" class="btn" role="tab" aria-selected="true" aria-controls="shopPurchase">아이템 구매</button><button id="shopDrawTab" class="btn" role="tab" aria-selected="false" aria-controls="shopDraw" tabindex="-1">뽑기</button><button id="shopPremiumTab" class="btn" role="tab" aria-selected="false" aria-controls="shopPremium" tabindex="-1">유료 상점</button></div>
+      <section id="shopPurchase" role="tabpanel" aria-labelledby="shopPurchaseTab">
+      <article class="shop-item"><h3>🍯 꿀</h3><p id="honeyInfo" class="dialog-text"></p><button id="honeyBtn" class="btn primary" type="button">구매 · 30K G</button></article>
+      <article class="shop-item"><h3>💎 보석 코팅</h3><p id="coatingInfo" class="dialog-text"></p><button id="coatingBtn" class="btn primary" type="button">구매 · 5M G</button></article>
+      <article class="shop-item"><h3>🪵 망치</h3><p id="hammerInfo" class="dialog-text"></p><div class="hammer-actions"><button id="hammerBtn" class="btn primary" type="button"></button><label class="hammer-level-label" for="hammerLevelSelect">레벨 선택<select id="hammerLevelSelect" class="btn" disabled></select></label></div><p id="hammerLevelStatus" class="meta" role="status" aria-live="polite"></p></article>
+      </section>
+      <section id="shopPremium" role="tabpanel" aria-labelledby="shopPremiumTab" hidden></section>
+      <section id="shopHalloween" role="region" aria-label="할로윈 상점" hidden>
+        <div class="halloween-shop-tabs" role="tablist" aria-label="할로윈 상점 메뉴">
+          <button id="halloweenPetsTab" class="btn" type="button" role="tab" aria-selected="true" aria-controls="shopHalloweenPets">펫</button>
+          <button id="halloweenSkinsTab" class="btn" type="button" role="tab" aria-selected="false" aria-controls="shopHalloweenSkins" tabindex="-1">스킨</button>
+        </div>
+        <section id="shopHalloweenPets" role="tabpanel" aria-labelledby="halloweenPetsTab"></section>
+        <section id="shopHalloweenSkins" role="tabpanel" aria-labelledby="halloweenSkinsTab" hidden></section>
+      </section>
+      <section id="shopDraw" role="tabpanel" aria-labelledby="shopDrawTab" hidden><p id="shopItemsStatus" role="status"></p><p id="shopItemsLogin">계정에서 빠른 시작 또는 로그인 후 사용할 수 있습니다.</p></section>
+    </div>
+  </div>
+
+  <div id="account" class="modal" hidden>
+    <div class="sheet compact" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
+      <div class="sheet-head"><h2 id="accountTitle">계정</h2><button data-close="account" class="btn small" type="button">닫기</button></div>
+      <p id="accountStatus" class="dialog-text">로그인하면 진행도와 랭킹이 계정에 저장됩니다.</p>
+      <div id="accountForm" class="account-form">
+        <label>빠른 시작 닉네임<input id="guestNicknameInput" type="text" maxlength="16" placeholder="닉네임만 입력하고 바로 시작"></label>
+        <button id="guestStartBtn" class="btn primary" type="button">닉네임으로 바로 시작</button>
+        <p class="account-note">빠른 시작 계정은 이 브라우저에서 유지됩니다. 내 계정에서 이메일을 연결하면 기존 진행도를 다른 기기에서도 이어갈 수 있습니다. 새 계정은 공을 한 번도 누르지 않으면 30분 후 랭킹에서 제외되고 3일 후 삭제됩니다. 한 번이라도 플레이하거나 이메일을 연결하면 자동 삭제 대상에서 제외됩니다.</p>
+        <label>이메일<input id="accountEmail" type="email" autocomplete="email" placeholder="name@example.com"></label>
+        <label>비밀번호<input id="accountPassword" type="password" autocomplete="current-password" minlength="6" placeholder="6자 이상"></label>
+        <label>닉네임<input id="nicknameInput" type="text" maxlength="16" placeholder="2~16자, 한글/영문/숫자/_"></label>
+        <div class="account-actions"><button id="signInBtn" class="btn" type="button">로그인</button><button id="signUpBtn" class="btn" type="button">회원가입</button></div>
+      </div>
+      <div id="nicknameEdit" class="account-form" hidden>
+        <label>변경할 닉네임<input id="renameNicknameInput" type="text" maxlength="16" placeholder="2~16자, 한글/영문/숫자/_"></label>
+        <button id="renameNicknameBtn" class="btn primary" type="button">닉네임 변경</button>
+      </div>
+      <div id="emailLinkForm" class="account-form" hidden>
+        <p class="account-note">이메일을 연결해도 계정과 진행도는 유지됩니다. 사용 중인 다른 계정의 이메일은 연결할 수 없습니다.</p>
+        <label>연결할 이메일<input id="linkEmailInput" type="email" autocomplete="email" placeholder="name@example.com"></label>
+        <button id="linkEmailBtn" class="btn" type="button">이메일 인증 메일 보내기</button>
+      </div>
+      <button id="checkEmailLinkBtn" class="btn" type="button" hidden>인증 완료 확인</button>
+      <div id="emailPasswordForm" class="account-form" hidden>
+        <p class="account-note">이메일 인증이 완료됐습니다. 로그인에 사용할 비밀번호를 설정해주세요.</p>
+        <label>새 비밀번호<input id="linkPasswordInput" type="password" autocomplete="new-password" minlength="6" placeholder="6자 이상"></label>
+        <label>새 비밀번호 확인<input id="linkPasswordConfirm" type="password" autocomplete="new-password" minlength="6"></label>
+        <button id="completeEmailLinkBtn" class="btn primary" type="button">비밀번호 설정·연결 완료</button>
+      </div>
+      <button id="signOutBtn" class="btn" type="button" hidden>로그아웃</button>
+    </div>
+  </div>
+
+
+  <div id="admin" class="modal" hidden>
+    <div class="sheet admin-sheet" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+      <div class="sheet-head"><h2 id="adminTitle">관리자 패널</h2><button data-close="admin" class="btn small">닫기</button></div>
+      <p id="adminStatus" role="status"></p>
+      <button id="adminKeepsakeOpen" class="btn" type="button" aria-controls="adminKeepsake">피어싱 조각 지급</button>
+      <section><h3>전체 배경</h3><label>배경 설정<select id="adminBackgroundMode"><option value="auto">자동 · 할로윈 기간 적용</option><option value="default">기본 배경</option></select></label><p>공개 서버는 기본 배경을 사용합니다.</p><p id="adminBackgroundStatus" role="status"></p><button id="adminBackgroundApply" class="btn">배경 적용</button></section>
+      <section><h3>👑 관리자 왁뿌볼 이벤트</h3><p>모든 플레이어에게 자동 등장합니다. 600회 · 반복 파괴 가능 · 최고 해금 볼 보상 ×10에 기존 배율 적용. 도감에서 자유롭게 변경할 수 있습니다.</p><label>진행 시간 (1~86,400초)<input id="adminBallEventDuration" type="number" min="1" max="86400" value="300"></label><label>시작 전 대기 시간 (0~86,400초)<input id="adminBallEventDelay" type="number" min="0" max="86400" value="0"></label><p id="adminBallEventInfo" role="status"></p><div class="admin-controls"><button id="adminBallEventStart" class="btn">관리자 볼 이벤트 시작</button><button id="adminBallEventStop" class="btn" disabled>관리자 볼 이벤트 종료</button></div></section>
+      <section><h3>🎉 전체 골드 타임</h3><p>설정한 시간 동안 모든 플레이어의 Gold 획득 배율을 높입니다. 환생·꿀 배율과 곱해지며, 진행 시간 종료 시 자동으로 해제됩니다.</p><label>Gold 배율 (1~1,000배)<input id="adminEventMultiplier" type="number" min="1" max="1000" step="1" value="10"></label><label>진행 시간 (1~86,400초)<input id="adminEventDuration" type="number" min="1" max="86400" step="1" value="60"></label><label>시작 전 대기 시간 (0~86,400초 · 0이면 즉시 시작)<input id="adminEventDelay" type="number" min="0" max="86400" step="1" value="30"></label><p id="adminGoldEventInfo" role="status">이벤트 상태 확인 중…</p><div class="admin-controls"><button id="adminGoldEventStart" class="btn">설정한 이벤트 시작</button><button id="adminGoldEventStop" class="btn" disabled>이벤트 즉시 종료</button></div></section>
+      <section><h3>점검·공지</h3><label>점검 안내<input id="adminMaintenanceMessage" value="현재 게임이 업데이트 중입니다."></label><div class="account-actions"><button id="adminMaintenanceOn" class="btn">점검 ON</button><button id="adminMaintenanceOff" class="btn">점검 OFF</button></div><label>전체 공지<input id="adminAnnouncement" maxlength="500"></label><div class="account-actions"><button id="adminAnnounce" class="btn">공지 보내기</button><button id="adminClearAnnouncement" class="btn" disabled>공지 내리기</button></div></section>
+      <section><h3>플레이어 검색</h3><label>닉네임 / User ID<input id="adminQuery" placeholder="테스트플레이어 또는 local-player"></label><button id="adminSearch" class="btn">검색</button><div id="adminResults"></div><p id="adminPlayerInfo">검색 결과에서 대상을 선택하세요.</p></section>
+      <section><h3>미플레이 빠른 시작 계정</h3>
+        <p>새 빠른 시작 계정은 공을 한 번도 누르지 않으면 생성 30분 후 랭킹에서 제외되고, 3일 후 자동 삭제됩니다. 첫 플레이·이메일 연결 계정과 기존 계정은 제외됩니다. 삭제 작업은 5분마다 실행됩니다.</p>
+        <label>조회 대상<select id="guestLifecycleFilter"><option value="unplayed">미플레이 정리 대상</option><option value="hidden">30분 경과 · 랭킹 제외</option><option value="due">3일 경과 · 삭제 대기</option><option value="protected">플레이·이메일·관리자 제외</option><option value="all">기록된 전체 계정</option></select></label>
+        <label>닉네임 / User ID<input id="guestLifecycleQuery" maxlength="100"></label>
+        <button id="guestLifecycleSearch" class="btn">계정 조회 / 새로고침</button>
+        <p id="guestLifecycleStatus" role="status">조회 버튼을 눌러 확인하세요. 기존 계정은 이 목록에 포함되지 않습니다.</p>
+        <div class="guest-lifecycle-table"><table><thead><tr><th>닉네임</th><th>User ID</th><th>생성 시각</th><th>경과 시간</th><th>첫 플레이</th><th>상태</th><th>삭제 예정 시각</th></tr></thead><tbody id="guestLifecycleRows"></tbody></table></div>
+        <div class="admin-controls"><button id="guestLifecyclePrevious" class="btn small" disabled>이전</button><button id="guestLifecycleNext" class="btn small" disabled>다음</button></div>
+      </section>
+      <section><h3>Gold·환생 관리</h3><label>변경 방식<select id="adminChangeMode"><option value="set">직접 설정</option><option value="add">추가</option><option value="subtract">차감</option></select></label><label>Gold<input id="adminGold" type="text" inputmode="numeric" pattern="[0-9]+" value="10000"></label><button id="adminSetGold" class="btn">Gold 적용</button><label>환생 횟수 (0~1000)<input id="adminRebirths" type="number" min="0" max="1000" step="1" value="0"></label><button id="adminSetRebirths" class="btn">환생 적용</button></section>
+      <section><h3>랭킹·이용 제한</h3>
+        <p>랭킹 숨김은 플레이와 저장을 유지합니다. 밴된 계정은 플레이·저장·랭킹 참여가 제한됩니다.</p>
+        <label>사유 (밴 시 필수)<textarea id="adminModerationReason" maxlength="500" rows="3" placeholder="랭킹 숨김 또는 밴 사유"></textarea></label>
+        <div class="admin-controls"><button id="adminHideRanking" class="btn">랭킹 숨기기</button><button id="adminShowRanking" class="btn">랭킹 다시 표시</button></div>
+        <label>밴 기간<select id="adminBanDuration"><option value="24">1일</option><option value="168">7일</option><option value="720">30일</option><option value="permanent">영구 밴</option></select></label>
+        <div class="admin-controls"><button id="adminBan" class="btn">밴 적용</button><button id="adminUnban" class="btn">밴 해제</button></div>
+      </section>
+      <section><h3>해금·도감</h3><label>왁뿌볼<select id="adminBall"></select></label><div class="admin-controls"><button id="adminUnlock" class="btn">선택 볼 해금</button><button id="adminUnlockAll" class="btn">전체 해금</button><button id="adminDiscover" class="btn">발견 처리</button><button id="adminDiscoverAll" class="btn">전체 도감 발견</button><button id="adminResetOne" class="btn">선택 발견 초기화</button><button id="adminResetAll" class="btn">전체 도감 초기화</button></div></section>
+      <section><h3>파괴·꿀 테스트</h3><p>별도 테스트 모드에서 실행합니다. 테스트 중 저장·Gold 지급·랭킹 변경은 중지됩니다.</p><div class="admin-controls"><button id="adminTestBall" class="btn">선택 볼 테스트</button><button id="adminTestLast" class="btn">마지막 균열</button><button id="adminTestBreak" class="btn">즉시 파괴</button></div><label>꿀 테스트 남은 시간 (초)<input id="adminHoneySeconds" type="number" min="0" max="600" value="600"></label><button id="adminTestHoney" class="btn">꿀 시간 적용</button><button id="adminEndTest" class="btn">테스트 종료·진행도 복원</button></section>
+      <section><h3>관리자 작업 기록</h3><button id="adminLoadLogs" class="btn">기록 새로고침</button><pre id="adminLogs"></pre></section>
+    </div>
+  </div>
+  <div id="adminBallEventBanner" role="status" hidden></div>
+  <div id="serverAnnouncement" class="server-announcement" hidden role="status" aria-live="polite">
+    <span id="serverAnnouncementText"></span>
+    <button id="serverAnnouncementClose" type="button" aria-label="공지 닫기">닫기</button>
+  </div>
+  <!-- 스크립트 순서가 중요해요: 데이터 → 사운드 → 그림 → 게임 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4"></script>
+  <script src="../wakppuball-public/server-config.js?v=20261118-public1"></script>
+  <script src="js/hit-requests.js?v=10961c8ae7c1"></script>
+  <script src="js/account.js?v=7abc6a2b6364"></script>
+  <script src="js/guest-exit.js?v=de1a974f9ca7"></script>
+  <script src="js/guest-exit-ui.js?v=035453f0bec5"></script>
+  <script src="js/gold-format.js?v=88e83b5fd7a4"></script>
+  <script src="js/balls-data.js?v=30d456bcf9ff"></script>
+  <script src="js/skin-sounds.js?v=aef847007f63"></script>
+  <script src="js/skin-clock.js?v=6df24f1ce1ed"></script>
+  <script src="js/player-settings.js?v=0fb47ab40090"></script>
+  <script src="js/sound.js?v=ad7e0c512d62"></script>
+  <script src="js/gem-ball-data.js?v=5d82d0fdb5c5"></script>
+  <script src="../wakppuball-public/public-compat.js?v=20261118-public1"></script>
+  <script src="js/items-data.js?v=1e0c81350150"></script>
+  <script src="js/sleep-hours.js?v=9136cf11a86f"></script>
+  <script src="js/keepsake-display.js?v=8421d62bb358"></script>
+  <script src="js/items-ui.js?v=cb5ba6cfb76c"></script>
+  <script src="js/items-reveal.js?v=3ba5df0bcf52"></script>
+  <script src="js/ball-art.js?v=91db8cd80542"></script>
+  <script src="js/event-time.js?v=e23c7b41d73d"></script>
+  <script src="js/weekly-notice.js?v=41801a347800"></script>
+  <script src="js/gold-event.js?v=5ec7858b749f"></script>
+  <script src="js/whitehole-effects.js?v=dfe1348176d6"></script>
+  <script src="js/transcendent-effects.js?v=91c8180f785c"></script>
+  <script src="js/skin-effects.js?v=a867bc7f41d5"></script>
+  <script src="js/skin-cutscene.js?v=21801b46457d"></script>
+  <script src="js/skins-ui.js?v=3411a8d05a16"></script>
+  <script src="js/admin-ball-event.js?v=716e91177b93"></script>
+  <script src="js/hammers-data.js?v=1c8ea8afd7f4"></script>
+  <script src="js/purchase-effects.js?v=f20f6bce38f2"></script>
+  <script src="js/input-guard-rules.js?v=d52e4f4d71d4"></script>
+  <script src="js/input-guard.js?v=168ac5ba8365"></script>
+  <script src="js/input-guard-admin.js?v=e0d26caffb04"></script>
+  <script src="js/badges.js?v=08a46f213be0"></script>
+  <script src="js/game.js?v=a6c503d5d4ef"></script>
+
+  <script src="js/beginner-ui.js?v=0e3ec7258ddf"></script>
+  <script src="js/event-schedule.js?v=a09e8de5533e"></script>
+  <script src="js/weekly-events.js?v=e2ade69b23de"></script>
+  <script src="js/presence.js?v=95960338c0f6"></script>
+  <script src="js/profile-cards.js?v=01669430ba8e"></script>
+  <script src="js/admin-panel.js?v=4721927e9cef"></script>
+  <script src="js/admin-keepsake.js?v=6fa69a5cc299"></script>
+  <script src="js/admin-paid.js?v=00ca062dd55a"></script>
+  <script src="js/guest-lifecycle.js?v=89094addcf10"></script>
+  <script src="js/purchase-ui.js?v=24b0fe77a4f5"></script>
+<script src="js/custom-image-loader.js?v=f54b99b9ae7b"></script>
+<script src="js/custom-ball.js?v=5479f9a57914"></script>
+  <script src="js/auto-rebirth.js?v=b18607dd3bc1"></script>
+  <script src="js/admin-purchase-notices.js?v=caa3844e36d6"></script>
+  <script src="js/blue-gems.js?v=2a759e3380a3"></script>
+  <script src="js/gem-balls-ui.js?v=d449102835be"></script>
+  <script src="js/monthly-rankings.js?v=a5ee38577805"></script>
+</body>
+</html>
