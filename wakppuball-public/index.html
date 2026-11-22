@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>왁뿌볼 · 공개 서버</title>
   <base href="../wakppuball/">
+  <script>document.documentElement.classList.add('friends-entry-pending');</script>
+  <style>html.friends-entry-pending body>:not(#friendGate){visibility:hidden!important}</style>
   <link rel="stylesheet" href="style.css?v=d4cb83909969">
   <link rel="stylesheet" href="input-guard.css?v=e5d84cb6b3e9">
   <link rel="stylesheet" href="blue-gems.css?v=df95ac489e0a">
@@ -261,10 +263,11 @@
     <button id="serverAnnouncementClose" type="button" aria-label="공지 닫기">닫기</button>
   </div>
   <!-- 스크립트 순서가 중요해요: 데이터 → 사운드 → 그림 → 게임 -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4"></script>
   <script src="../wakppuball-public/server-config.js?v=20261118-public1"></script>
+  <script src="js/friend-gate.js?v=df5e1b247785"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4"></script>
   <script src="js/hit-requests.js?v=10961c8ae7c1"></script>
-  <script src="js/account.js?v=7abc6a2b6364"></script>
+  <script src="js/account.js?v=88b110d92afa"></script>
   <script src="js/guest-exit.js?v=de1a974f9ca7"></script>
   <script src="js/guest-exit-ui.js?v=035453f0bec5"></script>
   <script src="js/gold-format.js?v=88e83b5fd7a4"></script>
@@ -309,7 +312,7 @@
   <script src="js/guest-lifecycle.js?v=89094addcf10"></script>
   <script src="js/purchase-ui.js?v=27676909ed3e"></script>
 <script src="js/custom-image-loader.js?v=f54b99b9ae7b"></script>
-<script src="js/custom-ball.js?v=5479f9a57914"></script>
+<script src="js/custom-ball.js?v=8f5c96c03466"></script>
   <script src="js/auto-rebirth.js?v=b18607dd3bc1"></script>
   <script src="js/admin-purchase-notices.js?v=caa3844e36d6"></script>
   <script src="js/blue-gems.js?v=2a759e3380a3"></script>

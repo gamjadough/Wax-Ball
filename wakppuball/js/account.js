@@ -11,6 +11,7 @@
   function startGuest() {
     if (guestStartPromise) return guestStartPromise;
     const reuseOrCreate = async () => {
+      await window.WakppuFriendGate?.ready();
       const { data, error } = await client.auth.getSession();
       if (error) return { data, error };
       if (data.session) return { data: { session: data.session, user: data.session.user }, error: null };
@@ -52,6 +53,7 @@
   }
 
   async function invoke(action, payload = {}, {signal} = {}) {
+    if(window.WakppuFriendGate?.allowed===false)throw Object.assign(new Error('친구 서버 입장 암호를 입력해주세요.'),{status:403,code:'FRIEND_GATE_REQUIRED'});
     if(window.WakppuGuestExit?.busy)throw new Error('계정을 전환 중입니다. 잠시 기다려주세요.');
     const expectedAccount=window.WakppuItemGame?.read().account;
     const { data: { session } } = await client.auth.getSession();
@@ -62,12 +64,13 @@
       headers: {
         'Content-Type': 'application/json',
         'apikey': config.anonKey,
+        ...window.WakppuFriendGate?.headers(),
         'Authorization': `Bearer ${session?.access_token || config.anonKey}`,
       },
       body: JSON.stringify({ b: { action, ...payload } }),
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw Object.assign(new Error(result.message || result.error || '서버 요청에 실패했습니다.'), {status:response.status,code:result.code});
+    if (!response.ok) {if(result.hint==='FRIEND_GATE_REQUIRED')window.WakppuFriendGate?.lock();throw Object.assign(new Error(result.message || result.error || '서버 요청에 실패했습니다.'), {status:response.status,code:result.code});}
     return result;
   }
 
@@ -75,12 +78,12 @@
     client,
     invoke,
     session: () => client.auth.getSession(),
-    signUp: (email, password) => client.auth.signUp({
+    signUp: async (email, password) => {await window.WakppuFriendGate?.ready();return client.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: config.redirectUrl || 'https://gamjadough.github.io/Wax-Ball/wakppuball/' },
-    }),
-    signIn: (email, password) => client.auth.signInWithPassword({ email, password }),
+    });},
+    signIn: async (email, password) => {await window.WakppuFriendGate?.ready();return client.auth.signInWithPassword({ email, password });},
     signInAnonymously: startGuest,
     signOut,
     linkEmail,
@@ -94,7 +97,7 @@
       },
       check:async()=>client.auth.getUser(),
       discard:async session=>{
-        const response=await fetch(`${config.url}/rest/v1/rpc/wakppu_api`,{method:'POST',headers:{'Content-Type':'application/json',apikey:config.anonKey,Authorization:'Bearer '+session.access_token},body:JSON.stringify({b:{action:'guest_discard',confirmation:'DELETE_GUEST',expected_user_id:session.user.id}})});
+        const response=await fetch(`${config.url}/rest/v1/rpc/wakppu_api`,{method:'POST',headers:{'Content-Type':'application/json',apikey:config.anonKey,Authorization:'Bearer '+session.access_token,...window.WakppuFriendGate?.headers()},body:JSON.stringify({b:{action:'guest_discard',confirmation:'DELETE_GUEST',expected_user_id:session.user.id}})});
         const result=await response.json();if(!response.ok)throw Object.assign(new Error(result.message||'삭제하지 못했습니다. 다시 시도해주세요.'),{status:response.status});return result;
       },
       adopt:session=>client.auth.setSession({access_token:session.access_token,refresh_token:session.refresh_token}),

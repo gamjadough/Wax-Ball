@@ -198,6 +198,7 @@ const server=http.createServer(async(req,res)=>{
     let data=await readFile(file);
     if(name==='/index.html'&&process.env.WAKPPU_LOCAL_CUSTOM_LIVE==='1')data=Buffer.from(data.toString().replace('<body>','<body data-custom-live-local>'));
     if(name==='/index.html') data=Buffer.from(data.toString().replace(/<script src="js\/account.js[^\"]*"><\/script>/,'<script src="js/local-account.js"></script>'));
+    if(name==='/index.html')data=Buffer.from(data.toString().replace(/(<script src="js\/server-config.js[^\"]*"><\/script>)/,'$1<script>WAKPPU_SERVER.friendGate=false;</script>'));
     if(name==='/index.html'&&paymentsEnabled&&url.searchParams.get('preview')==='payments')data=Buffer.from(data.toString().replace('</body>','<link rel="stylesheet" href="/local-payments/store.css"><script type="module" src="/local-payments/store.js"></script></body>'));
     if(name==='/index.html'&&bankPreview&&url.searchParams.get('preview')==='bank')data=Buffer.from(data.toString().replace('</body>',`<script src="js/local-bank-preview.js"></script><script>WakppuLocalBankPreview(${JSON.stringify(password)});</script></body>`));
     if(name==='/index.html'&&url.searchParams.get('preview')==='inputguard'&&process.env.WAKPPU_LOCAL_INPUT_GUARD_PREVIEW==='1')data=Buffer.from(data.toString().replace('</body>',`<script src="js/local-input-guard-preview.js"></script><script>WakppuLocalInputGuardPreview(${JSON.stringify(password)});</script></body>`));

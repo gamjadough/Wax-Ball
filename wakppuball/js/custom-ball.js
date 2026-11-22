@@ -15,6 +15,7 @@
   const account=WakppuItemGame.read().account;let endpoint,headers={'Content-Type':'application/json'};
   if(WakppuAuth.local){const session=JSON.parse(sessionStorage.getItem('wakppu-local-session')||'null');endpoint='/local/custom-image';headers.Authorization='Bearer '+session?.token;}
   else{const {data:{session}}=await WakppuAuth.session();if(!session||session.user.id!==account)throw Error('로그인 상태가 변경되었습니다. 다시 시도해주세요.');endpoint=WAKPPU_SERVER.url+'/functions/v1/custom-ball-image';headers.apikey=WAKPPU_SERVER.anonKey;headers.Authorization='Bearer '+session.access_token;}
+  Object.assign(headers,window.WakppuFriendGate?.headers());
   const response=await fetch(endpoint,{method:'POST',headers,body:JSON.stringify(body)}),result=await response.json().catch(()=>({}));
   if(account!==WakppuItemGame.read().account)throw Error('계정이 변경되었습니다.');if(!response.ok)throw Object.assign(new Error(result.error||'서버 요청에 실패했습니다.'),{status:response.status});return result;
  }

@@ -67,6 +67,9 @@ with sync_playwright() as p:
     expect(page.locator('#admin')).to_be_visible(timeout=10000)
     page.locator('#serverSelect').select_option('friends')
     page.wait_for_url('**/?server=friends');expect(page.locator('#admin')).to_be_hidden()
+    expect(page.locator('#friendGate')).to_be_visible()
+    page.locator('#friendGatePassword').fill('fixture-entry-only');page.locator('#friendGateSubmit').tap()
+    expect(page.locator('#friendGate')).to_be_hidden()
     login(page,'admin@fixture.test');expect(page.locator('#admin')).to_be_visible(timeout=10000)
     assert page.locator('#serverName').inner_text()=='친구 서버'
     friend=rpc(page,'admin_search',{'query':'관리대상'})[0]

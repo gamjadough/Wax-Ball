@@ -3,7 +3,7 @@ const bucket='wakppu-custom',version='20261021-custom1';
 export function createHandler({PNG,clients}){
  let health;
  return async req=>{
-  const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info','Access-Control-Allow-Methods':'POST, OPTIONS','Content-Type':'application/json','Cache-Control':'no-store'};
+  const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info, x-wakppu-access','Access-Control-Allow-Methods':'POST, OPTIONS','Content-Type':'application/json','Cache-Control':'no-store'};
   const reply=(body,status=200)=>new Response(JSON.stringify(body),{headers,status});
   if(req.method==='OPTIONS')return reply({ok:true});if(req.method!=='POST')return reply({error:'POST required'},405);
   let service,uploaded=false,committed=false,path;
@@ -11,7 +11,7 @@ export function createHandler({PNG,clients}){
    if(Number(req.headers.get('content-length')||0)>1700000)throw Object.assign(new Error('이미지가 너무 큽니다.'),{status:413});
    const reader=req.body?.getReader(),parts=[];let size=0;
    if(!reader)throw Error('body');while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>1700000){await reader.cancel();throw Object.assign(new Error('이미지가 너무 큽니다.'),{status:413});}parts.push(value);}
-   const body=JSON.parse(await new Blob(parts).text());const connection=clients(req.headers.get('authorization')||'');service=connection.service;
+   const body=JSON.parse(await new Blob(parts).text());const connection=clients(req.headers.get('authorization')||'',req.headers.get('x-wakppu-access')||'');service=connection.service;
    if(body.action==='health'){
     health||=(async()=>{const bytes=PNG.sync.write(new PNG({width:512,height:512}),{colorType:6,bitDepth:8});await normalizePng(new Uint8Array(bytes),PNG);return true;})();
     const {data,error}=await service.storage.getBucket(bucket);if(error||data.public!==false)throw Error('private bucket unavailable');

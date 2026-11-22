@@ -3,9 +3,10 @@ import {readFile} from 'node:fs/promises';
 import {createRequire} from 'node:module';
 const require=createRequire(process.env.WAKPPU_TEST_NODE_PACKAGE||new URL('./test-results/tester-runtime/package.json',import.meta.url));
 const {PGlite}=require('@electric-sql/pglite');
+const {pgcrypto}=require('@electric-sql/pglite/contrib/pgcrypto');
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
 export async function publicFixture(){
- const db=new PGlite();
+ const db=new PGlite({extensions:{pgcrypto}});
  await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;
  create schema auth;create schema extensions;create schema cron;
  create table auth.users(id uuid primary key,aud text,role text,is_anonymous boolean default false,email text,email_change text default '',email_confirmed_at timestamptz,created_at timestamptz default now(),updated_at timestamptz default now(),raw_user_meta_data jsonb default '{}');

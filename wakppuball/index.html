@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>왁뿌볼</title>
+  <script>document.documentElement.classList.add('friends-entry-pending');</script>
+  <style>html.friends-entry-pending body>:not(#friendGate){visibility:hidden!important}</style>
   <link rel="stylesheet" href="style.css?v=20261109-start1">
   <link rel="stylesheet" href="input-guard.css?v=20261022-multipoint1">
   <link rel="stylesheet" href="blue-gems.css?v=20261105-gold-ui1">
@@ -268,10 +270,11 @@
     <button id="serverAnnouncementClose" type="button" aria-label="공지 닫기">닫기</button>
   </div>
   <!-- 스크립트 순서가 중요해요: 데이터 → 사운드 → 그림 → 게임 -->
+  <script src="js/server-config.js?v=20261122-entry1"></script>
+  <script src="js/friend-gate.js?v=20261122-entry1"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/server-config.js?v=20261004-account1"></script>
   <script src="js/hit-requests.js?v=20261023-hit-queue1"></script>
-  <script src="js/account.js?v=20261118-servers1"></script>
+  <script src="js/account.js?v=20261122-entry1"></script>
   <script src="js/guest-exit.js?v=20261021-guest-exit1"></script>
   <script src="js/guest-exit-ui.js?v=20261021-guest-exit1"></script>
   <script src="js/gold-format.js?v=20261011-rebirth500"></script>
@@ -328,7 +331,7 @@
   <script src="js/halloween-theme.js?v=20261016-early-halloween"></script>
   <script src="js/purchase-ui.js?v=20261118-adminsite1"></script>
 <script src="js/custom-image-loader.js?v=20261023-mobile1"></script>
-<script src="js/custom-ball.js?v=20261118-servers1"></script>
+<script src="js/custom-ball.js?v=20261122-entry1"></script>
   <script src="js/auto-rebirth.js?v=20261023-reward-auto1"></script>
   <script src="js/admin-purchase-notices.js?v=20261022-notices1"></script>
   <script src="js/blue-gems.js?v=20261105-gold-ui1"></script>

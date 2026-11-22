@@ -39,6 +39,7 @@ ${setup}
  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4"></script>
  <script src="../wakppuball-public/server-config.js"></script><script>window.WAKPPU_PUBLIC_CONFIG=window.WAKPPU_SERVER;</script><script src="../wakppuball/js/server-config.js"></script><script>window.WAKPPU_FRIENDS_CONFIG=window.WAKPPU_SERVER;window.WAKPPU_SERVER=window.WAKPPU_PUBLIC_CONFIG;</script>
  ${await tag('wakppuball-admin/config.js','config.js')}
+ ${await tag('wakppuball/js/friend-gate.js','../wakppuball/js/friend-gate.js')}
  ${await tag('wakppuball/js/account.js','../wakppuball/js/account.js')}
  ${await tag('wakppuball-admin/admin-site.js','admin-site.js')}
  ${(await Promise.all(scripts.map(p=>tag('wakppuball/js/'+p+'.js','../wakppuball/js/'+p+'.js')))).join('\n')}
