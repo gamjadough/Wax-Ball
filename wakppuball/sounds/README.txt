@@ -1,5 +1,5 @@
 일반 볼별 전용음: materials/<볼 ID>/early.wav, mid.wav, late.wav, final.wav
-노란 볼을 제외한 23종 · 서로 다른 CC0 원음을 재구성한 효과음 · 타격→균열→파열→파괴
+노란 볼을 제외한 23종 · 재질별 원음 및 실제 녹음을 편집한 효과음 (라이선스: materials/CREDITS.txt) · 타격→균열→파열→파괴
 기존 노란/관리자/푸른 수정/한정/스킨 음원은 유지합니다.
 제작과 라이선스: materials/README.md, materials/sources.json
 

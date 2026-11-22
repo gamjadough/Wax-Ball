@@ -7,25 +7,26 @@
  const preview=()=>window.WakppuAuth?.local&&new URLSearchParams(location.search).get('preview')==='skin-sounds';
  const ready=()=>read()?.ready&&!read().test&&!read().busy&&!read().blocked&&!busy&&!window.WakppuItems?.busy&&!window.WakppuPumpkinInventory?.busy&&!window.WakppuHalloweenDecorUI?.busy;
  const key=id=>'wakppu-skin-reveal:'+id;
- function loadSound(rank){const cfg=WakppuSkinSounds.config(rank);if(cfg)SoundManager.init(Object.values(cfg).flat());}
  const def=id=>defs.find(d=>d.skin_id===id);
  function pending(value,id=owner){try{if(value)localStorage.setItem(key(id),JSON.stringify(value));else localStorage.removeItem(key(id));}catch{}}
  function equippedRank(ballId){if(owner!==read()?.account||!data)return null;const d=def(data.equipped[ballId]);return d&&data.owned[d.skin_id]?d.id:null;}
  function status(text){if(ui){ui.status.textContent=text;ui.inventoryStatus.textContent=text;}}
  function render(){
-  if(!ui)return;const available=ready()&&!!data&&owner===read()?.account;
+  if(!ui||document.hidden||(document.querySelector('#itemsModal').hidden&&document.querySelector('#shop').hidden))return;const available=ready()&&!!data&&owner===read()?.account;
   ui.draw.disabled=!available||BigInt(read()?.gold||0)<BigInt(price)||!!window.WakppuSkinCutscene?.active;
   ui.info.textContent='1회 '+fmt(price)+' G · 묶음 뽑기 없음 · 초월 천장 '+(data?.pity||0)+' / 100';
   ui.shards.textContent='스킨 조각: '+fmt(data?.shards||'0')+' · 환생해도 보유 스킨·조각·천장 유지';
   ui.gold.textContent='현재 Gold: '+fmt(read()?.gold||'0')+' G';
+  const signature=JSON.stringify([owner,data?.owned,data?.equipped,data?.shards,data?.can_equip,available]);
+  if(signature!==cardsMarkup){
   const markup=defs.map(d=>{
    const owned=!!data?.owned[d.skin_id],equipped=data?.equipped.eternity===d.skin_id;
    const ball=WakppuSkinSounds.appearance({...WAKPPU_BALLS.find(b=>b.id==='eternity'),skinId:d.id});
    return '<article class="skin-card"><div class="skin-thumb">'+buildBallThumb(ball)+'</div><strong>'+d.name+'</strong><span>'+d.rank+' · '+(owned?'보유':'미보유')+'</span><small>중복: 조각 '+d.duplicate+'개 · 교환: '+d.exchange+'개</small>'+(owned?'<button class="btn small" data-skin-equip="'+d.skin_id+'" '+(!available||equipped||!data.can_equip?'disabled':'')+'>'+(equipped?'장착 중':!data?.can_equip?'영겁 해금 후 장착':'장착')+'</button>':'<button class="btn small" data-skin-exchange="'+d.skin_id+'" '+(!available||BigInt(data?.shards||0)<BigInt(d.exchange)?'disabled':'')+'>조각 '+d.exchange+'개로 교환</button>')+'</article>';
   }).join('');
   // SVG IDs differ per render; rebuild only when real inventory/transaction state changes.
-  const signature=JSON.stringify([owner,data?.owned,data?.equipped,data?.shards,data?.can_equip,available]);
-  if(signature!==cardsMarkup){ui.cards.innerHTML=markup;cardsMarkup=signature;}
+  ui.cards.innerHTML=markup;cardsMarkup=signature;
+  }
   ui.unequip.disabled=!available||!data?.equipped.eternity;
  }
  async function refresh(){
@@ -33,7 +34,7 @@
   const account=read()?.account,seq=++sequence;
   if(owner!==account){data=null;owner=account;cardsMarkup='';window.WakppuSkinCutscene?.close();}
   if(!account||!read()?.ready){render();return;}
-  try{const next=await WakppuAuth.invoke('skins');if(seq!==sequence||account!==read()?.account)return;if(data&&next.skin_revision<data.skin_revision)return;const previous=equippedRank('eternity');data=next;owner=account;loadSound(equippedRank('eternity'));if(previous!==equippedRank('eternity'))window.WakppuSkinGame?.refresh();render();restoreReveal();}
+  try{const next=await WakppuAuth.invoke('skins');if(seq!==sequence||account!==read()?.account)return;if(data&&next.skin_revision<data.skin_revision)return;const previous=equippedRank('eternity');data=next;owner=account;if(previous!==equippedRank('eternity'))window.WakppuSkinGame?.refresh();render();restoreReveal();}
   catch(e){status(e.message);render();}
  }
  function reveal(result){
@@ -60,7 +61,6 @@
    if(next.revision<read().revision||next.skin_revision<(data?.skin_revision||0)){await WakppuItemGame.restore();await refresh();return;}
    const previous=equippedRank('eternity');data=next;owner=account;
    WakppuItemGame.accept(next,true);
-   loadSound(equippedRank('eternity'));
    if(previous!==equippedRank('eternity'))window.WakppuSkinGame?.refresh();
    status(action==='skin_equip'?'스킨 장착 상태를 저장했습니다.':'스킨 상태를 저장했습니다.');
    if(next.result)reveal(next.result);
@@ -68,8 +68,8 @@
   }catch(e){status(e.message);if(e.status===409){await WakppuItemGame.restore();await refresh();}if(throwErrors)throw e;}
   finally{busy=false;render();}
  }
- function showDraw(mode){shopTab=mode;ui.itemDraw.hidden=mode!=='items';ui.skinDraw.hidden=mode!=='skins';ui.drawItems.setAttribute('aria-pressed',String(mode==='items'));ui.drawSkins.setAttribute('aria-pressed',String(mode==='skins'));if(mode==='skins')refresh();}
- function showInventory(mode){inventoryTab=mode;ui.items.hidden=mode!=='items';ui.skins.hidden=mode!=='skins';ui.pets.hidden=mode!=='pets';ui.inventoryPets.setAttribute('aria-pressed',String(mode==='pets'));ui.inventoryItems.setAttribute('aria-pressed',String(mode==='items'));ui.inventorySkins.setAttribute('aria-pressed',String(mode==='skins'));if(mode==='skins')refresh();if(mode==='pets')window.WakppuHalloweenDecorUI?.refresh();}
+ function showDraw(mode){shopTab=mode;ui.itemDraw.hidden=mode!=='items';ui.skinDraw.hidden=mode!=='skins';ui.drawItems.setAttribute('aria-pressed',String(mode==='items'));ui.drawSkins.setAttribute('aria-pressed',String(mode==='skins'));render();if(mode==='skins')refresh();}
+ function showInventory(mode){inventoryTab=mode;ui.items.hidden=mode!=='items';ui.skins.hidden=mode!=='skins';ui.pets.hidden=mode!=='pets';ui.inventoryPets.setAttribute('aria-pressed',String(mode==='pets'));ui.inventoryItems.setAttribute('aria-pressed',String(mode==='items'));ui.inventorySkins.setAttribute('aria-pressed',String(mode==='skins'));render();if(mode==='skins')refresh();if(mode==='pets')window.WakppuHalloweenDecorUI?.refresh();}
  document.addEventListener('DOMContentLoaded',()=>{
   if(preview())return;
   const shop=document.querySelector('#shopDraw'),modal=document.querySelector('#itemsModal'),sheet=modal.querySelector('.sheet'),header=sheet.querySelector('.sheet-head');

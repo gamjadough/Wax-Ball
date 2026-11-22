@@ -1,4 +1,4 @@
-"""CC0 material-specific foley v2. Different source recordings and temporal recipes;
+"""Material foley v3: CC0 sources plus attributed CC BY bread recording. Different source recordings and temporal recipes;
 there is deliberately NO shared wax/noise/impact bed and NO pitch shifting.
 Build: python tools/build-material-sounds.py --ffmpeg /path/to/ffmpeg
 """
@@ -15,10 +15,10 @@ PROFILES={
  'green':('soft',I('impactPunch_medium_002'),I('impactSoft_heavy_002'),[.16,.23,.31,.63],'dense yielding wax: dull knock, short splits, soft collapse'),
  'strawberry':('pulp',S('slime_000'),I('footstep_grass_003'),[.19,.27,.36,.67],'wet pulp squash, tiny seeds and sticky rupture'),
  'apple':('bite',I('footstep_grass_001'),I('impactWood_medium_003'),[.13,.20,.29,.56],'dry crisp bite followed by juicy coarse crunch'),
- 'chocolate':('snap',I('impactWood_light_004'),I('impactPlank_medium_003'),[.12,.18,.25,.49],'clean brittle snap, separate small hard fragments, no ringing'),
- 'donut':('crumb',I('footstep_carpet_001'),I('footstep_snow_000'),[.17,.24,.32,.58],'soft compression, papery crust and loose crumbs'),
+ 'chocolate':('recording','recorded/chocolate',None,[.13,.20,.29,.49],'real dark chocolate snapping; isolated final clean snap, no wrapper bed'),
+ 'donut':('recording','recorded/bread',None,[.20,.29,.38,.58],'actual baguette crumbling used as bread-pastry foley; not a recording of a donut'),
  'rainbow':('cascade',I('impactBell_heavy_004'),I('impactGlass_light_000'),[.25,.34,.45,.93],'ascending playful glass cascade, no heavy thud'),
- 'water':('liquid',S('slime_001'),None,[.23,.33,.45,.86],'rounded water plop, gurgling bubbles and wide splash'),
+ 'water':('recording','recorded/ice',None,[.20,.32,.44,.70],'actual ice breaking into fragments; no water bubbles or slime'),
  'emerald':('mineral',I('impactMining_002'),I('impactGlass_medium_002'),[.17,.27,.39,.77],'compact gritty mineral chips and dark crystal cleavage'),
  'diamond':('shatter',I('impactGlass_medium_004'),I('impactGlass_heavy_003'),[.15,.25,.39,.89],'hard glass tick, sharp splitting sheet and falling shards'),
  'planet':('rubble',I('footstep_concrete_002'),I('impactMining_004'),[.23,.34,.47,1.02],'heavy rocky body, rough moving gravel and falling rubble'),
@@ -39,11 +39,11 @@ PROFILES={
 cache={};used={}
 def decode(key):
  if key in cache:return cache[key]
- file=a.source/(key+'.ogg');raw=subprocess.check_output([a.ffmpeg,'-v','error','-i',str(file),'-f','f32le','-ac','1','-ar',str(SR),'pipe:1'])
+ file=(ROOT/'tools/audio-sources'/(key+'.mp3')) if key.startswith('recorded/') else a.source/(key+'.ogg');raw=subprocess.check_output([a.ffmpeg,'-v','error','-i',str(file),'-f','f32le','-ac','1','-ar',str(SR),'pipe:1'])
  x=np.frombuffer(raw,dtype='<f4').astype(float);nz=np.flatnonzero(np.abs(x)>max(.001,float(np.max(np.abs(x)))*.025))
- if len(nz):x=x[max(0,int(nz[0]) -33):]
+ if len(nz) and not key.startswith('recorded/'):x=x[max(0,int(nz[0]) -33):]
  x-=np.mean(x);x/=max(float(np.max(np.abs(x))),1e-6)
- cache[key]=x;used[key]={'file':key+'.ogg','sha256':hashlib.sha256(file.read_bytes()).hexdigest()};return x
+ cache[key]=x;used[key]={'file':('../'+key+'.mp3' if key.startswith('recorded/') else key+'.ogg'),'sha256':hashlib.sha256(file.read_bytes()).hexdigest()};return x
 
 def filtered(x,lo=0,hi=0):
  if not lo and not hi:return x.copy()
@@ -55,7 +55,21 @@ def filtered(x,lo=0,hi=0):
 def render(ball,stage):
  kind,main,secondary,durations,description=PROFILES[ball];duration=durations[stage]
  rng=np.random.default_rng(int(hashlib.sha256(f'foley-v2:{ball}:{stage}'.encode()).hexdigest()[:16],16))
- t=np.arange(round(SR*duration))/SR;y=np.zeros(len(t));strength=[.30,.52,.76,1][stage]
+ t=np.arange(round(SR*duration))/SR;y=np.zeros(len(t))
+ if kind=='recording':
+  starts={'chocolate':[20.963,20.963,20.963,20.963],'donut':[6.67,18.64,13.70,13.68],'water':[.18,4.64,8.78,17.425]}
+  raw=decode(main);start=round(starts[ball][stage]*SR);clip=raw[start:start+len(t)]
+  y[:len(clip)]=filtered(clip,lo=95,hi=0)
+  # Only trim/gain/fades: no wood, fabric, synthetic impact or pitch processing.
+  y*=np.minimum(t/.0015,1)*np.minimum((duration-t)/.025,1).clip(0,1)
+  target=[.46,.49,.52,.59][stage]
+  y*=target/max(float(np.max(np.abs(y))),1e-9)
+  # Real fracture transients can overshoot PCM peaks when the browser resamples.
+  raw=subprocess.check_output([a.ffmpeg,'-v','error','-f','f32le','-ar',str(SR),'-ac','1','-i','pipe:0','-ar','48000','-f','f32le','pipe:1'],input=y.astype('<f4').tobytes())
+  true_peak=float(np.max(np.abs(np.frombuffer(raw,dtype='<f4'))))
+  if true_peak>target:y*=target/true_peak*.98
+  return np.round(y*32767).astype('<i2')
+ strength=[.30,.52,.76,1][stage]
  def source(key,start=0,gain=1,limit=None,reverse=False,lo=0,hi=0,offset=0):
   if key is None:return
   x=decode(key);x=x[round(offset*SR):];x=x[::-1] if reverse else x
@@ -88,23 +102,11 @@ def render(ball,stage):
   source(secondary,.004,.65,limit=.045+.016*stage,hi=4300)
   if stage==3:
    source(main,.065,.42,limit=.13,lo=900,offset=.02);source(secondary,.13,.2,limit=.065)
- elif kind=='snap':
-  source(main,limit=.045+.018*stage,gain=1,lo=300,hi=4300)
-  for i in range(1+stage*2):source(secondary,.013+i*(.018+stage*.005),.44/(1+i*.19),limit=.027+.004*stage,lo=900,hi=4700,offset=float(rng.uniform(0,.012)))
- elif kind=='crumb':
-  source(main,limit=.09+.04*stage,gain=1.2,hi=1350)
-  source(secondary,.018,.68*strength,limit=.09+.05*stage,lo=800,hi=4400)
-  if stage==3:source(secondary,.18,.20,limit=.18,lo=1300)
  elif kind=='cascade':
   source(secondary,gain=.22,limit=.035,lo=1500)
   for i in range(2+stage*2):
    source(main,.012+i*.045,.22/(1+i*.22),limit=.08,hi=4000,offset=i*.006)
    tone(.012+i*.045,[523.25,659.25,783.99,1046.5][i%4],.037,.05)
- elif kind=='liquid':
-  source(main,limit=.09+.06*stage,gain=.33,hi=1700)
-  for i in range(3+stage*3):
-   z=float(rng.uniform(0,.04+.11*stage));hz=float(rng.uniform(120,460));tone(z,hz,.018+.006*stage,.19/(1+i*.11),sweep=hz*9)
-  air(.012,.13+.12*stage,.055+stage*.022,900,5000,attack=.018)
  elif kind=='mineral':
   source(main,limit=.09+.035*stage,gain=1,hi=3900)
   for i in range(1+stage*2):source(secondary,.025+i*.029,.34/(1+i*.16),limit=.08,lo=1100,hi=4900)
@@ -190,6 +192,7 @@ for ball in PROFILES:
   with wave.open(str(path),'wb') as f:f.setparams((1,2,SR,0,'NONE','not compressed'));f.writeframes(pcm.tobytes())
   outputs.append({'file':f'{ball}/{name}.wav','seconds':len(pcm)/SR,'peak':round(float(np.max(np.abs(pcm.astype(float))))/32768,4),'rms':round(float(np.sqrt(np.mean((pcm.astype(float)/32768)**2))),4),'sha256':hashlib.sha256(path.read_bytes()).hexdigest()})
 for key in used:
+ if key.startswith('recorded/'):continue
  src=a.source/(key+'.ogg');dest=ARCHIVE/(key+'.ogg');dest.parent.mkdir(parents=True,exist_ok=True)
  if src.resolve()!=dest.resolve():shutil.copyfile(src,dest)
 for pack in ['impact','scifi']:
@@ -197,8 +200,8 @@ for pack in ['impact','scifi']:
  if src.resolve()!=dest.resolve():shutil.copyfile(src,dest)
  shutil.copyfile(src,OUT/(pack+'-LICENSE.txt'))
 config={b:{**{phase:[f'materials/{b}/{phase}.wav'] for phase in ['early','mid','late','final']},'pitch':1,'pitchRandom':0,'volume':.76,'volumeRandom':.025} for b in PROFILES}
-(ROOT/'wakppuball/js/material-sounds.js').write_text('// CC0 source-based material foley v2; no shared impact bed, no pitch shifting.\nwindow.WakppuMaterialSoundRevision="20261122-foley2";\nwindow.WakppuMaterialSounds='+json.dumps(config,separators=(',',':'))+';\n',encoding='utf8')
-manifest={'version':2,'license':'CC0-1.0','author':'Kenney; original arrangement and fluid/air layers','pages':['https://kenney.nl/assets/impact-sounds','https://kenney.nl/assets/sci-fi-sounds'],'generator':'tools/build-material-sounds.py','sample_rate':SR,'channels':1,'pitch_shift':False,'shared_base_layer':False,'sources':used,'profiles':PROFILES,'outputs':outputs}
+(ROOT/'wakppuball/js/material-sounds.js').write_text('// CC0 source-based material foley v2; no shared impact bed, no pitch shifting.\nwindow.WakppuMaterialSoundRevision="20261122-recorded3";\nwindow.WakppuMaterialSounds='+json.dumps(config,separators=(',',':'))+';\n',encoding='utf8')
+manifest={'version':3,'license':'Mixed: CC0-1.0 and CC-BY-4.0 (bread/donut only)','recordings':json.loads((ROOT/'tools/audio-sources/recorded/sources.json').read_text(encoding='utf8')),'author':'Kenney, Finnssound, robotortoise, davilca; original arrangements','pages':['https://kenney.nl/assets/impact-sounds','https://kenney.nl/assets/sci-fi-sounds'],'generator':'tools/build-material-sounds.py','sample_rate':SR,'channels':1,'pitch_shift':False,'shared_base_layer':False,'sources':used,'profiles':PROFILES,'outputs':outputs}
 (OUT/'sources.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf8')
-(OUT/'README.md').write_text('# Material foley v2\n\nKenney Impact/Sci-fi source assets are CC0; original per-object arrangements, bubbles, air and tonal details are also CC0. Source URLs, source/output hashes and individual recipes are in sources.json; original license files are included. Build inputs are archived under tools/audio-sources/materials.\n\nThere is no common wax/noise/impact bed. Each object uses a different dominant source and temporal construction. Water gurgles; donut compresses and crumbles; chocolate snaps in separate fragments; diamond shatters; blackhole sucks inward; cloud puffs; embers pop individually. No source or playback pitch shifting is used. Durations vary by material and stage. Existing yellow, admin, seasonal, blue crystal and skin audio is untouched.\n\nRebuild with tools/build-material-sounds.py --ffmpeg PATH (NumPy required). Output: 22,050 Hz, mono PCM16; peaks 0.46/0.49/0.52/0.59, <=1.05 seconds. Selected-ball preload and bounded cache/voice limits remain. The sound engine appends the revision query to avoid replaying cached v1 audio.\n',encoding='utf8')
+(OUT/'README.md').write_text('# Material foley v3\n\nKenney Impact/Sci-fi sources are CC0. Chocolate: Finnssound, CC0. Ice: davilca, CC0. Donut uses actual baguette crumbling by robotortoise, CC BY 4.0 (not a donut recording). See CREDITS.txt, linked in game settings. These three use cropped real recordings without substitute impact layers or pitch shifting. Source URLs, source/output hashes and individual recipes are in sources.json; original license files are included. Build inputs are archived under tools/audio-sources/materials.\n\nThere is no common wax/noise/impact bed. Each object uses a different dominant source and temporal construction. Water uses real ice fractures; donut uses real bread crumbling; chocolate uses the actual chocolate snap; diamond shatters; blackhole sucks inward; cloud puffs; embers pop individually. No source or playback pitch shifting is used. Durations vary by material and stage. Existing yellow, admin, seasonal, blue crystal and skin audio is untouched.\n\nRebuild with tools/build-material-sounds.py --ffmpeg PATH (NumPy required). Output: 22,050 Hz, mono PCM16; peaks 0.46/0.49/0.52/0.59, <=1.05 seconds. Selected-ball preload and bounded cache/voice limits remain. The sound engine appends the revision query to avoid replaying cached v1 audio.\n',encoding='utf8')
 print('Built',len(outputs),'clips from',len(used),'different source assets;',sum((OUT/o['file']).stat().st_size for o in outputs),'WAV bytes')

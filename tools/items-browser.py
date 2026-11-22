@@ -31,6 +31,7 @@ try:
             page.locator('[data-item="'+id+'"]').click()
         def open_draw():
             page.locator('#shopBtn').click();page.locator('#shopDrawTab').click()
+            if page.locator('#beginnerAdvanced').is_visible():page.locator('#beginnerAdvanced').click()
         assert page.locator('#drawBtn').count()==0
         assert page.locator('#inventoryBtn').bounding_box()['x']<page.locator('#collectionBtn').bounding_box()['x']
         open_draw();expect(page.locator('#itemsPity')).to_contain_text('98 / 100')

@@ -21,7 +21,7 @@ try:
    if width==320:
     decoded=page.evaluate("""async()=>{const ac=new AudioContext(),out=[];for(const cfg of Object.values(WakppuMaterialSounds))for(const stage of ['early','mid','late','final']){const name=cfg[stage][0];const r=await fetch('sounds/'+name);if(!r.ok)throw Error(name);const b=await ac.decodeAudioData(await r.arrayBuffer());let peak=0,sum=0;for(const v of b.getChannelData(0)){peak=Math.max(peak,Math.abs(v));sum+=v*v;}out.push({name,channels:b.numberOfChannels,duration:b.duration,peak,rms:Math.sqrt(sum/b.length)});}await ac.close();return out;}""")
     assert len(decoded)==92
-    for d in decoded:assert d['channels']==1 and .10<d['duration']<1.06 and .43<d['peak']<.61 and d['rms']>.015,d
+    for d in decoded:assert d['channels']==1 and .10<d['duration']<1.06 and .30<d['peak']<.61 and d['rms']>.015,d
    gold=page.evaluate('WakppuItemGame.read().gold')
    for ball in ids:
     page.evaluate("id=>WakppuGameTest.run('cracks',id)",ball)

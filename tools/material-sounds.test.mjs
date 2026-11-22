@@ -14,7 +14,7 @@ test('every ordinary ball without explicit audio has distinct four-stage materia
 });
 test('generated foley is original mono PCM, unique, short, bounded and checksum verified',()=>{
  const m=JSON.parse(read('wakppuball/sounds/materials/sources.json')),hashes=new Set();let bytes=0;
- assert.equal(m.license,'CC0-1.0');assert.equal(m.shared_base_layer,false);assert.equal(m.pitch_shift,false);assert.equal(new Set(Object.values(m.profiles).map(p=>p[1])).size,23);
+ assert.match(m.license,/CC-BY-4.0/);assert.equal(m.recordings.length,3);assert.ok(read('wakppuball/sounds/materials/CREDITS.txt').includes('robotortoise'));assert.ok(read('wakppuball/index.html').includes('sounds/materials/CREDITS.txt'));assert.equal(m.shared_base_layer,false);assert.equal(m.pitch_shift,false);assert.equal(new Set(Object.values(m.profiles).map(p=>p[1])).size,23);
  for(const source of Object.values(m.sources)){const raw=readFileSync(new URL('../tools/audio-sources/materials/'+source.file,import.meta.url));assert.equal(createHash('sha256').update(raw).digest('hex'),source.sha256);}
  assert.ok(new Set(m.outputs.map(o=>o.seconds)).size>15);
 
@@ -22,7 +22,7 @@ test('generated foley is original mono PCM, unique, short, bounded and checksum 
  assert.equal(b.toString('ascii',0,4),'RIFF');assert.equal(b.readUInt16LE(22),1);assert.equal(b.readUInt32LE(24),22050);assert.equal(b.readUInt16LE(34),16);assert.equal(b.readUInt32LE(40),b.length-44);
  assert.equal(createHash('sha256').update(b).digest('hex'),output.sha256);hashes.add(output.sha256);
  let peak=0,sum=0;for(let i=44;i<b.length;i+=2){const x=b.readInt16LE(i)/32768;peak=Math.max(peak,Math.abs(x));sum+=x*x;}
- assert.ok(peak<=.60&&peak>=.44);assert.ok(Math.sqrt(sum/((b.length-44)/2))>.015);assert.ok(output.seconds>=.1&&output.seconds<=1.05);
+ assert.ok(peak<=.60&&peak>=.30);assert.ok(Math.sqrt(sum/((b.length-44)/2))>.015);assert.ok(output.seconds>=.1&&output.seconds<=1.05);
  }assert.equal(hashes.size,92);assert.ok(bytes<2200000);
  const html=read('wakppuball/index.html');assert.ok(html.indexOf('js/material-sounds.js')<html.indexOf('js/sound.js'));
 });

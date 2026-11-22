@@ -1,0 +1,29 @@
+[
+  {
+    "id": "chocolate",
+    "author": "Finnssound",
+    "page": "https://freesound.org/people/Finnssound/sounds/660866/",
+    "license": "CC0-1.0",
+    "preview_url": "https://cdn.freesound.org/previews/660/660866_13884075-hq.mp3",
+    "sha256": "0f572066bbe0e4d5190ca16aa2c7c537ac1bfef2f5dfbe8c8b942fd9b59988ae",
+    "file": "chocolate.mp3"
+  },
+  {
+    "id": "bread",
+    "author": "robotortoise",
+    "page": "https://freesound.org/people/robotortoise/sounds/846468/",
+    "license": "CC-BY-4.0",
+    "preview_url": "https://cdn.freesound.org/previews/846/846468_2658913-hq.mp3",
+    "sha256": "81ede4023dc61561e76339fccaff385d56282ebdbb736ae0e0c2dfab712443e1",
+    "file": "bread.mp3"
+  },
+  {
+    "id": "ice",
+    "author": "davilca",
+    "page": "https://freesound.org/people/davilca/sounds/677230/",
+    "license": "CC0-1.0",
+    "preview_url": "https://cdn.freesound.org/previews/677/677230_1177772-hq.mp3",
+    "sha256": "3e60a2f936aee66963f01effb0c9cdb03f18dd640a3750659c93294f1655b3e4",
+    "file": "ice.mp3"
+  }
+]

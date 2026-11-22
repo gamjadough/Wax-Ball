@@ -18,6 +18,7 @@
  function accept(next){if(!next||owner!==game()?.account)return;if(data&&next.revision<data.revision)return;if(!data&&!next.catalog)return;data={...data,...next};if(Number.isFinite(next.server_time))offset=next.server_time-Date.now();render();}
  function message(text){document.querySelectorAll('.hgoods-status').forEach(n=>n.textContent=text);}
  function render(){
+  if(document.hidden||(document.getElementById('shop')?.hidden!==false&&document.getElementById('itemsModal')?.hidden!==false))return;
   const {server_time,...view}=data||{};const key=JSON.stringify([view,!!ready(),profile]);
   if(key!==signature){signature=key;
    for(const section of document.querySelectorAll('.hgoods-section')){

@@ -7,7 +7,6 @@
  const ready=()=>read()?.ready&&!read().test&&!read().busy&&!read().blocked&&!window.wakppuServerBlocked&&!busy&&!window.WakppuItems?.busy&&!window.WakppuLimited?.busy&&!window.WakppuSkins?.busy;
  function equipped(){const p=owner===read()?.account&&data?.can_equip&&def(data?.equipped);return p&&data.owned['pumpkin_'+p.id]?p.id:null;}
  function status(message){if(ui)for(const n of ui.status)n.textContent=message;}
- function sounds(){const p=profiles.find(p=>p.id===equipped());if(p)SoundManager.init(p.sounds);}
  function render(){
   if(!ui||(document.getElementById('shop').hidden&&document.getElementById('itemsModal').hidden))return;const available=ready()&&!!data&&owner===read()?.account;
   for(const n of ui.balance)n.textContent='🍬 사탕 '+WakppuGold.compact(data?.tokens||'0')+'개 · 한 번 교환하면 영구 보유';
@@ -26,7 +25,7 @@
   if(busy)return;const account=read()?.account,seq=++sequence;
   if(owner!==account){data=null;owner=account;signature='';}
   if(!account||!read()?.ready){render();return;}
-  try{const next=await WakppuAuth.invoke('pumpkin_skins');if(seq!==sequence||account!==read()?.account)return;if(data&&next.skin_revision<data.skin_revision)return;const prior=equipped();data=next;owner=account;sounds();if(prior!==equipped())window.WakppuSkinGame?.refresh();render();}
+  try{const next=await WakppuAuth.invoke('pumpkin_skins');if(seq!==sequence||account!==read()?.account)return;if(data&&next.skin_revision<data.skin_revision)return;const prior=equipped();data=next;owner=account;if(prior!==equipped())window.WakppuSkinGame?.refresh();render();}
   catch(e){if(account===read()?.account){data=null;status(e.message);render();}}
  }
  async function transact(action,skinId,extra={}){
@@ -37,7 +36,7 @@
    let next;try{next=await WakppuAuth.invoke(action,req);}catch(e){if(e.status)throw e;next=await WakppuAuth.invoke(action,req);}
    if(account!==read()?.account)return;
    if(next.revision<read().revision||next.skin_revision<data.skin_revision)throw Object.assign(Error('최신 스킨 상태를 다시 불러옵니다.'),{status:409});
-   data=next;owner=account;WakppuItemGame.accept(next,true);sounds();
+   data=next;owner=account;WakppuItemGame.accept(next,true);
    if(prior!==equipped())window.WakppuSkinGame?.refresh();
    await window.WakppuLimited?.refresh();await window.WakppuItems?.refresh();await window.WakppuSkins?.refresh();
    status(action==='pumpkin_scare_disable_equip'?(extra.enabled?'해제 효과를 장착했습니다. 점프스케어가 나오지 않습니다.':'해제 효과를 장착 해제했습니다. 점프스케어가 다시 나옵니다.'):action==='pumpkin_scare_disable_buy'?'점프스케어 영구 해제를 구매했습니다. 모든 잭오랜턴 스킨에도 적용됩니다.':action==='pumpkin_skin_exchange'?'스킨을 교환했습니다. 인벤토리 → 스킨에서 장착할 수 있습니다.':skinId?'스킨을 장착했습니다. 잭오랜턴 왁뿌볼에 적용됩니다.':'잭오랜턴 스킨을 해제했습니다.');

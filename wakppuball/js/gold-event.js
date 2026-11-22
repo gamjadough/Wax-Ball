@@ -8,16 +8,17 @@
   let snapshot=null,manual=null,serverTime=0,received=0;
   const clock=()=>root.performance?.now?.()??Date.now();
   function current(event=snapshot){const elapsed=clock()-received;return elapsed>=0&&elapsed<=12000?phase(event,serverTime+elapsed):{phase:'idle',multiplier:1,seconds:0};}
+  const write=(el,key,value)=>{if(el&&el[key]!==value)el[key]=value;};
   function render(){
     if(!root.document)return;
     const state=current(manual),banner=document.getElementById('goldEventBanner'),info=document.getElementById('adminGoldEventInfo');
     const duration=Math.round((Date.parse(manual?.ends_at)-Date.parse(manual?.starts_at))/1000);
     const title='👑 관리자 특별 이벤트 · 골드 타임';
     const text=state.phase==='scheduled'?`${title} · ${root.WakppuEventTime.format(state.seconds)} 후 시작 · Gold ×${manual.multiplier}, ${root.WakppuEventTime.format(duration)} 진행`:state.phase==='active'?`${title} · Gold ×${state.multiplier} · 남은 시간 ${root.WakppuEventTime.format(state.seconds)}`:'현재 진행 중인 이벤트가 없습니다.';
-    if(banner){banner.hidden=state.phase==='idle';banner.textContent=text;banner.dataset.phase=state.phase;banner.dataset.source='manual';}
-    if(info)info.textContent=text;
+    if(banner){write(banner,'hidden',state.phase==='idle');write(banner,'textContent',text);if(banner.dataset.phase!==state.phase)banner.dataset.phase=state.phase;if(banner.dataset.source!=='manual')banner.dataset.source='manual';}
+    write(info,'textContent',text);
     const start=document.getElementById('adminGoldEventStart'),stop=document.getElementById('adminGoldEventStop');
-    if(start)start.disabled=state.phase!=='idle';if(stop)stop.disabled=state.phase==='idle';
+    write(start,'disabled',state.phase!=='idle');write(stop,'disabled',state.phase==='idle');
   }
   root.WakppuGoldEvent={phase,current,multiplier:()=>current().multiplier,update(data){
     const time=Date.parse(data.server_time);

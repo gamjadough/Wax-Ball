@@ -1,0 +1,19 @@
+Recorded material sounds / 녹음 효과음 출처
+
+Chocolate: "Chocolate Crumble and Snapping / Cutting ( Moderately thick and hard dark chocolate ).wav"
+by Finnssound — https://freesound.org/people/Finnssound/sounds/660866/
+CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Changes: HQ preview cropped to isolated final chocolate snap, mono, resampled, gain/fades and 95 Hz high-pass.
+
+Donut / pastry: "Crumbling a baguette in my fingers"
+by robotortoise — https://freesound.org/people/robotortoise/sounds/846468/
+CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+Changes: HQ preview excerpts trimmed, mono, resampled, gain/fades and 95 Hz high-pass.
+This is a bread-crumbling recording used as pastry foley, not an actual donut recording. No endorsement by the author is implied.
+
+Ice (water ball): "Break Ice"
+by davilca — https://freesound.org/people/davilca/sounds/677230/
+CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Changes: HQ preview excerpts trimmed, mono, resampled, gain/fades and 95 Hz high-pass.
+
+Other material sounds use Kenney CC0 sources (see impact-LICENSE.txt, scifi-LICENSE.txt and sources.json).

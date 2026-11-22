@@ -23,6 +23,12 @@
  function render(){
   if(!document.querySelector('#itemsGold'))return;
   const game=window.WakppuItemGame?.read();
+  if(document.querySelector('#itemsModal').hidden&&document.querySelector('#shop').hidden){
+   const effects=defs.filter(d=>{const e=data?.effects[d.id];return e&&(d.seconds?e.expires_at>Date.now():e.remaining>0);});
+   const badge=document.querySelector('#activeItemsBadge');badge.hidden=!effects.length;
+   const text='활성 아이템 '+effects.length+'개';if(badge.textContent!==text)badge.textContent=text;
+   return;
+  }
   const limited=filter==='limited';if(document.querySelector('#halloweenGoodsInventory'))document.querySelector('#halloweenGoodsInventory').hidden=!limited;
   for(const id of ['inventoryOrder','inventoryList','inventoryPageInfo','inventoryPrevious','inventoryNext']){const n=document.getElementById(id);if(n)(id==='inventoryOrder'?n.closest('label'):n).hidden=limited;}
   document.querySelector('#itemsGold').textContent='현재 Gold: '+format(game?.gold||'0')+' G';
@@ -130,7 +136,7 @@
    }
   });
   window.addEventListener('wakppu-account-restored',()=>{window.WakppuDrawReveal?.restore();if(!busy)refresh();});
-  setInterval(render,1000);render();
+  setInterval(()=>{if(!document.hidden)render();},1000);render();
  });
  window.WakppuItems={get data(){return data;},get busy(){return busy;},active,accept,refresh,render,status,showShop:mode=>showShop(mode),openDraw:()=>{document.querySelector('#shopBtn').click();showShop('draw');},clearEffects(){++sequence;const game=window.WakppuItemGame?.read();itemAccount=game?.account;transactionFloor=Number(game?.revision||0)+1;if(data)data.effects={};render();}};
 })();

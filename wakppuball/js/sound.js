@@ -88,17 +88,17 @@ const SoundManager = (() => {
     if(pool.state==='loading'||pool.ok||Date.now()<pool.retryAt)return;
     const generation=++pool.generation;pool.state='loading';
     for(const audio of pool.items){audio.pause();audio.removeAttribute?.('src');audio.load?.();}
-    pool.items=[];pool.ready.clear();pool.next=0;let expanded=false;
-    function add(probe=false){
+    pool.items=[];pool.ready.clear();pool.next=0;
+    function add(){
       const audio=new Audio();audio.preload='auto';pool.items.push(audio);
       audio.addEventListener('canplay',()=>{
         if(generation!==pool.generation)return;
         clearTimeout(pool.timer);pool.ready.add(audio);pool.ok=true;pool.state='ready';pool.failures=0;
-        if(probe&&!expanded){expanded=true;for(let i=1;i<SOUND_SETTINGS.poolSize;i++)add();}
       });
       audio.addEventListener('error',()=>failed(pool,audio,generation));audio.src=pool.src;return audio;
     }
-    const probe=add(true);
+    pool.addVoice=add;
+    const probe=add();
     pool.timer=setTimeout(()=>{if(!pool.ok)failed(pool,probe,generation);},10000);
   }
   // Only a few recently selected material sets remain decoded on mobile.
@@ -151,7 +151,10 @@ const SoundManager = (() => {
     if(pool?.ok){
       const ready=pool.items.filter(audio=>pool.ready.has(audio));
       if(ready.length){
-        const audio=ready[pool.next++%ready.length],generation=pool.generation,attempt=(playAttempts.get(audio)||0)+1;playAttempts.set(audio,attempt);
+        const idle=ready.find(a=>a.paused||a.ended);
+        // Grow a voice only when actual overlapping input needs it, never on preload.
+        if(!idle&&pool.items.length<SOUND_SETTINGS.poolSize)pool.addVoice?.();
+        const audio=idle||ready[pool.next++%ready.length],generation=pool.generation,attempt=(playAttempts.get(audio)||0)+1;playAttempts.set(audio,attempt);
         const rejected=error=>{
           if(playAttempts.get(audio)!==attempt||error?.name==='AbortError'||error?.name==='NotAllowedError')return;
           failed(pool,audio,generation);

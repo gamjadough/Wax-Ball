@@ -183,11 +183,12 @@
     finally{eventRequest=false;syncBallEvent();if(!state.busy)saveProgress();}
   }
 
+  let lastLocalSave=null;
   function saveProgress() {
     if(window.WakppuSkins?.busy||window.WakppuGemBalls?.busy)return;
     if (testSnapshot || eventRequest || (eventSelected && state.busy) || window.wakppuServerBlocked) return;
     try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify({
+      const serialized=JSON.stringify({
         version: SAVE_VERSION,
         gold: state.gold.toString(),
         rebirths: state.rebirths,
@@ -199,7 +200,8 @@
         hammerSelectedLevel: state.hammerSelectedLevel,
         honeyExpiresAt: state.honeyExpiresAt,
         coatingExpiresAt: state.coatingExpiresAt,
-      }));
+      });
+      if(serialized!==lastLocalSave){localStorage.setItem(SAVE_KEY,serialized);lastLocalSave=serialized;}
       queueRemoteSave();
     } catch (error) {
       // 저장소가 차단되거나 가득 차도 현재 플레이는 계속합니다.

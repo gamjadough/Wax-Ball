@@ -7,14 +7,15 @@
     const scheduled=now<Date.parse(event.starts_at);
     return {phase:scheduled?'scheduled':'active',event,seconds:Math.max(0,Math.ceil((Date.parse(scheduled?event.starts_at:event.ends_at)-now)/1000))};
   }
+  const write=(el,key,value)=>{if(el&&el[key]!==value)el[key]=value;};
   function render(){
     const gameplay=current(),s=current(manual),banner=document.getElementById('adminBallEventBanner'),info=document.getElementById('adminBallEventInfo');
     const title='👑 관리자 특별 이벤트 · 왁뿌볼';
     const text=s.phase==='active'?`${title} · 남은 시간 ${window.WakppuEventTime.format(s.seconds)} · 도감에서 선택 가능`:s.phase==='scheduled'?`${title} · ${window.WakppuEventTime.format(s.seconds)} 후 시작`:'현재 관리자 왁뿌볼 이벤트가 없습니다.';
-    if(banner){banner.hidden=s.phase==='idle';banner.textContent=text;banner.dataset.phase=s.phase;banner.dataset.source='manual';}
-    if(info)info.textContent=text;
+    if(banner){write(banner,'hidden',s.phase==='idle');write(banner,'textContent',text);if(banner.dataset.phase!==s.phase)banner.dataset.phase=s.phase;if(banner.dataset.source!=='manual')banner.dataset.source='manual';}
+    write(info,'textContent',text);
     const start=document.getElementById('adminBallEventStart'),stop=document.getElementById('adminBallEventStop');
-    if(start)start.disabled=s.phase!=='idle';if(stop)stop.disabled=s.phase==='idle';
+    write(start,'disabled',s.phase!=='idle');write(stop,'disabled',s.phase==='idle');
     if(lastPhase!==gameplay.phase||lastId!==gameplay.event?.id||lastAlways!==always){lastPhase=gameplay.phase;lastId=gameplay.event?.id;lastAlways=always;window.dispatchEvent(new CustomEvent('wakppu-admin-ball-event',{detail:gameplay}));}
   }
   window.WakppuAdminBallEvent={current,alwaysAvailable:()=>always,update(data){
