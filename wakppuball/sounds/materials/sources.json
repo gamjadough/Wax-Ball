@@ -1,36 +1,36 @@
 {
-  "version": 3,
-  "license": "Mixed: CC0-1.0 and CC-BY-4.0 (bread/donut only)",
+  "version": 4,
+  "license": "Mixed: CC0-1.0 and CC-BY-4.0 (chocolate only)",
   "recordings": [
     {
       "id": "chocolate",
-      "author": "Finnssound",
-      "page": "https://freesound.org/people/Finnssound/sounds/660866/",
-      "license": "CC0-1.0",
-      "preview_url": "https://cdn.freesound.org/previews/660/660866_13884075-hq.mp3",
-      "sha256": "0f572066bbe0e4d5190ca16aa2c7c537ac1bfef2f5dfbe8c8b942fd9b59988ae",
+      "author": "orginaljun",
+      "page": "https://freesound.org/people/orginaljun/sounds/151672/",
+      "license": "CC-BY-4.0",
+      "preview_url": "https://cdn.freesound.org/previews/151/151672_2635357-hq.mp3",
+      "sha256": "b1cc91c403f893df7dce953efb6e00fcf8206487237e7b16e388b14ffa533a31",
       "file": "chocolate.mp3"
     },
     {
       "id": "bread",
-      "author": "robotortoise",
-      "page": "https://freesound.org/people/robotortoise/sounds/846468/",
-      "license": "CC-BY-4.0",
-      "preview_url": "https://cdn.freesound.org/previews/846/846468_2658913-hq.mp3",
-      "sha256": "81ede4023dc61561e76339fccaff385d56282ebdbb736ae0e0c2dfab712443e1",
+      "author": "spanrucker",
+      "page": "https://freesound.org/people/spanrucker/sounds/272223/",
+      "license": "CC0-1.0",
+      "preview_url": "https://cdn.freesound.org/previews/272/272223_220835-hq.mp3",
+      "sha256": "3c57f0bc1794a0b0121783d7bbbe1d6c5ed431927528127ca46ff9707ac099b5",
       "file": "bread.mp3"
     },
     {
       "id": "ice",
-      "author": "davilca",
-      "page": "https://freesound.org/people/davilca/sounds/677230/",
+      "author": "Nox_Sound",
+      "page": "https://freesound.org/people/Nox_Sound/sounds/625740/",
       "license": "CC0-1.0",
-      "preview_url": "https://cdn.freesound.org/previews/677/677230_1177772-hq.mp3",
-      "sha256": "3e60a2f936aee66963f01effb0c9cdb03f18dd640a3750659c93294f1655b3e4",
+      "preview_url": "https://cdn.freesound.org/previews/625/625740_9250976-hq.mp3",
+      "sha256": "388b6988c4cc021bbecce195e2c067edf721fd245064c4a895f4c03d54b16ff1",
       "file": "ice.mp3"
     }
   ],
-  "author": "Kenney, Finnssound, robotortoise, davilca; original arrangements",
+  "author": "Kenney, orginaljun (orginaljun.deviantart.com), spanrucker, Nox_Sound; original arrangements",
   "pages": [
     "https://kenney.nl/assets/impact-sounds",
     "https://kenney.nl/assets/sci-fi-sounds"
@@ -67,11 +67,11 @@
     },
     "recorded/chocolate": {
       "file": "../recorded/chocolate.mp3",
-      "sha256": "0f572066bbe0e4d5190ca16aa2c7c537ac1bfef2f5dfbe8c8b942fd9b59988ae"
+      "sha256": "b1cc91c403f893df7dce953efb6e00fcf8206487237e7b16e388b14ffa533a31"
     },
     "recorded/bread": {
       "file": "../recorded/bread.mp3",
-      "sha256": "81ede4023dc61561e76339fccaff385d56282ebdbb736ae0e0c2dfab712443e1"
+      "sha256": "3c57f0bc1794a0b0121783d7bbbe1d6c5ed431927528127ca46ff9707ac099b5"
     },
     "impact/impactGlass_light_000": {
       "file": "impact/impactGlass_light_000.ogg",
@@ -83,7 +83,7 @@
     },
     "recorded/ice": {
       "file": "../recorded/ice.mp3",
-      "sha256": "3e60a2f936aee66963f01effb0c9cdb03f18dd640a3750659c93294f1655b3e4"
+      "sha256": "388b6988c4cc021bbecce195e2c067edf721fd245064c4a895f4c03d54b16ff1"
     },
     "impact/impactMining_002": {
       "file": "impact/impactMining_002.ogg",
@@ -232,24 +232,24 @@
       "recorded/chocolate",
       null,
       [
-        0.13,
-        0.2,
-        0.29,
-        0.49
+        0.16,
+        0.23,
+        0.32,
+        0.55
       ],
-      "real dark chocolate snapping; isolated final clean snap, no wrapper bed"
+      "actual chocolate bar breaks; different recorded fractures at each stage"
     ],
     "donut": [
       "recording",
       "recorded/bread",
       null,
       [
-        0.2,
-        0.29,
-        0.38,
-        0.58
+        0.21,
+        0.3,
+        0.4,
+        0.62
       ],
-      "actual baguette crumbling used as bread-pastry foley; not a recording of a donut"
+      "actual bread cutting/ripping used as pastry foley, not a donut recording"
     ],
     "rainbow": [
       "cascade",
@@ -268,10 +268,10 @@
       "recorded/ice",
       null,
       [
-        0.2,
-        0.32,
-        0.44,
-        0.7
+        0.22,
+        0.34,
+        0.48,
+        0.79
       ],
       "actual ice breaking into fragments; no water bubbles or slime"
     ],
@@ -555,59 +555,59 @@
     },
     {
       "file": "chocolate/early.wav",
-      "seconds": 0.12997732426303854,
-      "peak": 0.46,
-      "rms": 0.0692,
-      "sha256": "ceceeaddae62ff25a571e1fdc9ca1496b7b74d90e8d6e4573189cc5da5e58d4a"
+      "seconds": 0.16,
+      "peak": 0.4192,
+      "rms": 0.0298,
+      "sha256": "3477a2a844ec853334a95c639869182c272be9bf830f00c22400330e176ea8f3"
     },
     {
       "file": "chocolate/mid.wav",
-      "seconds": 0.2,
-      "peak": 0.49,
-      "rms": 0.0594,
-      "sha256": "e976d911e082bf1a2e87798fc6522fe75fd05a8bbc87e712604b5d49e6adce21"
+      "seconds": 0.23002267573696145,
+      "peak": 0.4597,
+      "rms": 0.0384,
+      "sha256": "5eaac4cc6806c9cd37dd415c6a470945bb7f63ced288f592e066458bebcc88d1"
     },
     {
       "file": "chocolate/late.wav",
-      "seconds": 0.28997732426303857,
-      "peak": 0.52,
-      "rms": 0.0524,
-      "sha256": "e59bd8dc522f1cbddde7dea068a09620817610f93f5cd137320834b1291bd78d"
+      "seconds": 0.32,
+      "peak": 0.5012,
+      "rms": 0.0168,
+      "sha256": "7970956a878abd4b36f275082ebfce38f9ff79359684e1fb9f8e596fea1be25b"
     },
     {
       "file": "chocolate/final.wav",
-      "seconds": 0.4899773242630385,
-      "peak": 0.59,
-      "rms": 0.0457,
-      "sha256": "51854064c8aabbc1b558a031eba81b7e21ba042062a6a25bdf17b5aa88a3ff1b"
+      "seconds": 0.5500226757369614,
+      "peak": 0.4589,
+      "rms": 0.0483,
+      "sha256": "d8bdb56be5e889507b2dfc6b813a18c6ec776b0eaefa1299b4126119f9030450"
     },
     {
       "file": "donut/early.wav",
-      "seconds": 0.2,
-      "peak": 0.4311,
-      "rms": 0.0523,
-      "sha256": "d8061c3de32c08560c0a789ecf7e32f7574da08d353fb4568a7da37b507f70ec"
+      "seconds": 0.20997732426303856,
+      "peak": 0.4508,
+      "rms": 0.0423,
+      "sha256": "9a4a9322cd856362d47ebcc79282bb8f27782d577244cefead69d32ce168beea"
     },
     {
       "file": "donut/mid.wav",
-      "seconds": 0.28997732426303857,
-      "peak": 0.49,
-      "rms": 0.0171,
-      "sha256": "4d92ff25e25287ac7b54d8cea084b5f43c84ac2ffd6f0bb6cbcf7b1d0541b5ac"
+      "seconds": 0.3,
+      "peak": 0.4685,
+      "rms": 0.1135,
+      "sha256": "fc3754eb255f0df0f62ddf4ea89fef1fa729fda4de7b708377a8ac87d5eabcfb"
     },
     {
       "file": "donut/late.wav",
-      "seconds": 0.38,
-      "peak": 0.5035,
-      "rms": 0.0473,
-      "sha256": "9b7175768c34cc14f29a41f8b8eff2994c33980c5f6be3ee2cf4829cfeb6dcd1"
+      "seconds": 0.4,
+      "peak": 0.5052,
+      "rms": 0.0655,
+      "sha256": "9995409063339a7c9360036ce540c8c8ba3b718556d420b14ac2a2b82754701f"
     },
     {
       "file": "donut/final.wav",
-      "seconds": 0.58,
-      "peak": 0.5713,
-      "rms": 0.0438,
-      "sha256": "588dd90a695205fd1e4896fbfef0a12f28f4080db80fd765f0ef8b9b237d8e0b"
+      "seconds": 0.62,
+      "peak": 0.5732,
+      "rms": 0.0669,
+      "sha256": "e4afd0e14b3ce2949bf97fe553773f6b156febe73729bc51510dcd6e07137bb5"
     },
     {
       "file": "rainbow/early.wav",
@@ -639,31 +639,31 @@
     },
     {
       "file": "water/early.wav",
-      "seconds": 0.2,
-      "peak": 0.4502,
-      "rms": 0.0362,
-      "sha256": "29ea47954bbfab576e8e3361e9014bf48530dfebc602d343e2354e6a39f7bd3e"
+      "seconds": 0.22,
+      "peak": 0.46,
+      "rms": 0.0629,
+      "sha256": "b744ba3174237a493edebce9275f8b772719ee4ef6077f298ef3b3944027fc3e"
     },
     {
       "file": "water/mid.wav",
-      "seconds": 0.32,
-      "peak": 0.4676,
-      "rms": 0.0201,
-      "sha256": "b4340498a484430bbf64ca5fd05074a82cfeef62731b907d6bb30e4f220988b7"
+      "seconds": 0.34,
+      "peak": 0.4062,
+      "rms": 0.0415,
+      "sha256": "5683dd03c278a9d5e191ab8d61a4cd22b2f833eb17bb861e2d925d70191020d7"
     },
     {
       "file": "water/late.wav",
-      "seconds": 0.44,
-      "peak": 0.52,
-      "rms": 0.0307,
-      "sha256": "42182c30d46af36086ed11b3991bc57a3c1deacc7b6338b75b1260cda85bc1fa"
+      "seconds": 0.48,
+      "peak": 0.5062,
+      "rms": 0.0265,
+      "sha256": "78d5a43b85ceeac8c46dc4e476f6a1e3872d59e12e4f900f578bb9207002ed2e"
     },
     {
       "file": "water/final.wav",
-      "seconds": 0.7,
-      "peak": 0.4807,
-      "rms": 0.0161,
-      "sha256": "857bf50d33da8394ea220641f06e64d53c8cbfe9a99f0128336835b45c789850"
+      "seconds": 0.7900226757369615,
+      "peak": 0.59,
+      "rms": 0.0438,
+      "sha256": "9d4781f2c5aefbedfc377cb07e845c1653402c9e41d126239212244c0672a768"
     },
     {
       "file": "emerald/early.wav",

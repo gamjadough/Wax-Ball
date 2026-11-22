@@ -14,7 +14,7 @@ test('every ordinary ball without explicit audio has distinct four-stage materia
 });
 test('generated foley is original mono PCM, unique, short, bounded and checksum verified',()=>{
  const m=JSON.parse(read('wakppuball/sounds/materials/sources.json')),hashes=new Set();let bytes=0;
- assert.match(m.license,/CC-BY-4.0/);assert.equal(m.recordings.length,3);assert.ok(read('wakppuball/sounds/materials/CREDITS.txt').includes('robotortoise'));assert.ok(read('wakppuball/index.html').includes('sounds/materials/CREDITS.txt'));assert.equal(m.shared_base_layer,false);assert.equal(m.pitch_shift,false);assert.equal(new Set(Object.values(m.profiles).map(p=>p[1])).size,23);
+ assert.match(m.license,/CC-BY-4.0/);assert.equal(m.recordings.length,3);assert.ok(read('wakppuball/sounds/materials/CREDITS.txt').includes('orginaljun.deviantart.com'));assert.ok(read('wakppuball/index.html').includes('sounds/materials/CREDITS.txt'));assert.equal(m.shared_base_layer,false);assert.equal(m.pitch_shift,false);assert.equal(new Set(Object.values(m.profiles).map(p=>p[1])).size,23);
  for(const source of Object.values(m.sources)){const raw=readFileSync(new URL('../tools/audio-sources/materials/'+source.file,import.meta.url));assert.equal(createHash('sha256').update(raw).digest('hex'),source.sha256);}
  assert.ok(new Set(m.outputs.map(o=>o.seconds)).size>15);
 
