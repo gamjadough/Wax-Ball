@@ -16,10 +16,14 @@
  }
  function bankInfo(bank){return node('p',(bank.bank_name||'')+' '+(bank.account_number||'')+' / 예금주 '+(bank.account_holder||'')+'\n문의: '+(bank.support_contact||''),'purchase-bank');}
  function equipButton(id){const equip=button(data.equipped?'별빛 오라 스킨 해제':'별빛 오라 스킨 장착',()=>mutate('purchase_equip',{equipped:!data.equipped},data.equipped?'스킨을 해제했습니다.':'별빛 오라 스킨을 장착했습니다. 상점을 닫으면 볼에서 확인할 수 있습니다.'),busy);equip.id=id;equip.classList.add('primary');equip.dataset.purchaseEquip='starlight_skin';return equip;}
+ const shopClosed=()=>data?.shop_closed===true||(window.WAKPPU_SERVER?.id==='friends'&&!window.WakppuAuth?.local);
+ const closedNotice='친구 서버에서는 유료 상점을 이용할 수 없습니다. 기존 보유 상품과 주문 내역은 유지됩니다.';
  function render(){
   const customSelection=$('customOrderTarget')?.value;cosmetics();$('purchaseProducts').replaceChildren();$('purchaseHistory').replaceChildren();$('purchaseOwned').replaceChildren();$('purchaseInventoryContent').replaceChildren();
-  $('purchaseNotice').textContent=!game()?.account?'계정에서 로그인한 뒤 주문할 수 있습니다.':!data?'상품 정보를 불러오고 있습니다.':!data.enabled?'판매 준비 중입니다. 현재 새 주문을 받고 있지 않습니다.':!data.eligible?'빠른 시작 계정은 이메일 연결과 인증을 마친 뒤 주문할 수 있습니다.':'계좌이체 후 관리자가 실제 입금을 확인하면 상품을 지급합니다.';
-  for(const p of data?.products||[]){
+  $('purchaseNotice').textContent=shopClosed()?closedNotice:!game()?.account?'계정에서 로그인한 뒤 주문할 수 있습니다.':!data?'상품 정보를 불러오고 있습니다.':!data.enabled?'판매 준비 중입니다. 현재 새 주문을 받고 있지 않습니다.':!data.eligible?'빠른 시작 계정은 이메일 연결과 인증을 마친 뒤 주문할 수 있습니다.':'계좌이체 후 관리자가 실제 입금을 확인하면 상품을 지급합니다.';
+  $('purchaseDepositor').closest('label').hidden=shopClosed();
+  for(const note of $('shopPremium').children)if(note.tagName==='P'&&!note.id)note.hidden=shopClosed();
+  for(const p of shopClosed()?[]:data?.products||[]){
    const custom=p.id==='custom_ball_single'||p.id==='custom_ball_all',customAccess=custom&&(data.custom?.plan==='all'||p.id==='custom_ball_single'&&data.custom?.plan==='single');const premium=p.id==='premium_supporter_pack',covered=custom&&p.id==='custom_ball_single'&&data.custom?.plan==='all'||p.id==='supporter_pack'&&!!data.owned.premium_supporter_pack;
    const card=node('article',undefined,'purchase-card'+(premium?' purchase-premium-card':''));const icon=node('div',premium?'♛':p.id==='starlight_skin'?'✦':p.id==='first_steps_pack'?'🎁':'💜',p.id==='starlight_skin'?'purchase-skin-sample':'purchase-pack-sample');icon.setAttribute('aria-hidden','true');
    const starter=p.id==='first_steps_pack',owned=!!data.owned[p.id]||(starter&&!!data.starter_grant)||(p.id==='auto_rebirth'&&data.auto_rebirth?.owned),skin=p.id==='starlight_skin';
@@ -50,7 +54,9 @@
    if(o.custom_target)row.append(node('p','커스텀 적용 대상: '+([...WAKPPU_BALLS,ADMIN_EVENT_BALL,WakppuLimitedData.ball].find(b=>b.id===o.custom_target)?.name||o.custom_target)));
    if(o.custom_upgrade_order_id)row.append(node('p','단일 이용권에서 전체 볼로 업그레이드하는 주문입니다.'));
    if(o.source==='admin_grant')row.append(node('p','관리자 직접 지급 · 결제·입금 없음'));
-   else if(['pending','claimed'].includes(o.status)){
+   else if(['pending','claimed'].includes(o.status)&&shopClosed()){
+    row.append(node('p','유료 상점 이용이 중단되었습니다. 이미 입금한 주문은 관리자에게 문의해주세요.'));
+   }else if(['pending','claimed'].includes(o.status)){
     row.append(bankInfo(o.bank),node('p','위 계좌에 정확한 금액을 이체하세요. ‘입금 알림’은 입금 확인이나 상품 지급이 아닙니다. 입금 후에는 주문을 취소하지 말고 문의 방법으로 연락해주세요.'));
     if(o.status==='pending'){
      const claim=button('입금 알림 보내기',()=>{if(confirm('실제 입금을 완료하셨나요? 관리자 확인을 요청하며, 즉시 지급되지는 않습니다.'))mutate('purchase_claim',{order_id:o.id},'입금 알림을 보냈습니다. 관리자 확인 후 지급됩니다.');},busy);claim.dataset.purchaseClaim=o.id;
@@ -69,6 +75,7 @@
   catch(e){if(version===sequence){data=null;owner=null;render();status(e.message);}}
  }
  async function mutate(action,payload,message){
+  if(shopClosed()&&['purchase_order','purchase_claim'].includes(action)){status(closedNotice);return;}
   if(busy)return;busy=true;++sequence;const current=game()?.account;render();
   try{const next=await WakppuAuth.invoke(action,payload);if(current!==game()?.account)return;data=next;owner=current;status(message);}
   catch(e){status(e.message);}finally{busy=false;render();await refresh();}
@@ -79,6 +86,8 @@
   try{
    const [cfg,list]=await Promise.all([WakppuAuth.invoke('admin_purchase_config'),adminNoticeId?WakppuAuth.invoke('admin_purchase_inbox',{order_id:adminNoticeId}):WakppuAuth.invoke('admin_purchase_orders',{offset:adminOffset,status:$('purchaseAdminFilter').value})]);
    if(current!==game()?.account||read!==adminRead)return;config=cfg;
+   $('purchaseConfigForm').elements.enabled.disabled=cfg.shop_closed===true;
+   if(cfg.shop_closed)$('purchaseAdminStatus').textContent='친구 서버의 유료 상점은 이용 중단 상태입니다. 기존 주문만 관리할 수 있습니다.';
    if(!$('purchaseConfigForm').dataset.dirty){for(const key of ['bank_name','account_number','account_holder','support_contact'])$('purchaseConfigForm').elements[key].value=cfg[key];$('purchaseConfigForm').elements.enabled.checked=cfg.enabled;}
    const drafts=new Map([...$('purchaseAdminOrders').querySelectorAll('input[data-confirm-amount],input[data-deposit-reference]')].map(n=>[(n.dataset.confirmAmount?'amount:':'reference:')+(n.dataset.confirmAmount||n.dataset.depositReference),n.value]));
    $('purchaseAdminOrders').replaceChildren();

@@ -15,6 +15,8 @@
   try{
    const [cfg,list]=await Promise.all([WakppuAuth.invoke('admin_purchase_config'),adminNoticeId?WakppuAuth.invoke('admin_purchase_inbox',{order_id:adminNoticeId}):WakppuAuth.invoke('admin_purchase_orders',{offset:adminOffset,status:$('purchaseAdminFilter').value})]);
    if(current!==game()?.account||read!==adminRead)return;config=cfg;
+   $('purchaseConfigForm').elements.enabled.disabled=cfg.shop_closed===true;
+   if(cfg.shop_closed)$('purchaseAdminStatus').textContent='친구 서버의 유료 상점은 이용 중단 상태입니다. 기존 주문만 관리할 수 있습니다.';
    if(!$('purchaseConfigForm').dataset.dirty){for(const key of ['bank_name','account_number','account_holder','support_contact'])$('purchaseConfigForm').elements[key].value=cfg[key];$('purchaseConfigForm').elements.enabled.checked=cfg.enabled;}
    const drafts=new Map([...$('purchaseAdminOrders').querySelectorAll('input[data-confirm-amount],input[data-deposit-reference]')].map(n=>[(n.dataset.confirmAmount?'amount:':'reference:')+(n.dataset.confirmAmount||n.dataset.depositReference),n.value]));
    $('purchaseAdminOrders').replaceChildren();
