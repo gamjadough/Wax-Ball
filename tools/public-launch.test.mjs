@@ -1,4 +1,4 @@
-import {test} from 'node:test';import assert from 'node:assert/strict';import {publicFixture} from './public-server-fixture.mjs';
+import {readFile} from 'node:fs/promises';import {test} from 'node:test';import assert from 'node:assert/strict';import {publicFixture} from './public-server-fixture.mjs';
 test('public paid APIs/bonuses are unavailable even for administrators; December starts exactly at KST midnight',async()=>{
  const {db,rpc}=await publicFixture(),admin=crypto.randomUUID(),player=crypto.randomUUID();
  try{
@@ -15,5 +15,6 @@ test('public paid APIs/bonuses are unavailable even for administrators; December
  await db.exec("create or replace function wakppu_monthly_now() returns timestamptz language sql as $$select '2026-12-01T00:00:00+09:00'::timestamptz$$");
  await db.query('select wakppu_monthly_record($1)',[player]);const r=await rpc(player,{action:'monthly_rankings'});assert.equal(r.month,'2026-12');assert.deepEqual(r.seasons,['2026-12']);assert.equal(r.me.clicks,'1');
  const profile=await rpc(admin,{action:'profile_status'});assert.ok(!JSON.stringify(profile).includes('후원자'));assert.ok(!JSON.stringify(profile).includes('supporter_glow'));assert.ok(!JSON.stringify(profile).includes('premium_celestial'));
+ await db.exec(await readFile(new URL('./public-server-production-check.sql',import.meta.url),'utf8'));
  }finally{await db.close();}
 });
