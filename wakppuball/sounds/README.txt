@@ -1,3 +1,8 @@
+일반 볼별 전용음: materials/<볼 ID>/early.wav, mid.wav, late.wav, final.wav
+노란 볼을 제외한 23종 · 직접 합성한 CC0 음원 · 타격→균열→파열→파괴
+기존 노란/관리자/푸른 수정/한정/스킨 음원은 유지합니다.
+제작과 라이선스: materials/README.md, materials/sources.json
+
 여기에 효과음(mp3)을 넣으세요. 파일 이름은 아래와 똑같이 맞춰야 해요.
 
   yellow-crack-482875.mp3  사용자 제공 원본 보관 (게임에서는 전체 재생하지 않음)

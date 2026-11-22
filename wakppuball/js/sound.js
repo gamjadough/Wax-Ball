@@ -11,10 +11,14 @@
 /* 왁뿌볼 하나의 최종 사운드 설정 (기본값 + 그 볼의 개별 설정) */
 function getSoundConfig(ball) {
   const skin=ball.id==='eternity'?window.WakppuSkinSounds?.config(ball.skinId):null;
-  return Object.assign({}, DEFAULT_SOUNDS, ball.sound || {}, skin ? {...skin,pitch:1,pitchRandom:.025,volume:.65,volumeRandom:.04} : {});
+  const dedicated=['early','mid','late','final','sequence'].some(key=>ball.sound?.[key]?.length);
+  const material=dedicated?null:window.WakppuMaterialSounds?.[ball.id];
+  return Object.assign({}, DEFAULT_SOUNDS, ball.sound || {}, material || {}, skin ? {...skin,pitch:1,pitchRandom:.025,volume:.65,volumeRandom:.04} : {});
 }
 
 const SoundManager = (() => {
+  let materialClock=0;const materialVoices=[];
+  const isMaterial=name=>name.startsWith('materials/');
   const pools = {};      // 소리 이름 → { items: [Audio...], next: 0, ok: false }
   let ctx = null;        // 임시 합성음용 AudioContext
   let noiseBuffer = null;
@@ -97,13 +101,24 @@ const SoundManager = (() => {
     const probe=add(true);
     pool.timer=setTimeout(()=>{if(!pool.ok)failed(pool,probe,generation);},10000);
   }
+  // Only a few recently selected material sets remain decoded on mobile.
+  function pruneMaterials(){
+    const cached=Object.values(pools).filter(p=>isMaterial(p.name)).sort((a,b)=>b.used-a.used);
+    for(const pool of cached.slice(12)){
+      pool.generation++;clearTimeout(pool.timer);
+      for(const audio of pool.items){audio.pause();audio.removeAttribute?.('src');audio.load?.();const i=materialVoices.indexOf(audio);if(i>=0)materialVoices.splice(i,1);}
+      pool.ready.clear();pool.items=[];delete pools[pool.name];
+    }
+  }
   function init(names){
     for(const name of names){
       let pool=pools[name];
       if(!pool){pool=pools[name]={name,src:SOUND_SETTINGS.folder+name+(/\.(?:mp3|wav|ogg)$/i.test(name)?'':SOUND_SETTINGS.extension),items:[],ready:new Set(),next:0,ok:false,state:'idle',retryAt:0,failures:0,generation:0,timer:null};}
+      if(isMaterial(name))pool.used=++materialClock;
       // Missing legacy samples are expected; avoid repeated 404 requests for them.
       if(pool.state==='idle'||(!placeholderNames.has(name)&&pool.state==='error'))load(pool);
     }
+    pruneMaterials();
   }
 
   /* ---------- 브라우저 정책상 첫 터치 때 오디오를 깨워야 해요 ---------- */
@@ -142,6 +157,11 @@ const SoundManager = (() => {
           failed(pool,audio,generation);
         };
         try{
+          if(isMaterial(name)){
+            if(name.endsWith('/final.wav')){for(const voice of materialVoices)voice.pause();materialVoices.length=0;}
+            const previous=materialVoices.indexOf(audio);if(previous>=0)materialVoices.splice(previous,1);
+            materialVoices.push(audio);while(materialVoices.length>6)materialVoices.shift().pause();
+          }
           audio.pause();audio.currentTime=0;mediaVolumes.set(audio,vol);audio.volume=vol*effectLevel();
           audio.preservesPitch=false;audio.mozPreservesPitch=false;audio.webkitPreservesPitch=false;audio.playbackRate=rate;
           const promise=audio.play();if(promise?.catch)promise.catch(rejected);
