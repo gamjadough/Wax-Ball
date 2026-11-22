@@ -113,7 +113,7 @@ const SoundManager = (() => {
   function init(names){
     for(const name of names){
       let pool=pools[name];
-      if(!pool){pool=pools[name]={name,src:SOUND_SETTINGS.folder+name+(/\.(?:mp3|wav|ogg)$/i.test(name)?'':SOUND_SETTINGS.extension),items:[],ready:new Set(),next:0,ok:false,state:'idle',retryAt:0,failures:0,generation:0,timer:null};}
+      if(!pool){pool=pools[name]={name,src:SOUND_SETTINGS.folder+name+(/\.(?:mp3|wav|ogg)$/i.test(name)?'':SOUND_SETTINGS.extension)+(isMaterial(name)?'?v='+encodeURIComponent(window.WakppuMaterialSoundRevision||'1'):''),items:[],ready:new Set(),next:0,ok:false,state:'idle',retryAt:0,failures:0,generation:0,timer:null};}
       if(isMaterial(name))pool.used=++materialClock;
       // Missing legacy samples are expected; avoid repeated 404 requests for them.
       if(pool.state==='idle'||(!placeholderNames.has(name)&&pool.state==='error'))load(pool);

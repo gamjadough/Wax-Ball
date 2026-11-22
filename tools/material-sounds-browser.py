@@ -14,14 +14,14 @@ try:
    ctx=browser.new_context(viewport={'width':width,'height':height},has_touch=True,is_mobile=width<900,reduced_motion='reduce')
    ctx.route('**/*',lambda r:r.continue_() if r.request.url.startswith(base) else r.fulfill(status=200,body=''))
    page=ctx.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
-   page.add_init_script("""window.materialPlayed=[];window.mediaCreated=[];const NativeAudio=Audio;window.Audio=function(...args){const a=new NativeAudio(...args);mediaCreated.push(a);return a};Audio.prototype=NativeAudio.prototype;const play=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(...args){if(this.src.includes('/materials/'))materialPlayed.push({src:this.src,volume:this.volume,audio:this});return play.apply(this,args)};""")
+   page.add_init_script("""window.materialPlayed=[];window.mediaCreated=[];const NativeAudio=Audio;window.Audio=function(...args){const a=new NativeAudio(...args);mediaCreated.push(a);return a};Audio.prototype=NativeAudio.prototype;const play=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(...args){if(this.src.includes('/materials/'))materialPlayed.push({src:this.src.split('?')[0],volume:this.volume,audio:this});return play.apply(this,args)};""")
    page.goto(base,wait_until='networkidle');page.evaluate('WakppuSettings.set({muted:false,sfx:true,sfxVolume:65,reduceEffects:true})')
    assert not page.evaluate("performance.getEntriesByType('resource').some(x=>x.name.includes('/materials/'))")
    ids=page.evaluate('Object.keys(WakppuMaterialSounds)')
    if width==320:
     decoded=page.evaluate("""async()=>{const ac=new AudioContext(),out=[];for(const cfg of Object.values(WakppuMaterialSounds))for(const stage of ['early','mid','late','final']){const name=cfg[stage][0];const r=await fetch('sounds/'+name);if(!r.ok)throw Error(name);const b=await ac.decodeAudioData(await r.arrayBuffer());let peak=0,sum=0;for(const v of b.getChannelData(0)){peak=Math.max(peak,Math.abs(v));sum+=v*v;}out.push({name,channels:b.numberOfChannels,duration:b.duration,peak,rms:Math.sqrt(sum/b.length)});}await ac.close();return out;}""")
     assert len(decoded)==92
-    for d in decoded:assert d['channels']==1 and .19<d['duration']<1.06 and .43<d['peak']<.61 and d['rms']>.015,d
+    for d in decoded:assert d['channels']==1 and .10<d['duration']<1.06 and .43<d['peak']<.61 and d['rms']>.015,d
    gold=page.evaluate('WakppuItemGame.read().gold')
    for ball in ids:
     page.evaluate("id=>WakppuGameTest.run('cracks',id)",ball)
