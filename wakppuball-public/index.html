@@ -14,8 +14,6 @@
   <link rel="stylesheet" href="event-notice.css?v=cc429f0d12e7">
   <link rel="stylesheet" href="guest-lifecycle.css?v=df044faa19ac">
   <link rel="stylesheet" href="whitehole.css?v=e432a6813c58">
-  <link rel="stylesheet" href="purchases.css?v=f0890f30cc63">
-  <link rel="stylesheet" href="purchase-notices.css?v=ba2fee489e2e">
   <link rel="stylesheet" href="keepsake.css?v=7da203144373">
   <link rel="stylesheet" href="items.css?v=b4cf82814050">
   <link rel="stylesheet" href="limited.css?v=4d968247e7a1">
@@ -30,10 +28,9 @@
   <link rel="stylesheet" href="beginner.css?v=489d0393db45">
 <link rel="stylesheet" href="custom.css?v=e0a6961a6c74">
   <link rel="stylesheet" href="monthly-rankings.css?v=4073a0843d46">
-  <style>.public-server-label{position:fixed;top:max(8px,env(safe-area-inset-top));left:12px;font-size:12px;color:#a9bfd5;pointer-events:none;z-index:2}#halloweenCurrency,#inventoryPetsTab,[data-filter="limited"]{display:none!important}</style>
+  <style>#halloweenCurrency,#inventoryPetsTab,[data-filter="limited"]{display:none!important}</style>
 </head>
 <body data-server="public">
-  <div class="public-server-label">공개 서버</div>
   <section id="maintenance" class="maintenance" aria-labelledby="maintenanceTitle" hidden>
     <div class="maintenance-card">
       <span class="maintenance-icon" aria-hidden="true">🔧</span>
@@ -172,13 +169,12 @@
   <div id="shop" class="modal" hidden>
     <div class="sheet compact" role="dialog" aria-modal="true" aria-labelledby="shopTitle">
       <div class="sheet-head"><h2 id="shopTitle">🛒 상점</h2><button data-close="shop" class="btn small" type="button">닫기</button></div>
-      <div class="shop-tabs" role="tablist" aria-label="상점 메뉴"><button id="shopPurchaseTab" class="btn" role="tab" aria-selected="true" aria-controls="shopPurchase">아이템 구매</button><button id="shopDrawTab" class="btn" role="tab" aria-selected="false" aria-controls="shopDraw" tabindex="-1">뽑기</button><button id="shopPremiumTab" class="btn" role="tab" aria-selected="false" aria-controls="shopPremium" tabindex="-1">유료 상점</button></div>
+      <div class="shop-tabs" role="tablist" aria-label="상점 메뉴"><button id="shopPurchaseTab" class="btn" role="tab" aria-selected="true" aria-controls="shopPurchase">아이템 구매</button><button id="shopDrawTab" class="btn" role="tab" aria-selected="false" aria-controls="shopDraw" tabindex="-1">뽑기</button></div>
       <section id="shopPurchase" role="tabpanel" aria-labelledby="shopPurchaseTab">
       <article class="shop-item"><h3>🍯 꿀</h3><p id="honeyInfo" class="dialog-text"></p><button id="honeyBtn" class="btn primary" type="button">구매 · 30K G</button></article>
       <article class="shop-item"><h3>💎 보석 코팅</h3><p id="coatingInfo" class="dialog-text"></p><button id="coatingBtn" class="btn primary" type="button">구매 · 5M G</button></article>
       <article class="shop-item"><h3>🪵 망치</h3><p id="hammerInfo" class="dialog-text"></p><div class="hammer-actions"><button id="hammerBtn" class="btn primary" type="button"></button><label class="hammer-level-label" for="hammerLevelSelect">레벨 선택<select id="hammerLevelSelect" class="btn" disabled></select></label></div><p id="hammerLevelStatus" class="meta" role="status" aria-live="polite"></p></article>
       </section>
-      <section id="shopPremium" role="tabpanel" aria-labelledby="shopPremiumTab" hidden></section>
       <section id="shopHalloween" role="region" aria-label="할로윈 상점" hidden>
         <div class="halloween-shop-tabs" role="tablist" aria-label="할로윈 상점 메뉴">
           <button id="halloweenPetsTab" class="btn" type="button" role="tab" aria-selected="true" aria-controls="shopHalloweenPets">펫</button>
@@ -263,11 +259,11 @@
     <button id="serverAnnouncementClose" type="button" aria-label="공지 닫기">닫기</button>
   </div>
   <!-- 스크립트 순서가 중요해요: 데이터 → 사운드 → 그림 → 게임 -->
-  <script src="../wakppuball-public/server-config.js?v=20261118-public1"></script>
-  <script src="js/friend-gate.js?v=df5e1b247785"></script>
+  <script src="../wakppuball-public/server-config.js?v=20261122-launch2"></script>
+  <script src="js/friend-gate.js?v=a925e158397f"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4"></script>
   <script src="js/hit-requests.js?v=10961c8ae7c1"></script>
-  <script src="js/account.js?v=88b110d92afa"></script>
+  <script src="js/account.js?v=baa8be059c05"></script>
   <script src="js/guest-exit.js?v=de1a974f9ca7"></script>
   <script src="js/guest-exit-ui.js?v=035453f0bec5"></script>
   <script src="js/gold-format.js?v=88e83b5fd7a4"></script>
@@ -277,11 +273,11 @@
   <script src="js/player-settings.js?v=0fb47ab40090"></script>
   <script src="js/sound.js?v=ad7e0c512d62"></script>
   <script src="js/gem-ball-data.js?v=5d82d0fdb5c5"></script>
-  <script src="../wakppuball-public/public-compat.js?v=20261118-public1"></script>
+  <script src="../wakppuball-public/public-compat.js?v=20261122-launch2"></script>
   <script src="js/items-data.js?v=1e0c81350150"></script>
   <script src="js/sleep-hours.js?v=9136cf11a86f"></script>
   <script src="js/keepsake-display.js?v=8421d62bb358"></script>
-  <script src="js/items-ui.js?v=cb5ba6cfb76c"></script>
+  <script src="js/items-ui.js?v=e1dfb8fa19fb"></script>
   <script src="js/items-reveal.js?v=3ba5df0bcf52"></script>
   <script src="js/ball-art.js?v=91db8cd80542"></script>
   <script src="js/event-time.js?v=e23c7b41d73d"></script>
@@ -294,7 +290,6 @@
   <script src="js/skins-ui.js?v=3411a8d05a16"></script>
   <script src="js/admin-ball-event.js?v=716e91177b93"></script>
   <script src="js/hammers-data.js?v=1c8ea8afd7f4"></script>
-  <script src="js/purchase-effects.js?v=f20f6bce38f2"></script>
   <script src="js/input-guard-rules.js?v=d52e4f4d71d4"></script>
   <script src="js/input-guard.js?v=168ac5ba8365"></script>
   <script src="js/input-guard-admin.js?v=8e02505e6628"></script>
@@ -308,15 +303,9 @@
   <script src="js/profile-cards.js?v=01669430ba8e"></script>
   <script src="js/admin-panel.js?v=a6116f3b8e69"></script>
   <script src="js/admin-keepsake.js?v=6fa69a5cc299"></script>
-  <script src="js/admin-paid.js?v=00ca062dd55a"></script>
   <script src="js/guest-lifecycle.js?v=89094addcf10"></script>
-  <script src="js/purchase-ui.js?v=27676909ed3e"></script>
-<script src="js/custom-image-loader.js?v=f54b99b9ae7b"></script>
-<script src="js/custom-ball.js?v=8f5c96c03466"></script>
-  <script src="js/auto-rebirth.js?v=b18607dd3bc1"></script>
-  <script src="js/admin-purchase-notices.js?v=caa3844e36d6"></script>
   <script src="js/blue-gems.js?v=2a759e3380a3"></script>
   <script src="js/gem-balls-ui.js?v=d449102835be"></script>
-  <script src="js/monthly-rankings.js?v=a5ee38577805"></script>
+  <script src="js/monthly-rankings.js?v=97467c0e6d13"></script>
 </body>
 </html>

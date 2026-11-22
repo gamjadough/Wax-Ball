@@ -5,7 +5,7 @@ const require=createRequire(process.env.WAKPPU_TEST_NODE_PACKAGE||new URL('./tes
 const {PGlite}=require('@electric-sql/pglite');
 const {pgcrypto}=require('@electric-sql/pglite/contrib/pgcrypto');
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
-export async function publicFixture(){
+export async function publicFixture({launch=true}={}){
  const db=new PGlite({extensions:{pgcrypto}});
  await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;
  create schema auth;create schema extensions;create schema cron;
@@ -17,6 +17,7 @@ export async function publicFixture(){
  create function cron.schedule(text,text,text) returns bigint language sql as $$select 1::bigint$$;`);
  await db.exec(await read('supabase/public-server/migrations/20261118121025_public_server_baseline.sql'));
  await db.exec(await read('supabase/public-server/public-policy.sql'));
+ if(launch)await db.exec(await read('supabase/public-server/migrations/20261122102300_public_launch_december.sql'));
  async function rpc(u,b,anonymous=false){await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify(u?{sub:u,role:'authenticated',is_anonymous:anonymous}:{})]);return(await db.query('select public.wakppu_api($1::jsonb) r',[JSON.stringify(b)])).rows[0].r;}
  return {db,rpc};
 }

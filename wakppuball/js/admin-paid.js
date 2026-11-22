@@ -1,4 +1,5 @@
 (() => {
+ if(window.WAKPPU_SERVER?.paidContent===false)return;
  const $=id=>document.getElementById(id),section=document.createElement('section');section.id='adminPaid';
  section.innerHTML='<h3>유료 상품 직접 지급</h3><p>이메일 인증 없이 선택한 계정에 지급합니다. 결제·입금 확인과 구분하여 0원 관리자 지급으로 기록합니다.</p><p id="adminPaidTarget">먼저 플레이어를 검색하고 선택하세요.</p><label>상품<select id="adminPaidProduct"></select></label><p id="adminPaidOwned"></p><label>지급·회수 사유<input id="adminPaidReason" minlength="3" maxlength="200" placeholder="예: 이메일 인증 오류 보상"></label><div class="admin-paid-actions"><button id="adminPaidGrant" class="btn" type="button" disabled>선택 계정에 직접 지급</button><button id="adminPaidRevoke" class="btn" type="button" disabled>관리자 지급 회수</button><button id="adminPaidRefresh" class="btn" type="button" disabled>보유 상태 새로고침</button></div><p id="adminPaidStatus" role="status"></p><h4>최근 직접 지급 이력 (20건)</h4><div id="adminPaidHistory"></div>';
  $('adminPlayerInfo').after(section);

@@ -25,7 +25,7 @@ test('friends entry requires a server-issued token, including signed-in administ
  assert.equal((await access({mode:'check'},headers)).allowed,false);
  await assert.rejects(rpc(admin,{action:'status'},false,headers),e=>e.code==='PT403');
  // Direct table reads are gated too, while existing own-row policies remain.
- await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:player})]);
+ await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:admin})]);
  await db.exec('set role authenticated');
  assert.equal((await db.query('select count(*) n from game_states')).rows[0].n,0);
  await db.exec('reset role');
@@ -38,5 +38,21 @@ test('wrong-code attempts are persisted and throttled',async()=>{
  const blocked=await access({mode:'unlock',password:'fixture-entry-only'});assert.equal(blocked.allowed,false);assert.match(blocked.error,/1분/);
  await db.exec("update wakppu_friend_gate_attempts set started_at=now()-interval '2 minutes'");
  assert.equal((await access({mode:'unlock',password:'fixture-entry-only'})).allowed,true);
+ }finally{await db.close();}
+});
+
+test('returning accounts are verified by server history; device entry survives six hours',async()=>{
+ const {db,rpc,access}=await friendsGateFixture(),played=crypto.randomUUID(),fresh=crypto.randomUUID();
+ try{
+ await db.query('insert into auth.users(id) values($1),($2)',[played,fresh]);
+ await db.query('update game_states set current_clicks=1 where user_id=$1',[played]);
+ const remembered=await access({mode:'check'},{},played);assert.equal(remembered.allowed,true);assert.match(remembered.token,/^[a-f0-9]{64}$/);
+ assert.ok(await rpc(played,{action:'status'}));
+ assert.equal((await access({mode:'check'},{},fresh)).allowed,false);
+ await assert.rejects(rpc(fresh,{action:'status'}),e=>e.code==='PT403');
+ await db.exec("update wakppu_friend_gate_sessions set expires_at=now()+interval '358 days'");
+ const token={'x-wakppu-access':remembered.token};assert.equal((await access({mode:'check'},token)).allowed,true);
+ assert.ok((await db.query("select expires_at>now()+interval '364 days' ok from wakppu_friend_gate_sessions")).rows[0].ok);
+ assert.equal((await access({mode:'check'})).allowed,false);
  }finally{await db.close();}
 });

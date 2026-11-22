@@ -5,11 +5,15 @@
  const number=value=>BigInt(value||0).toLocaleString('ko-KR');
  function countdown(){
   if(!state||!active||$('ranking').hidden||document.hidden)return;
+  if(state.not_started){$('monthlyCountdown').textContent='2026년 12월 1일 00:00 시작 (한국 시간)';return;}
   const left=Math.max(0,Date.parse(state.ends_at)-(Date.now()+offset)),days=Math.floor(left/86400000),hours=Math.floor(left/3600000)%24,minutes=Math.floor(left/60000)%60;
   $('monthlyCountdown').textContent=state.finalized?'결과 확정 · 보상 지급 완료':left===0?'시즌 종료 · 결과 확정 중':`종료까지 ${days}일 ${hours}시간 ${minutes}분`;
   if(state.trial&&state.finalized)$('monthlyCountdown').textContent='시험 집계 종료 · 테스터 배지 지급';
  }
  function render(){
+  $('monthlySeason').disabled=!!state.not_started;
+  if(state.not_started){$('monthlySeason').replaceChildren(new Option('12월 시작 예정',''));$('monthlyTrial').hidden=true;$('monthlyMe').textContent='';$('monthlyList').replaceChildren();$('monthlyState').textContent='정식 소개와 함께 12월부터 클릭을 집계합니다.';countdown();return;}
+
   const options=state.seasons.map(m=>new Option(m.replace('-','년 ')+'월'+(m==='2026-10'?' · 시험':''),m));
   $('monthlySeason').replaceChildren(...options);$('monthlySeason').value=state.month;
   $('monthlyTrial').hidden=!state.trial;

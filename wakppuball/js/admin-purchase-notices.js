@@ -1,4 +1,5 @@
 (() => {
+ if(window.WAKPPU_SERVER?.paidContent===false)return;
  const $=id=>document.getElementById(id);let account=null,seen=new Map(),generation=0,inFlight=null,latest=null,lastPoll=0;
  const key=()=> 'wakppu-purchase-notices:'+account;
  function active(){return !document.hidden&&WakppuItemGame.read().ready&&!!WakppuItemGame.read().account&&!$('adminBtn').hidden;}

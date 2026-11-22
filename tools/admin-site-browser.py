@@ -37,12 +37,8 @@ with sync_playwright() as p:
    page.locator('#adminShowRanking').tap();expect(page.locator('#adminPlayerInfo')).to_contain_text('랭킹: 표시')
    page.locator('#adminBan').tap();expect(page.locator('#adminPlayerInfo')).to_contain_text('기간제 밴')
    page.locator('#adminUnban').tap();expect(page.locator('#adminPlayerInfo')).to_contain_text('이용 상태: 정상')
-   expect(page.locator('#adminPaidProduct option')).to_have_count(7)
-   page.locator('#adminPaidProduct').select_option('starlight_skin')
-   page.locator('#adminPaidReason').fill('로컬 지급 검증')
-   page.locator('#adminPaidGrant').tap()
-   expect(page.locator('#adminPaidOwned')).to_contain_text('관리자 지급으로 보유')
-   page.locator('#adminPaidRevoke').tap();expect(page.locator('#adminPaidOwned')).to_contain_text('미보유')
+   expect(page.locator('#adminPaid')).to_have_count(0)
+   expect(page.locator('[data-page="payments"]')).to_have_count(0)
    page.locator('[data-page="events"]').tap()
    page.locator('#adminBallEventDuration').fill('1');page.locator('#adminBallEventDelay').fill('0')
    page.locator('#adminBallEventStart').tap();expect(page.locator('#adminStatus')).to_contain_text('이벤트를 설정')
@@ -74,6 +70,14 @@ with sync_playwright() as p:
     assert page.locator('#serverName').inner_text()=='친구 서버'
     friend=rpc(page,'admin_search',{'query':'관리대상'})[0]
     assert friend['state']['gold']=='200'
+    page.locator('#adminQuery').fill('관리대상');page.locator('#adminSearch').tap()
+    page.locator('#adminResults button').filter(has_text='관리대상').tap()
+    expect(page.locator('#adminPaidProduct option')).to_have_count(7)
+    page.locator('#adminPaidProduct').select_option('starlight_skin')
+    page.locator('#adminPaidReason').fill('로컬 지급 검증')
+    page.locator('#adminPaidGrant').tap()
+    expect(page.locator('#adminPaidOwned')).to_contain_text('관리자 지급으로 보유')
+    page.locator('#adminPaidRevoke').tap();expect(page.locator('#adminPaidOwned')).to_contain_text('미보유')
     print('PASS role revocation and independent server login/data',flush=True)
   except Exception as error:
    print('Failure:',str(error),'Errors:',errors,'URL:',page.url,flush=True)

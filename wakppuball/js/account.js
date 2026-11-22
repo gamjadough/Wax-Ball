@@ -7,6 +7,8 @@
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   });
 
+  window.WakppuFriendGate?.bind?.(client);
+
   let guestStartPromise;
   function startGuest() {
     if (guestStartPromise) return guestStartPromise;

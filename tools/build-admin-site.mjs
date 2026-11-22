@@ -13,6 +13,7 @@ export async function buildAdminSite(){
  const setup=purchase.slice(purchase.indexOf("  const admin=node('section')"),purchase.indexOf("  new MutationObserver"));
  const adminPurchases=`// Generated from purchase-ui.js by build-admin-site.mjs. No player shop or game effects.
 (() => {
+ if(window.WAKPPU_SERVER?.paidContent===false)return;
  const $=id=>document.getElementById(id),game=()=>window.WakppuItemGame?.read();
  let config=null,adminOffset=0,adminBusy=false,adminOwner=null,adminRead=0,adminNoticeId=new URLSearchParams(location.search).get('order');
  const refresh=async()=>{};

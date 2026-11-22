@@ -18,8 +18,10 @@ rejects seasonal actions for players and administrators. Seasonal dates and
 effects stay disabled.
 
 Anonymous sign-in and email confirmation are enabled. Site URL and redirect URL
-are the public entry above. Payments are disabled and bank fields are blank by
-the owner's choice. Administrators may configure payments later through the game.
+are the public entry above. Paid content is unavailable in this server. The public entry omits paid shops,
+auras, custom paid editors and auto-rebirth scripts. The public RPC rejects
+purchase/admin-paid/custom/auto-rebirth actions, including for administrators;
+paid bonuses are zero. Audit and grant records remain private.
 Game accounts are independent: create a new account on the public entry before
 assigning its verified account the administrator role. No first-user auto-admin
 or client-supplied role claims are accepted.
@@ -47,6 +49,10 @@ automatically distinct because Supabase project refs differ.
 
 After changing the friends HTML or shared scripts, run `node tools/build-public-site.mjs`
 and include the regenerated public HTML. Asset hashes prevent stale shared code.
+Apply `migrations/20261122102300_public_launch_december.sql` only to the public
+project. Monthly competition starts at 2026-12-01 00:00 Asia/Seoul; pre-launch
+November ranking data is removed and clicks before launch are not recorded.
+
 Test with `node --test tools/public-server.test.mjs` (PGlite dependency required),
 `tools/public-server-browser.py` on a local static server, and the transaction-only
 `tools/public-server-production-check.sql` against the public database.

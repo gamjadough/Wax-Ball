@@ -1,6 +1,7 @@
 (() => {
  const $=id=>document.getElementById(id),cfg=WAKPPU_SERVER;
  let account=null,allowed=false,authVersion=0,currentPage=new URLSearchParams(location.search).has('order')?'payments':'players';
+ if(cfg.paidContent===false){currentPage='players';document.querySelector('[data-page="payments"]')?.remove();}
  $('serverSelect').value=cfg.id;$('serverName').textContent=cfg.name;
  for(const a of document.querySelectorAll('[data-game-link]'))a.href=cfg.game;
  $('serverSelect').onchange=()=>{location.href='?server='+$('serverSelect').value;};
