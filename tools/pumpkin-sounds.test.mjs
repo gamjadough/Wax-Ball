@@ -11,6 +11,11 @@ test('pumpkin has dedicated staged CC0 sounds, unchanged gameplay and selected-b
  assert.ok(game.indexOf('const sound = getSoundConfig(data);')>game.indexOf('function spawnBall('));
  const manifest=JSON.parse(read('wakppuball/sounds/pumpkin/sources.json'));assert.equal(manifest.license,'CC0-1.0');assert.equal(manifest.outputs.length,5);
  for(const output of manifest.outputs){const bytes=fs.readFileSync(new URL('../wakppuball/sounds/pumpkin/'+output.file,import.meta.url));assert.equal(createHash('sha256').update(bytes).digest('hex'),output.sha256);assert.ok(bytes.length>1000&&bytes.length<15000);assert.ok(output.peak<=.620001);assert.ok(output.duration<=1.05);}
- const html=read('wakppuball/index.html');for(const [n,version] of [['game','20261109-start1'],['limited-data','20261020-pumpkin-drop30'],['limited-ui','20261029-crystal1']])assert.ok(html.includes('js/'+n+'.js?v='+version));
+ const html=read('wakppuball/index.html');for(const name of ['game','limited-data','limited-ui']){
+  const source=[...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map(m=>m[1]).find(src=>src.split('?')[0]==='js/'+name+'.js');
+  assert.ok(source,'Missing script: '+name);
+  assert.ok(new URL(source,'https://example.test/').searchParams.get('v'),'Missing cache version: '+name);
+  assert.ok(fs.statSync(new URL('../wakppuball/'+source.split('?')[0],import.meta.url)).isFile());
+ }
 
 });

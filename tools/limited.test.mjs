@@ -78,7 +78,8 @@ test('limited SQL: real item wrapper, purchase transaction, separate progress, e
  assert.equal((await rpc({action:'limited'},admin)).selected,null);await assert.rejects(asAdmin('limited_hit'));
  await db.exec(`update players set role='admin' where user_id='${admin}'`);
  const early=await readFile(new URL('../supabase/migrations/20261016101249_halloween_early_start.sql',import.meta.url),'utf8');
- await db.exec("update wakppu_limited_settings set ends_at='2026-11-14T15:00:00Z'");
+ // Set both boundaries together: the previous start was relative to today's date.
+ await db.exec("update wakppu_limited_settings set starts_at='2026-10-17T00:00:00+09:00',ends_at='2026-11-14T15:00:00Z'");
  const playersBefore=(await db.query('select * from wakppu_limited_players order by user_id')).rows;
  const endBefore=(await db.query('select ends_at from wakppu_limited_settings')).rows[0].ends_at;
  await db.exec(early);await db.exec(early);

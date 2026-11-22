@@ -2,6 +2,8 @@
 
 Run with Python and Playwright installed, plus Microsoft Edge.
 Optional --node specifies the Node executable used by the local sample server.
+Standalone administrator UI is covered by tools/admin-site-browser.py against
+tools/admin-site-fixture.mjs; this suite checks gameplay and its moderation UI.
 """
 import argparse
 import json
@@ -12,7 +14,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / 'tools' / '.test-deps'))
+sys.path.insert(0, os.environ.get('WAKPPU_TEST_PYTHON_PATH', str(ROOT / 'tools' / '.test-deps')))
 from playwright.sync_api import sync_playwright, expect
 
 SAVE_KEY = 'wax-ball:wakppuball:local-test-save'
@@ -36,7 +38,7 @@ def main():
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
         port = sock.getsockname()[1]
-    env = dict(os.environ, WAKPPU_LOCAL_PORT=str(port))
+    env = dict(os.environ, WAKPPU_LOCAL_PORT=str(port), WAKPPU_LOCAL_SLEEP_TIME='2026-11-22T12:00:00+09:00')
     server = subprocess.Popen([args.node, str(ROOT/'tools/local-server.mjs')],
                               cwd=ROOT, env=env, stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT, text=True, encoding='utf-8')
@@ -95,7 +97,7 @@ def main():
                 assert saved(page)['gold']=='1'
                 page.reload()
                 expect(page.locator('#goldValue')).to_have_text('1')
-                assert page.locator('.hit').count()==1
+                assert page.locator('#ballSvg .hit').count()==1
                 assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
                 page.screenshot(path=str(OUT/'mobile.png'), full_page=True)
 
@@ -140,7 +142,7 @@ def main():
                 assert saved(page)['gold']=='11', saved(page)
 
             def invalid_rebirth(page):
-                assert saved(page)['rebirths']<=25, saved(page)['rebirths']
+                assert saved(page)['rebirths']==0, saved(page)['rebirths']
                 hit(page)
                 page.wait_for_timeout(1400)
 
@@ -148,18 +150,33 @@ def main():
                 hit(page, 2)
                 page.wait_for_timeout(1500)
                 assert saved(page)['gold']==str(9007199254740993+5000000*(2**25))
-                expect(page.locator('#rebirthBtn')).to_be_disabled()
+                # Rebirth 25 is no longer the cap; the button opens the cost dialog.
+                page.locator('#rebirthBtn').click()
+                expect(page.locator('#rebirthText')).to_contain_text('환생할 수 있습니다')
+                expect(page.locator('#rebirthConfirm')).to_be_disabled()
+                page.locator('[data-close="rebirth"]').click()
                 page.reload()
                 assert saved(page)['gold']==str(9007199254740993+5000000*(2**25))
 
             def all_art(page):
-                for ball_id in page.evaluate('WAKPPU_BALLS.map(b=>b.id)'):
+                for ball in page.evaluate('WAKPPU_BALLS.map(b=>({id:b.id,grade:b.grade}))'):
+                    ball_id=ball['id']
                     page.evaluate('(id)=>WakppuGameTest.run("last",id)', ball_id)
-                    assert page.locator('.hit').count()==1, ball_id
+                    assert page.locator('#ballSvg .hit').count()==1, ball_id
                     hit(page, 1)
-                    expect(page.locator('.shard')).to_have_count(27)
+                    if ball['grade']=='초월':
+                        page.wait_for_function("document.querySelector('[data-transcendent-phase]')?.dataset.transcendentPhase==='release'")
+                        assert page.locator('.transcendent-fx').count()>=5,ball_id
+                    else:
+                        expect(page.locator('#ballSvg .shard')).to_have_count(27)
                 page.evaluate('WakppuGameTest.end()')
                 assert saved(page)['gold']=='0'
+
+            def max_rebirth(page):
+                assert saved(page)['rebirths']==page.evaluate('REBIRTH_COSTS.length')
+                page.locator('#rebirthBtn').click()
+                expect(page.locator('#rebirthText')).to_contain_text('최대 환생 달성')
+                expect(page.locator('#rebirthConfirm')).to_be_hidden()
 
             def partial_restore(page):
                 hit(page, 2)
@@ -181,85 +198,65 @@ def main():
                 response=page.evaluate("async()=>{try {await WakppuAuth.invoke('admin_search');return false;} catch(e){return e.message;}}")
                 assert response=='admin only', response
 
-            def admin(page):
-                page.locator('#accountBtn').click()
-                page.locator('#accountEmail').fill('dodoonglee@gmail.com')
-                page.locator('#accountPassword').fill(password)
-                page.locator('#signInBtn').click()
+            def admin_login(page):
+                page.evaluate("async password=>{const r=await WakppuAuth.signIn('dodoonglee@gmail.com',password);if(r.error)throw r.error;await WakppuItemGame.restore()}", password)
+                page.wait_for_function('WakppuItemGame.read().ready')
                 expect(page.locator('#adminBtn')).to_be_visible()
-                page.locator('#adminBtn').click()
-                expect(page.locator('#adminClearAnnouncement')).to_be_disabled()
-                page.locator('#adminAnnouncement').fill('공지 해제 테스트')
-                page.locator('#adminAnnounce').click()
+
+            def rpc(page, action, **body):
+                return page.evaluate("b=>WakppuAuth.invoke(b.action,b.body)", {'action':action,'body':body})
+
+            def admin(page):
+                admin_login(page)
+                # The full administrator site has its own SQL-backed UI suite.
+                # Keep game-side announcement rendering and preview isolation here.
+                rpc(page,'admin_announcement',message='공지 해제 테스트')
+                page.reload(wait_until='networkidle')
                 expect(page.locator('#serverAnnouncementText')).to_have_text('공지 해제 테스트')
-                expect(page.locator('#adminClearAnnouncement')).to_be_enabled()
-                page.locator('#adminClearAnnouncement').click()
+                rpc(page,'admin_announcement',clear=True)
+                page.reload(wait_until='networkidle')
                 expect(page.locator('#serverAnnouncement')).to_be_hidden()
-                expect(page.locator('#adminStatus')).to_have_text('공지를 내렸습니다.')
-                expect(page.locator('#adminClearAnnouncement')).to_be_disabled()
-                expect(page.locator('#adminAnnouncement')).to_have_value('')
-                page.screenshot(path=str(OUT/'announcement-cleared.png'), full_page=True)
-                page.locator('#adminResults button').first.click()
-                expect(page.locator('#adminUnban')).to_be_disabled()
-                page.locator('#adminBall').select_option('blackhole')
+                page.wait_for_function('WakppuItemGame.read().ready')
                 before=saved(page)
-                page.locator('#adminTestBreak').click()
+                assert rpc(page,'admin_test',ball_id='blackhole')['authorized']
+                page.evaluate("WakppuGameTest.run('break','blackhole')")
                 page.wait_for_timeout(1500)
                 assert saved(page)==before
-                page.locator('#adminBtn').click()
-                page.locator('#adminEndTest').click()
-                page.locator('[data-close="admin"]').click()
+                page.evaluate('WakppuGameTest.end()')
                 assert saved(page)==before
-                page.screenshot(path=str(OUT/'desktop.png'), full_page=True)
-
+                page.screenshot(path=str(OUT/'desktop.png'),full_page=True)
 
             def moderation(page):
-                page.on('dialog', lambda dialog: dialog.accept())
-                page.locator('#accountBtn').click()
-                page.locator('#accountEmail').fill('dodoonglee@gmail.com')
-                page.locator('#accountPassword').fill(password)
-                page.locator('#signInBtn').click()
-                expect(page.locator('#adminBtn')).to_be_visible()
-                page.locator('#adminBtn').click()
-                page.locator('#adminResults button[data-player-id="local-player"]').click()
-                page.locator('#adminModerationReason').fill('브라우저 제재 테스트')
-                page.locator('#adminHideRanking').click()
-                expect(page.locator('#adminPlayerInfo')).to_contain_text('랭킹: 숨김')
-                assert not any(r['nickname']=='테스트손님' for r in page.evaluate("()=>WakppuAuth.invoke('rankings')"))
-                page.locator('#adminShowRanking').click()
-                expect(page.locator('#adminPlayerInfo')).to_contain_text('랭킹: 표시')
+                admin_login(page)
+                target='local-player'
+                rpc(page,'admin_ranking_visibility',user_id=target,hidden=True)
+                assert not any(r['nickname']=='테스트손님' for r in rpc(page,'rankings'))
+                rpc(page,'admin_ranking_visibility',user_id=target,hidden=False)
                 guest=page.context.new_page()
-                guest.goto(base)
-                guest.wait_for_load_state('networkidle')
-                guest.locator('#accountBtn').click()
-                guest.locator('#guestNicknameInput').fill('제재대상')
-                guest.locator('#guestStartBtn').click()
-                expect(guest.locator('#account')).to_be_hidden()
-                page.locator('#adminBanDuration').select_option('24')
-                page.locator('#adminBan').click()
-                expect(page.locator('#adminPlayerInfo')).to_contain_text('기간제 밴')
-                expect(guest.locator('#maintenanceTitle')).to_have_text('계정 이용 제한', timeout=12000)
-                expect(guest.locator('#game')).to_be_hidden()
-                expect(guest.locator('.maintenance-note')).to_contain_text('브라우저 제재 테스트')
-                code=guest.evaluate("async()=>{try{await WakppuAuth.invoke('save_progress',{gold:'99999'});return 200;}catch(e){return e.status;}}")
-                assert code==403
-                page.locator('#adminHideRanking').click()
-                expect(page.locator('#adminPlayerInfo')).to_contain_text('랭킹: 숨김')
-                page.locator('#adminUnban').click()
-                expect(page.locator('#adminPlayerInfo')).to_contain_text('이용 상태: 정상')
-                # Ban release must not clear the independent ranking flag.
-                expect(page.locator('#adminPlayerInfo')).to_contain_text('랭킹: 숨김')
-                guest.evaluate("()=>dispatchEvent(new Event('wakppu-account-restored'))")
-                expect(guest.locator('#game')).to_be_visible()
-                page.locator('#adminShowRanking').click()
-                page.locator('#adminBanDuration').select_option('permanent')
-                page.locator('#adminBan').click()
-                expect(page.locator('#adminPlayerInfo')).to_contain_text('영구 밴')
-                page.locator('#adminBan').scroll_into_view_if_needed()
-                page.screenshot(path=str(OUT/'moderation-panel.png'), full_page=True)
-                page.locator('#adminUnban').click()
-                expect(page.locator('#adminPlayerInfo')).to_contain_text('이용 상태: 정상')
-                guest.close()
+                try:
+                    guest.goto(base,wait_until='networkidle')
+                    guest.locator('#accountBtn').click()
+                    guest.locator('#guestNicknameInput').fill('제재대상')
+                    guest.locator('#guestStartBtn').click()
+                    expect(guest.locator('#account')).to_be_hidden()
+                    rpc(page,'admin_ban',user_id=target,mode='temporary',duration_hours=24,reason='브라우저 제재 테스트')
+                    expect(guest.locator('#maintenanceTitle')).to_have_text('계정 이용 제한',timeout=12000)
+                    expect(guest.locator('#game')).to_be_hidden()
+                    expect(guest.locator('.maintenance-note')).to_contain_text('브라우저 제재 테스트')
+                    code=guest.evaluate("async()=>{try{await WakppuAuth.invoke('save_progress',{gold:'99999'});return 200;}catch(e){return e.status;}}")
+                    assert code==403
+                    rpc(page,'admin_ranking_visibility',user_id=target,hidden=True)
+                    rpc(page,'admin_unban',user_id=target)
+                    row=next(r for r in rpc(page,'admin_search',query=target) if r['id']==target)
+                    assert row['moderation']['status']=='active' and row['ranking_hidden']
+                    guest.evaluate('WakppuItemGame.restore()')
+                    expect(guest.locator('#game')).to_be_visible()
+                    rpc(page,'admin_ranking_visibility',user_id=target,hidden=False)
+                    rpc(page,'admin_ban',user_id=target,mode='permanent',reason='브라우저 제재 테스트')
+                    expect(guest.locator('#maintenanceTitle')).to_have_text('계정 이용 제한',timeout=12000)
+                    rpc(page,'admin_unban',user_id=target)
+                finally:
+                    guest.close()
 
             def email_link(page):
                 page.locator('#accountBtn').click()
@@ -271,10 +268,14 @@ def main():
                 page.wait_for_timeout(650)
                 original_state=page.evaluate("async()=> (await WakppuAuth.invoke('bootstrap')).state")
                 page.locator('#accountBtn').click()
-                expect(page.locator('#signOutBtn')).to_be_hidden()
+                expect(page.locator('#signOutBtn')).to_be_visible()
                 page.locator('#linkEmailInput').fill('dodoonglee@gmail.com')
                 page.locator('#linkEmailBtn').click()
                 expect(page.locator('#accountStatus')).to_contain_text('이미 사용 중인 이메일')
+                expect(page.locator('#guestExitDialog')).to_be_visible()
+                page.locator('#guestExitCancel').click()
+                expect(page.locator('#guestExitDialog')).to_be_hidden()
+                assert page.evaluate('async()=> (await WakppuAuth.session()).data.session.user.id')==original_id
                 page.locator('#linkEmailInput').fill('guest-link@example.test')
                 page.locator('#linkEmailBtn').click()
                 expect(page.locator('#checkEmailLinkBtn')).to_be_visible()
@@ -312,6 +313,7 @@ def main():
             check('invalid-rebirth-save', invalid_rebirth, fixture(rebirths=1024))
             check('large-reward-exact-save', large_reward, fixture(gold='9007199254740993',rebirths=25,
                   unlocked=[True]*13,selected=12,hammerOwned=True,hammerLevel=10))
+            check('max-rebirth-save', max_rebirth, fixture(rebirths=1000))
             check('all-ball-art-break', all_art)
             check('admin-partial-restore', partial_restore)
             check('guest-ranking-permission', guest)

@@ -15,6 +15,8 @@ try:
    page.on('pageerror',lambda e:errors.append(str(e)))
    page.route('**/*',lambda r:r.continue_() if r.request.url.startswith(base) else r.fulfill(status=200,body=''))
    page.goto(base+'/?preview=halloween');page.wait_for_function('WakppuItemGame.read().ready&&WakppuLimited.data?.tokens===100')
+   # Test controls belong inside the shop and must never cover gameplay controls.
+   expect(page.locator('.halloween-local')).to_be_hidden()
    for button,modal,close in [('#settingsBtn','#playerSettings','#settingsClose'),('#shopBtn','#shop','[data-close="shop"]'),('#inventoryBtn','#itemsModal','#itemsClose'),('#collectionBtn','#collection','#collectionClose'),('#rankingBtn','#ranking','[data-close="ranking"]'),('#accountBtn','#account','[data-close="account"]')]:
     page.locator(button).tap();expect(page.locator(modal)).to_be_visible()
     sheet=page.locator(modal+' .sheet');box=sheet.bounding_box()
@@ -26,6 +28,15 @@ try:
     sheet.evaluate('e=>e.scrollTop=e.scrollHeight')
     sheet.evaluate('e=>e.scrollTop=0')
     page.locator(close).tap();expect(page.locator(modal)).to_be_hidden()
+   page.locator('#shopBtn').tap()
+   for mode in ['ended','active']:
+    control=page.locator('.halloween-local [data-demo="'+mode+'"]')
+    # The shared pressed animation scales the button briefly; check layout size.
+    assert control.evaluate('e=>e.offsetHeight')>=44
+    control.tap()
+    page.wait_for_function('(active)=>WakppuLimited.data?.season.active===active',arg=mode=='active')
+   page.locator('[data-close="shop"]').tap()
+   expect(page.locator('.halloween-local')).to_be_hidden()
    assert not errors,errors
    out=ROOT/'tools/test-results';out.mkdir(parents=True,exist_ok=True);page.screenshot(path=str(out/f'mobile-layout-{width}x{height}.png'))
    page.close();print(f'PASS touch panels {width}x{height}: settings, shop/draw, inventory, collection, ranking, account; no overflow',flush=True)

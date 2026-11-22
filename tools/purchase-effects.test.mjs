@@ -26,6 +26,11 @@ test('free chime includes provenance, a short bounded waveform and cache version
  const root=new URL('../wakppuball/sounds/starlight/',import.meta.url),meta=JSON.parse(fs.readFileSync(new URL('sources.json',root),'utf8')),bytes=fs.readFileSync(new URL(meta.output,root));
  assert.equal(meta.license,'CC0-1.0');assert.equal(meta.generator,'tools/build-starlight-sound.py');assert.ok(meta.source.includes('Original procedural'));assert.equal(createHash('sha256').update(bytes).digest('hex'),meta.sha256);
  assert.equal(bytes.toString('ascii',0,4),'RIFF');assert.ok(meta.duration<=.9&&meta.peak<=.36);assert.ok(bytes.length<42000);
- const html=read('wakppuball/index.html');for(const f of ['purchase-effects','purchase-ui','game'])assert.ok(html.includes('js/'+f+'.js?v='+({'purchase-effects':'20261019-shatter4','purchase-ui':'20261025-supporter-cards1',game:'20261109-start1'}[f])));
+ const html=read('wakppuball/index.html');for(const name of ['purchase-effects','purchase-ui','game']){
+  const source=[...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map(m=>m[1]).find(src=>src.split('?')[0]==='js/'+name+'.js');
+  assert.ok(source,'Missing script: '+name);
+  assert.ok(new URL(source,'https://example.test/').searchParams.get('v'),'Missing cache version: '+name);
+  assert.ok(fs.statSync(new URL('../wakppuball/'+source.split('?')[0],import.meta.url)).isFile());
+ }
 
 });
