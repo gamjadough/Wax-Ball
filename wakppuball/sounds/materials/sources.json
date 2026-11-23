@@ -1,9 +1,9 @@
 {
-  "version": 6,
+  "version": 7,
   "license": "Pixabay Content License + CC0-1.0",
   "page": "https://pixabay.com/sound-effects/film-special-effects-bones-cracking-482875/",
   "license_url": "https://pixabay.com/service/license-summary/",
-  "author": "DRAGON-STUDIO, qubodup",
+  "author": "DRAGON-STUDIO, qubodup, hello_world+123",
   "generator": "tools/build-material-sounds.py",
   "sample_rate": 22050,
   "channels": 1,
@@ -40,7 +40,8 @@
     "wakppuball/sounds/yellow-crack-3.wav": "5aebf1e0e07248fc79c189b549bcc83bd77c47d17291383fb43912d96569a94b",
     "wakppuball/sounds/yellow-crack-4.wav": "ef84c63311ed42a5437b9513413dc564245be5433f43aef266ecd0430c9a4201",
     "wakppuball/sounds/yellow-crack-5.wav": "24d4b242682e65a33515c43f1bbc01a158614ae92bade52e89a0f0160707e585",
-    "tools/audio-sources/fruit-wax/slime.mp3": "72521df6208f6a93518ece50dd2451f3769e0b78f5fc66837e39159eb9b3b8bf"
+    "tools/audio-sources/fruit-wax/slime.mp3": "72521df6208f6a93518ece50dd2451f3769e0b78f5fc66837e39159eb9b3b8bf",
+    "tools/audio-sources/honey-wax/honey.mp3": "461d881cf8e64c982f7c9e53998c437d7f6aa4d1738ed035c93d83ec2157f844"
   },
   "recordings": [
     {
@@ -49,6 +50,13 @@
       "preview_url": "https://cdn.freesound.org/previews/442/442772_71257-hq.mp3",
       "license": "CC0-1.0",
       "sha256": "72521df6208f6a93518ece50dd2451f3769e0b78f5fc66837e39159eb9b3b8bf"
+    },
+    {
+      "author": "hello_world+123",
+      "page": "https://freesound.org/people/hello_world%2B123/sounds/764992/",
+      "preview_url": "https://cdn.freesound.org/previews/764/764992_16536376-hq.mp3",
+      "license": "CC0-1.0",
+      "sha256": "461d881cf8e64c982f7c9e53998c437d7f6aa4d1738ed035c93d83ec2157f844"
     }
   ],
   "outputs": [
@@ -131,6 +139,46 @@
       "seconds": 0.62,
       "peak": 0.589996337890625,
       "rms": 0.06704728621181313
+    },
+    {
+      "file": "honey-wax/early.wav",
+      "source": "wax/early.wav + tools/audio-sources/honey-wax/honey.mp3",
+      "sha256": "1cf89ca55319b04914bd26189b6467e39a63694faba26e39db0e9a51d7fcb625",
+      "seconds": 0.32,
+      "peak": 0.459991455078125,
+      "rms": 0.037983674602312556
+    },
+    {
+      "file": "honey-wax/tap.wav",
+      "source": "wax/tap.wav + tools/audio-sources/honey-wax/honey.mp3",
+      "sha256": "efb58c61ef25a7811a91715db3238fc364e00aff404c46319d7d255e4fc5c7dc",
+      "seconds": 0.38,
+      "peak": 0.46722412109375,
+      "rms": 0.031008256084393178
+    },
+    {
+      "file": "honey-wax/mid.wav",
+      "source": "wax/mid.wav + tools/audio-sources/honey-wax/honey.mp3",
+      "sha256": "87979292901e274126830d28e71b3579d3af260c1905b6c9e734ce0e55bb091a",
+      "seconds": 0.46,
+      "peak": 0.507415771484375,
+      "rms": 0.047665738115662735
+    },
+    {
+      "file": "honey-wax/late.wav",
+      "source": "wax/late.wav + tools/audio-sources/honey-wax/honey.mp3",
+      "sha256": "5fad2fb5ef5bb0bc619dfbdca8d5117d859707d0795a27292c383f0021e447a1",
+      "seconds": 0.54,
+      "peak": 0.537506103515625,
+      "rms": 0.04978239198512908
+    },
+    {
+      "file": "honey-wax/final.wav",
+      "source": "wax/final.wav + tools/audio-sources/honey-wax/honey.mp3",
+      "sha256": "93bb18b0f193bcc87a411ca68bd9654f154bd812cee3aef3518385ffd401fa05",
+      "seconds": 0.78,
+      "peak": 0.589996337890625,
+      "rms": 0.0658016380795308
     }
   ]
 }

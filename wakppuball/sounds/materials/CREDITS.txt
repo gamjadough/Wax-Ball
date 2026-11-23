@@ -16,3 +16,10 @@ CC0 1.0 https://creativecommons.org/publicdomain/zero/1.0/
 The source itself mixes CC0 recordings; original source links are on its Freesound page.
 Edits: HQ preview mono downmix, 22050 Hz resampling, 2800 Hz low-pass, quiet decaying core placed 18 ms after a DRAGON-STUDIO crack; short crops, fades and gain normalization. No pitch shift or time stretching.
 This is an approximation made from freely usable recordings, not an actual wax-butter recording. No endorsement is implied.
+
+Snack-grade honey-wax-style mix (chocolate and donut only)
+Additional body: "squezing honey from bottle_mixdown" by hello_world+123
+https://freesound.org/people/hello_world%2B123/sounds/764992/
+CC0 1.0 https://creativecommons.org/publicdomain/zero/1.0/
+Edits: HQ preview excerpts at 3.30, 6.22, 10.62, 14.58, 22.17 seconds; mono downmix, 22050 Hz resampling, 90–3200 Hz filtering, attack/decay envelope and 25 ms delayed mix with DRAGON-STUDIO cracks; short crops, fades and normalized/resampling-limited peaks. No pitch shift or time stretching.
+This is real honey squeezed from a bottle, mixed as honey-wax-style Foley; not a recording of an actual honey-wax squishy. No endorsement is implied.
