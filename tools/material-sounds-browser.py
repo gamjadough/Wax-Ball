@@ -20,7 +20,7 @@ try:
    ids=page.evaluate('Object.keys(WakppuMaterialSounds)')
    if width==320:
     decoded=page.evaluate("""async()=>{const ac=new AudioContext(),out=[];for(const name of [...new Set(Object.values(WakppuMaterialSounds).flatMap(cfg=>['early','mid','late','final'].flatMap(k=>cfg[k])))]){const r=await fetch('sounds/'+name);if(!r.ok)throw Error(name);const b=await ac.decodeAudioData(await r.arrayBuffer());let peak=0,sum=0;for(const v of b.getChannelData(0)){peak=Math.max(peak,Math.abs(v));sum+=v*v;}out.push({name,channels:b.numberOfChannels,duration:b.duration,peak,rms:Math.sqrt(sum/b.length)});}await ac.close();return out;}""")
-    assert len(decoded)==35
+    assert len(decoded)==40
     for d in decoded:assert d['channels']==1 and .10<d['duration']<1.06 and .30<d['peak']<.61 and d['rms']>.015,d
    gold=page.evaluate('WakppuItemGame.read().gold')
    for ball in ids:
@@ -33,12 +33,24 @@ try:
     page.evaluate("id=>{const cfg=WakppuMaterialSounds[id];for(const stage of ['mid','late','final'])SoundManager.play(cfg[stage][0],cfg)}",ball)
     assert page.evaluate('materialPlayed.slice(-3).map(x=>x.src.split("/").pop())')==['mid.wav','late.wav','final.wav']
     assert page.evaluate("mediaCreated.filter(a=>a.src.includes('/materials/')).length")<=48
+   last_grade=os.environ.get('WAKPPU_SOUND_LAST_GRADE')
+   last_ids=page.evaluate("grade=>WAKPPU_BALLS.filter(b=>b.grade===grade).map(b=>b.id)",last_grade) if last_grade else []
+   if last_grade:assert len(last_ids)==10
+   for ball in last_ids:
+    page.evaluate("id=>WakppuGameTest.run('last',id)",ball)
+    page.wait_for_function("id=>Object.values(WakppuMaterialSounds[id]).filter(Array.isArray).flat().every(n=>SoundManager.ready(n))",arg=ball)
+    start=page.evaluate('materialPlayed.length');page.locator('#ballSvg').tap()
+    page.wait_for_function('!WakppuItemGame.read().busy')
+    played=page.evaluate('n=>materialPlayed.slice(n).map(x=>x.src)',start)
+    assert len(played)==1 and played[0].endswith('/transcendent-asmr/final.wav'),(ball,played)
+    assert page.evaluate('WakppuItemGame.read().gold')==gold
    # Fruit/snack/nature/gem balls really break through their own family; mode preserves gold.
    full_breaks=[('strawberry',11,'fruit-wax'),('apple',14,'fruit-wax'),('chocolate',17,'honey-wax'),('donut',20,'honey-wax'),('rainbow',23,'ice-wax'),('water',26,'ice-wax'),('emerald',29,'keycap'),('diamond',32,'keycap'),('planet',50,'honey-keycap'),('sun',100,'honey-keycap'),('blackhole',180,'honey-wax-butter'),('whitehole',300,'honey-wax-butter')]
    selected_family=os.environ.get('WAKPPU_SOUND_FULL_FAMILY')
    if selected_family:
     full_breaks=[v for v in full_breaks if v[2] in selected_family.split(',')]
     assert full_breaks,selected_family
+   if os.environ.get('WAKPPU_SOUND_SKIP_FULL_GRADES')=='1':full_breaks=[]
    full_width=os.environ.get('WAKPPU_SOUND_FULL_WIDTH')
    if full_width and width!=int(full_width):full_breaks=[]
    full_label=','.join([v[0] for v in full_breaks]+['green'])
@@ -82,7 +94,7 @@ try:
     page.reload(wait_until='networkidle');assert page.evaluate('WakppuItemGame.read().gold')=='10'
    assert not errors,errors
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
-   print(f'PASS {width}x{height}: 23 selected-ball touch hits, 35 real WAVs across every stage, full {full_label} breaks, bounded cache/voices, final preemption, mute and reward preservation',flush=True)
+   print(f'PASS {width}x{height}: 23 selected-ball touch hits, 40 real WAVs across every stage, full {full_label} breaks, {len(last_ids)} last-hit destructions, bounded cache/voices, final preemption, mute and reward preservation',flush=True)
    ctx.close()
   browser.close()
 finally:server.terminate();server.wait(timeout=10)

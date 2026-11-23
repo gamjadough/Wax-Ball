@@ -50,3 +50,8 @@ Dimension-grade honey + wax + butter-style mix (blackhole and whitehole)
 Reuse DRAGON-STUDIO wax-like cracks (Pixabay Content License), hello_world+123 honey-bottle squeeze (CC0) and qubodup Slime Squish soft-core (CC0), all credited above.
 All three layers begin together. Honey (100–2800 Hz) and soft core (2800 Hz low-pass) have leading silence trimmed, a 2 ms attack and short decay, cropped inside the original wax clip duration. Mono 22050 Hz, fades and normalized/resampling-limited peaks, no pitch shift/time stretching or extra tail.
 This is freely licensed Foley combining wax/honey/butter-like textures, not a recording of a real three-material squishy. No endorsement implied.
+
+Transcendent-grade combined ASMR (ten base transcendent balls)
+Offline simultaneous mix of DRAGON-STUDIO wax cracks, qubodup butter-style soft core, hello_world+123 honey, Nox_Sound ice fractures, and StavSounds mechanical keys, with the same source licenses/URLs credited above.
+Edits: source crops as above, honey 100–2800 Hz, ice 600–6500 Hz; silence trimming, 2 ms layer attack and short decays, same wax-length window, no extra tail, mono 22050 Hz, fades, staged normalized peaks with 48 kHz peak protection and RMS capped at .12. No pitch shift/time stretching. One mixed playback file per hit; no extra live audio layers.
+This is mixed Foley; existing dedicated paid/seasonal/eternity-skin audio keeps precedence. No endorsement implied.

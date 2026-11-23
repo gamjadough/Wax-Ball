@@ -1,5 +1,5 @@
 {
-  "version": 12,
+  "version": 13,
   "license": "Pixabay Content License + CC0-1.0",
   "page": "https://pixabay.com/sound-effects/film-special-effects-bones-cracking-482875/",
   "license_url": "https://pixabay.com/service/license-summary/",
@@ -395,6 +395,46 @@
       "seconds": 0.43755102040816324,
       "peak": 0.57806396484375,
       "rms": 0.08362591093053431
+    },
+    {
+      "file": "transcendent-asmr/early.wav",
+      "source": "wax + keycap + CC0 butter-style core + honey + ice (see source hashes)",
+      "sha256": "4471a52e40a4efdc776299e5b5817ca0309668e2f15222bee673201afb0ac8a6",
+      "seconds": 0.3728344671201814,
+      "peak": 0.459991455078125,
+      "rms": 0.04636992559370349
+    },
+    {
+      "file": "transcendent-asmr/tap.wav",
+      "source": "wax + keycap + CC0 butter-style core + honey + ice (see source hashes)",
+      "sha256": "63872ae1793f5029f25721cc06fc23a1057c6abec07203ea4a8cb9eadc43dc83",
+      "seconds": 0.34095238095238095,
+      "peak": 0.46844482421875,
+      "rms": 0.03823601208162961
+    },
+    {
+      "file": "transcendent-asmr/mid.wav",
+      "source": "wax + keycap + CC0 butter-style core + honey + ice (see source hashes)",
+      "sha256": "6ecdb898f2ed7e4d51b0df9fb8b1a5c7ec05d37669daf219c1d088223673f1bf",
+      "seconds": 0.49324263038548755,
+      "peak": 0.50006103515625,
+      "rms": 0.04682392472796822
+    },
+    {
+      "file": "transcendent-asmr/late.wav",
+      "source": "wax + keycap + CC0 butter-style core + honey + ice (see source hashes)",
+      "sha256": "1262b49af6975a4a0c62a127f2dec2d2b00ca833c14a763a96e9edce8dd71c78",
+      "seconds": 0.2755102040816326,
+      "peak": 0.51959228515625,
+      "rms": 0.07961080721023468
+    },
+    {
+      "file": "transcendent-asmr/final.wav",
+      "source": "wax + keycap + CC0 butter-style core + honey + ice (see source hashes)",
+      "sha256": "92a8a863eaae354509b5fdf65206751f87c773a3544260eeeab0488260e45022",
+      "seconds": 0.43755102040816324,
+      "peak": 0.589996337890625,
+      "rms": 0.084229088737604
     }
   ]
 }

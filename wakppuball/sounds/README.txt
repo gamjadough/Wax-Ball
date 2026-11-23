@@ -1,3 +1,4 @@
+초월 등급 기본 볼 10종은 materials/transcendent-asmr/의 균열·버터·꿀·얼음·키캡 동시 혼합음을 사용합니다. 전용 스킨 음원은 유지합니다.
 차원 등급(블랙홀·화이트홀)은 materials/honey-wax-butter/의 꿀+왁스+버터 질감 동시 혼합음을 사용합니다.
 우주 등급(행성·태양)은 materials/honey-keycap/의 키캡+꿀 질감 혼합음을 사용합니다.
 보석 등급(에메랄드·다이아몬드)은 materials/keycap/의 실제 기계식 키보드 단일 키 입력음을 사용합니다.
