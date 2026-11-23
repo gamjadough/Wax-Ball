@@ -1,3 +1,4 @@
+차원 등급(블랙홀·화이트홀)은 materials/honey-wax-butter/의 꿀+왁스+버터 질감 동시 혼합음을 사용합니다.
 우주 등급(행성·태양)은 materials/honey-keycap/의 키캡+꿀 질감 혼합음을 사용합니다.
 보석 등급(에메랄드·다이아몬드)은 materials/keycap/의 실제 기계식 키보드 단일 키 입력음을 사용합니다.
 자연 등급(무지개·물)은 materials/ice-wax/의 얼음 균열+왁스 혼합음을 사용합니다.

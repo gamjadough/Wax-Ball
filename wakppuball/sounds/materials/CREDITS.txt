@@ -45,3 +45,8 @@ Space-grade honey-keycap mix (planet and sun only)
 Reuse the five StavSounds CC0 mechanical-key presses credited above with hello_world+123's CC0 honey-bottle squeeze excerpts credited above. No new source recording.
 Edits: key press and 100–2800 Hz filtered honey body start together, honey leading silence trimmed, 2 ms attack and short decay, same duration as each keycap clip (no added honey tail), mono 22050 Hz, fades and normalized/resampling-limited peaks. No pitch shift or time stretching.
 A Foley combination, not a recording of an actual honey-filled keycap. No endorsement implied.
+
+Dimension-grade honey + wax + butter-style mix (blackhole and whitehole)
+Reuse DRAGON-STUDIO wax-like cracks (Pixabay Content License), hello_world+123 honey-bottle squeeze (CC0) and qubodup Slime Squish soft-core (CC0), all credited above.
+All three layers begin together. Honey (100–2800 Hz) and soft core (2800 Hz low-pass) have leading silence trimmed, a 2 ms attack and short decay, cropped inside the original wax clip duration. Mono 22050 Hz, fades and normalized/resampling-limited peaks, no pitch shift/time stretching or extra tail.
+This is freely licensed Foley combining wax/honey/butter-like textures, not a recording of a real three-material squishy. No endorsement implied.

@@ -1,5 +1,5 @@
 {
-  "version": 11,
+  "version": 12,
   "license": "Pixabay Content License + CC0-1.0",
   "page": "https://pixabay.com/sound-effects/film-special-effects-bones-cracking-482875/",
   "license_url": "https://pixabay.com/service/license-summary/",
@@ -355,6 +355,46 @@
       "seconds": 0.15900226757369615,
       "peak": 0.541259765625,
       "rms": 0.02849877519383802
+    },
+    {
+      "file": "honey-wax-butter/early.wav",
+      "source": "wax/early.wav + tools/audio-sources/honey-wax/honey.mp3 + tools/audio-sources/fruit-wax/slime.mp3",
+      "sha256": "a45303906d557263cfa142853a3fcdc602473dcee76b0025fec4898e7da6d6a8",
+      "seconds": 0.3728344671201814,
+      "peak": 0.459991455078125,
+      "rms": 0.043671858216371894
+    },
+    {
+      "file": "honey-wax-butter/tap.wav",
+      "source": "wax/tap.wav + tools/audio-sources/honey-wax/honey.mp3 + tools/audio-sources/fruit-wax/slime.mp3",
+      "sha256": "13635699685277e083762a2c9325b02746811e88a8c32b023998535aa92c7cf6",
+      "seconds": 0.34095238095238095,
+      "peak": 0.46881103515625,
+      "rms": 0.036938539633224785
+    },
+    {
+      "file": "honey-wax-butter/mid.wav",
+      "source": "wax/mid.wav + tools/audio-sources/honey-wax/honey.mp3 + tools/audio-sources/fruit-wax/slime.mp3",
+      "sha256": "78b4fe37323a042117c98c89ec11825fad829ee15da7dda6e0d09260b0d93dc6",
+      "seconds": 0.49324263038548755,
+      "peak": 0.4996337890625,
+      "rms": 0.04650836106661651
+    },
+    {
+      "file": "honey-wax-butter/late.wav",
+      "source": "wax/late.wav + tools/audio-sources/honey-wax/honey.mp3 + tools/audio-sources/fruit-wax/slime.mp3",
+      "sha256": "3ceb8c679f29009372fe56ea8176cf049a1545b79e8b48a2daa7439fc1cda156",
+      "seconds": 0.2755102040816326,
+      "peak": 0.518585205078125,
+      "rms": 0.0799135777098945
+    },
+    {
+      "file": "honey-wax-butter/final.wav",
+      "source": "wax/final.wav + tools/audio-sources/honey-wax/honey.mp3 + tools/audio-sources/fruit-wax/slime.mp3",
+      "sha256": "ec8c2ecbf774acc1ecd1d2b8669bde46517c43124e160677c7c7c6a3b8b494f2",
+      "seconds": 0.43755102040816324,
+      "peak": 0.57806396484375,
+      "rms": 0.08362591093053431
     }
   ]
 }

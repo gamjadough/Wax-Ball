@@ -143,6 +143,35 @@ for i,name in enumerate(['early','tap','mid','late','final']):
  pcm=np.round(y*32767).astype('<i2');file=OUT/'honey-keycap'/(name+'.wav')
  with wave.open(str(file),'wb') as f:f.setparams((1,2,SR,0,'NONE','not compressed'));f.writeframes(pcm.tobytes())
  outputs.append(dict(file='honey-keycap/'+name+'.wav',source='keycap/'+name+'.wav + tools/audio-sources/honey-wax/honey.mp3',sha256=hashlib.sha256(file.read_bytes()).hexdigest(),seconds=len(pcm)/SR,peak=float(np.max(np.abs(pcm.astype(float))))/32768,rms=float(np.sqrt(np.mean((pcm.astype(float)/32768)**2)))))
+# Dimension grade: honey, wax and butter-style soft core start together.
+raw=subprocess.check_output([a.ffmpeg,'-v','error','-i',str(fruit_source),'-f','f32le','-ac','1','-ar',str(SR),'pipe:1'])
+butter=np.frombuffer(raw,dtype='<f4').astype(float);butter-=butter.mean()
+freq=np.fft.rfftfreq(len(butter),1/SR)
+butter=np.fft.irfft(np.fft.rfft(butter)/(1+(freq/2800)**8),len(butter))
+butter/=max(float(np.max(np.abs(butter))),1e-9)
+active=np.flatnonzero(np.abs(butter)>.02)
+if len(active):butter=butter[int(active[0]):]
+(OUT/'honey-wax-butter').mkdir(exist_ok=True)
+for i,name in enumerate(['early','tap','mid','late','final']):
+ with wave.open(str(OUT/'wax'/(name+'.wav')),'rb') as f:shell=np.frombuffer(f.readframes(f.getnframes()),dtype='<i2').astype(float)/32768
+ n=len(shell);duration=n/SR;t=np.arange(n)/SR;y=shell*.85
+ start=round([3.30,6.22,10.62,14.58,22.17][i]*SR);sticky=honey[start:start+n].copy();sticky-=sticky.mean()
+ freq=np.fft.rfftfreq(len(sticky),1/SR)
+ sticky=np.fft.irfft(np.fft.rfft(sticky)/(1+(freq/2800)**8)*(1-1/(1+(freq/100)**6)),len(sticky))
+ sticky/=max(float(np.max(np.abs(sticky))),1e-9)
+ active=np.flatnonzero(np.abs(sticky)>.02)
+ if len(active):sticky=sticky[int(active[0]):]
+ for layer,gain in [(sticky,[.18,.20,.23,.26,.30][i]),(butter,[.15,.17,.19,.21,.25][i])]:
+  length=min(len(layer),n);envelope=np.minimum(np.arange(length)/(.002*SR),1)*np.exp(-np.arange(length)/(SR*[.16,.18,.23,.19,.28][i]))
+  y[:length]+=layer[:length]*envelope*gain
+ y*=np.minimum(t/.0015,1)*np.minimum((duration-t)/.025,1).clip(0,1)
+ target=[.46,.49,.52,.55,.59][i];y*=target/max(float(np.max(np.abs(y))),1e-9)
+ resampled=subprocess.check_output([a.ffmpeg,'-v','error','-f','f32le','-ar',str(SR),'-ac','1','-i','pipe:0','-ar','48000','-f','f32le','pipe:1'],input=y.astype('<f4').tobytes())
+ peak=float(np.max(np.abs(np.frombuffer(resampled,dtype='<f4'))))
+ if peak>target:y*=target/peak*.98
+ pcm=np.round(y*32767).astype('<i2');file=OUT/'honey-wax-butter'/(name+'.wav')
+ with wave.open(str(file),'wb') as f:f.setparams((1,2,SR,0,'NONE','not compressed'));f.writeframes(pcm.tobytes())
+ outputs.append(dict(file='honey-wax-butter/'+name+'.wav',source='wax/'+name+'.wav + tools/audio-sources/honey-wax/honey.mp3 + tools/audio-sources/fruit-wax/slime.mp3',sha256=hashlib.sha256(file.read_bytes()).hexdigest(),seconds=len(pcm)/SR,peak=float(np.max(np.abs(pcm.astype(float))))/32768,rms=float(np.sqrt(np.mean((pcm.astype(float)/32768)**2)))))
 config={b:dict(early=['materials/wax/early.wav','materials/wax/tap.wav'],mid=['materials/wax/mid.wav'],late=['materials/wax/late.wav'],final=['materials/wax/final.wav'],pitch=1,pitchRandom=0,volume=.76,volumeRandom=0) for b in ids}
 for b in ['strawberry','apple']:
  for stage in ['early','mid','late','final']:config[b][stage]=[name.replace('materials/wax/','materials/fruit-wax/') for name in config[b][stage]]
@@ -154,13 +183,15 @@ for b in ['emerald','diamond']:
  for stage in ['early','mid','late','final']:config[b][stage]=[name.replace('materials/wax/','materials/keycap/') for name in config[b][stage]]
 for b in ['planet','sun']:
  for stage in ['early','mid','late','final']:config[b][stage]=[name.replace('materials/wax/','materials/honey-keycap/') for name in config[b][stage]]
-(ROOT/'wakppuball/js/material-sounds.js').write_text('// Shared wax cracking, adapted from the existing yellow source; see sounds/materials/CREDITS.txt.\nwindow.WakppuMaterialSoundRevision="20261123-honeysync11";\nwindow.WakppuMaterialSounds='+json.dumps(config,separators=(',',':'))+';\n',encoding='utf8')
-manifest=dict(version=11,license='Pixabay Content License + CC0-1.0',page='https://pixabay.com/sound-effects/film-special-effects-bones-cracking-482875/',license_url='https://pixabay.com/service/license-summary/',author='DRAGON-STUDIO, qubodup, hello_world+123, Nox_Sound, StavSounds',generator='tools/build-material-sounds.py',sample_rate=SR,channels=1,pitch_shift=False,shared_base_layer=True,profiles=ids,sources=sources,recordings=[json.loads((ROOT/f'tools/audio-sources/{family}/source.json').read_text()) for family in ['fruit-wax','honey-wax','ice-wax','keycap']],outputs=outputs)
+for b in ['blackhole','whitehole']:
+ for stage in ['early','mid','late','final']:config[b][stage]=[name.replace('materials/wax/','materials/honey-wax-butter/') for name in config[b][stage]]
+(ROOT/'wakppuball/js/material-sounds.js').write_text('// Shared wax cracking, adapted from the existing yellow source; see sounds/materials/CREDITS.txt.\nwindow.WakppuMaterialSoundRevision="20261123-dimension12";\nwindow.WakppuMaterialSounds='+json.dumps(config,separators=(',',':'))+';\n',encoding='utf8')
+manifest=dict(version=12,license='Pixabay Content License + CC0-1.0',page='https://pixabay.com/sound-effects/film-special-effects-bones-cracking-482875/',license_url='https://pixabay.com/service/license-summary/',author='DRAGON-STUDIO, qubodup, hello_world+123, Nox_Sound, StavSounds',generator='tools/build-material-sounds.py',sample_rate=SR,channels=1,pitch_shift=False,shared_base_layer=True,profiles=ids,sources=sources,recordings=[json.loads((ROOT/f'tools/audio-sources/{family}/source.json').read_text()) for family in ['fruit-wax','honey-wax','ice-wax','keycap']],outputs=outputs)
 (OUT/'sources.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf8')
 # Remove only obsolete generated WAVs recorded by the previous manifest.
 keep={o['file'] for o in outputs}
 for old in previous['outputs']:
  path=(OUT/old['file']).resolve()
  if old['file'] not in keep and path.is_relative_to(OUT.resolve()) and path.suffix=='.wav' and path.is_file():path.unlink()
-(OUT/'README.md').write_text('# Shared wax cracking\n\nThe other 13 ordinary balls share five short clips adapted from the existing yellow ball recording. Strawberry/apple use five fruit-wax clips: a thin wax-like crack plus a quiet low-passed CC0 soft-core squish. Chocolate/donut use five honey-wax clips: wax fractures plus real honey squeezed from a bottle (CC0), mixed simultaneously in the wax clip window. Rainbow/water use five ice-wax clips combining real ice fractures (Nox_Sound, CC0) with a quieter wax shell. Emerald/diamond use five real tactile/clicky mechanical-key presses (StavSounds, CC0), with no wax overlay. Planet/sun use five honey-keycap clips combining the mechanical-key press with honey starting at the same instant and ending inside the keypress window. The wax-style families are Foley approximations, not recordings of actual wax-butter or honey-wax squishies. Early hits alternate two cracks; mid/late/final progress through the remaining three. No sequence overrides final: the final hit always uses final.wav. No pitch shift, synthetic theme layer or time stretching. Mono PCM16 at 22050 Hz, normalized levels with 48 kHz resampling peak protection. Original yellow and explicitly configured admin/gem/seasonal/skin/custom audio remain unchanged. Thirty shared files replace 92 generated WAVs. Bounded voices/cache and mute remain active. See CREDITS.txt for author, source, license and edits.\n',encoding='utf8')
+(OUT/'README.md').write_text('# Shared wax cracking\n\nThe other 11 ordinary balls share five short clips adapted from the existing yellow ball recording. Strawberry/apple use five fruit-wax clips: a thin wax-like crack plus a quiet low-passed CC0 soft-core squish. Chocolate/donut use five honey-wax clips: wax fractures plus real honey squeezed from a bottle (CC0), mixed simultaneously in the wax clip window. Rainbow/water use five ice-wax clips combining real ice fractures (Nox_Sound, CC0) with a quieter wax shell. Emerald/diamond use five real tactile/clicky mechanical-key presses (StavSounds, CC0), with no wax overlay. Planet/sun use five honey-keycap clips combining the mechanical-key press with honey starting at the same instant and ending inside the keypress window. Blackhole/whitehole use five simultaneous honey + wax + butter-style soft-core mixes, exactly bounded to the wax clip duration. The wax-style families are Foley approximations, not recordings of actual wax-butter or honey-wax squishies. Early hits alternate two cracks; mid/late/final progress through the remaining three. No sequence overrides final: the final hit always uses final.wav. No pitch shift, synthetic theme layer or time stretching. Mono PCM16 at 22050 Hz, normalized levels with 48 kHz resampling peak protection. Original yellow and explicitly configured admin/gem/seasonal/skin/custom audio remain unchanged. Thirty-five shared files replace 92 generated WAVs. Bounded voices/cache and mute remain active. See CREDITS.txt for author, source, license and edits.\n',encoding='utf8')
 print('Built',len(outputs),'shared clips for',len(ids),'balls;',sum((OUT/o['file']).stat().st_size for o in outputs),'bytes')
