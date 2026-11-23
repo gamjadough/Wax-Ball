@@ -1,9 +1,9 @@
 {
-  "version": 8,
+  "version": 9,
   "license": "Pixabay Content License + CC0-1.0",
   "page": "https://pixabay.com/sound-effects/film-special-effects-bones-cracking-482875/",
   "license_url": "https://pixabay.com/service/license-summary/",
-  "author": "DRAGON-STUDIO, qubodup, hello_world+123, Nox_Sound",
+  "author": "DRAGON-STUDIO, qubodup, hello_world+123, Nox_Sound, StavSounds",
   "generator": "tools/build-material-sounds.py",
   "sample_rate": 22050,
   "channels": 1,
@@ -42,7 +42,12 @@
     "wakppuball/sounds/yellow-crack-5.wav": "24d4b242682e65a33515c43f1bbc01a158614ae92bade52e89a0f0160707e585",
     "tools/audio-sources/fruit-wax/slime.mp3": "72521df6208f6a93518ece50dd2451f3769e0b78f5fc66837e39159eb9b3b8bf",
     "tools/audio-sources/honey-wax/honey.mp3": "461d881cf8e64c982f7c9e53998c437d7f6aa4d1738ed035c93d83ec2157f844",
-    "tools/audio-sources/recorded/ice.mp3": "388b6988c4cc021bbecce195e2c067edf721fd245064c4a895f4c03d54b16ff1"
+    "tools/audio-sources/recorded/ice.mp3": "388b6988c4cc021bbecce195e2c067edf721fd245064c4a895f4c03d54b16ff1",
+    "tools/audio-sources/keycap/early.mp3": "41bd66f756a6387b2598316a8259f92b17bba328472934bdfa0b4ea002303cf5",
+    "tools/audio-sources/keycap/tap.mp3": "2c3509bd80ebec134a2276a8cb4411773ac0331894fea056efb182935413cb2d",
+    "tools/audio-sources/keycap/mid.mp3": "ecb1701717091d954949ff23ba41d19348a790deea22478506f5cd625bc47508",
+    "tools/audio-sources/keycap/late.mp3": "ec4d29b88d66d478e269d15456a9bec695fd8efd03ecbe04ac3c9595733443b2",
+    "tools/audio-sources/keycap/final.mp3": "260020767ff6068aeaafc982e7b0825576479256762a0c489ed5c9c06fb44959"
   },
   "recordings": [
     {
@@ -67,6 +72,47 @@
       "preview_url": "https://cdn.freesound.org/previews/625/625740_9250976-hq.mp3",
       "sha256": "388b6988c4cc021bbecce195e2c067edf721fd245064c4a895f4c03d54b16ff1",
       "file": "ice.mp3"
+    },
+    {
+      "author": "StavSounds",
+      "license": "CC0-1.0",
+      "samples": [
+        {
+          "stage": "early",
+          "page": "https://freesound.org/people/StavSounds/sounds/766625/",
+          "preview_url": "https://cdn.freesound.org/previews/766/766625_7862587-hq.mp3",
+          "file": "early.mp3",
+          "sha256": "41bd66f756a6387b2598316a8259f92b17bba328472934bdfa0b4ea002303cf5"
+        },
+        {
+          "stage": "tap",
+          "page": "https://freesound.org/people/StavSounds/sounds/766633/",
+          "preview_url": "https://cdn.freesound.org/previews/766/766633_7862587-hq.mp3",
+          "file": "tap.mp3",
+          "sha256": "2c3509bd80ebec134a2276a8cb4411773ac0331894fea056efb182935413cb2d"
+        },
+        {
+          "stage": "mid",
+          "page": "https://freesound.org/people/StavSounds/sounds/766634/",
+          "preview_url": "https://cdn.freesound.org/previews/766/766634_7862587-hq.mp3",
+          "file": "mid.mp3",
+          "sha256": "ecb1701717091d954949ff23ba41d19348a790deea22478506f5cd625bc47508"
+        },
+        {
+          "stage": "late",
+          "page": "https://freesound.org/people/StavSounds/sounds/766629/",
+          "preview_url": "https://cdn.freesound.org/previews/766/766629_7862587-hq.mp3",
+          "file": "late.mp3",
+          "sha256": "ec4d29b88d66d478e269d15456a9bec695fd8efd03ecbe04ac3c9595733443b2"
+        },
+        {
+          "stage": "final",
+          "page": "https://freesound.org/people/StavSounds/sounds/766614/",
+          "preview_url": "https://cdn.freesound.org/previews/766/766614_7862587-hq.mp3",
+          "file": "final.mp3",
+          "sha256": "260020767ff6068aeaafc982e7b0825576479256762a0c489ed5c9c06fb44959"
+        }
+      ]
     }
   ],
   "outputs": [
@@ -229,6 +275,46 @@
       "seconds": 0.76,
       "peak": 0.54400634765625,
       "rms": 0.05115428946204463
+    },
+    {
+      "file": "keycap/early.wav",
+      "source": "tools/audio-sources/keycap/early.mp3",
+      "sha256": "6de1274126cfa123a1cc494547666549bd63a566f884ae77c00ed0154f6da3b8",
+      "seconds": 0.21219954648526076,
+      "peak": 0.434600830078125,
+      "rms": 0.026533080679860866
+    },
+    {
+      "file": "keycap/tap.wav",
+      "source": "tools/audio-sources/keycap/tap.mp3",
+      "sha256": "8eb3d2ca8c8275a77ca24555671a62e7b9fa0d575049eb9dbe211a75ff9f423c",
+      "seconds": 0.20521541950113378,
+      "peak": 0.47991943359375,
+      "rms": 0.04495254505758858
+    },
+    {
+      "file": "keycap/mid.wav",
+      "source": "tools/audio-sources/keycap/mid.mp3",
+      "sha256": "bf9cd5772bd4f8b5b06d5e9b979ae3df21e4b252dece16896950070b7e5f1140",
+      "seconds": 0.1891156462585034,
+      "peak": 0.43927001953125,
+      "rms": 0.04605288469769246
+    },
+    {
+      "file": "keycap/late.wav",
+      "source": "tools/audio-sources/keycap/late.mp3",
+      "sha256": "2e9b125148e5993d25d77f07170462015a0c191008f252d0764d2fc853ceb117",
+      "seconds": 0.19759637188208617,
+      "peak": 0.491851806640625,
+      "rms": 0.03994173384548922
+    },
+    {
+      "file": "keycap/final.wav",
+      "source": "tools/audio-sources/keycap/final.mp3",
+      "sha256": "daef9e725b0afe5e9e441e63135aa544e46b7cb1ce8b8038cd7467bf2ff0f82b",
+      "seconds": 0.15900226757369615,
+      "peak": 0.53125,
+      "rms": 0.028062759053250112
     }
   ]
 }

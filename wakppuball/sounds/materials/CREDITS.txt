@@ -30,3 +30,13 @@ https://freesound.org/people/Nox_Sound/sounds/625740/
 CC0 1.0 https://creativecommons.org/publicdomain/zero/1.0/
 Edits: archived HQ preview excerpts at .135, 10.64, 14.13, 25.82, 38.02 seconds; mono, 22050 Hz, 70–7600 Hz filtering, a 6 ms offset from a quieter DRAGON-STUDIO wax-like crack, short crops/fades and normalized/resampling-limited peaks. No pitch shift/time stretching.
 Real ice fractures mixed as ice-wax-style Foley; not a recording of an actual ice-wax squishy. No endorsement implied.
+
+Gem-grade keycap sounds (emerald and diamond only)
+By StavSounds — real single mechanical-key presses, Mechanical Keyboards pack
+Keyboard_Tactile_1 https://freesound.org/people/StavSounds/sounds/766625/
+Keyboard_Tactile_3 https://freesound.org/people/StavSounds/sounds/766633/
+Keyboard_Tactile_4 https://freesound.org/people/StavSounds/sounds/766634/
+Keyboard_Tactile_13 https://freesound.org/people/StavSounds/sounds/766629/
+Keyboard_Clicky_18 https://freesound.org/people/StavSounds/sounds/766614/
+Each licensed CC0 1.0 https://creativecommons.org/publicdomain/zero/1.0/
+Edits: HQ previews, mono 22050 Hz, silence trimming with 3 ms pre-roll/20 ms tail, 1 ms/12 ms fades, gain normalization and resampling peak guard. No pitch shift, time stretching, wax overlay or synthetic impact. No endorsement implied.

@@ -98,6 +98,26 @@ for i,name in enumerate(['early','tap','mid','late','final']):
  pcm=np.round(y*32767).astype('<i2');file=OUT/'ice-wax'/(name+'.wav')
  with wave.open(str(file),'wb') as f:f.setparams((1,2,SR,0,'NONE','not compressed'));f.writeframes(pcm.tobytes())
  outputs.append(dict(file='ice-wax/'+name+'.wav',source='wax/'+name+'.wav + tools/audio-sources/recorded/ice.mp3',sha256=hashlib.sha256(file.read_bytes()).hexdigest(),seconds=len(pcm)/SR,peak=float(np.max(np.abs(pcm.astype(float))))/32768,rms=float(np.sqrt(np.mean((pcm.astype(float)/32768)**2)))))
+# Gem grade uses actual individual mechanical-key presses, with no wax overlay.
+keycap_meta=json.loads((ROOT/'tools/audio-sources/keycap/source.json').read_text())
+(OUT/'keycap').mkdir(exist_ok=True)
+for i,entry in enumerate(keycap_meta['samples']):
+ name=entry['stage'];source=ROOT/'tools/audio-sources/keycap'/entry['file']
+ raw=subprocess.check_output([a.ffmpeg,'-v','error','-i',str(source),'-f','f32le','-ac','1','-ar',str(SR),'pipe:1'])
+ x=np.frombuffer(raw,dtype='<f4').astype(float);x-=x.mean()
+ active=np.flatnonzero(np.abs(x)>float(np.max(np.abs(x)))*.015)
+ if len(active):x=x[max(0,int(active[0])-round(.003*SR)):min(len(x),int(active[-1])+round(.02*SR))]
+ if len(x)<round(.12*SR):x=np.pad(x,(0,round(.12*SR)-len(x)))
+ t=np.arange(len(x))/SR;duration=len(x)/SR
+ x*=np.minimum(t/.001,1)*np.minimum((duration-t)/.012,1).clip(0,1)
+ target=[.46,.49,.52,.55,.59][i];x*=target/max(float(np.max(np.abs(x))),1e-9)
+ resampled=subprocess.check_output([a.ffmpeg,'-v','error','-f','f32le','-ar',str(SR),'-ac','1','-i','pipe:0','-ar','48000','-f','f32le','pipe:1'],input=x.astype('<f4').tobytes())
+ peak=float(np.max(np.abs(np.frombuffer(resampled,dtype='<f4'))))
+ if peak>target:x*=target/peak*.98
+ pcm=np.round(x*32767).astype('<i2');file=OUT/'keycap'/(name+'.wav')
+ with wave.open(str(file),'wb') as f:f.setparams((1,2,SR,0,'NONE','not compressed'));f.writeframes(pcm.tobytes())
+ sourcefile=source.relative_to(ROOT).as_posix();sources[sourcefile]=hashlib.sha256(source.read_bytes()).hexdigest()
+ outputs.append(dict(file='keycap/'+name+'.wav',source=sourcefile,sha256=hashlib.sha256(file.read_bytes()).hexdigest(),seconds=len(pcm)/SR,peak=float(np.max(np.abs(pcm.astype(float))))/32768,rms=float(np.sqrt(np.mean((pcm.astype(float)/32768)**2)))))
 config={b:dict(early=['materials/wax/early.wav','materials/wax/tap.wav'],mid=['materials/wax/mid.wav'],late=['materials/wax/late.wav'],final=['materials/wax/final.wav'],pitch=1,pitchRandom=0,volume=.76,volumeRandom=0) for b in ids}
 for b in ['strawberry','apple']:
  for stage in ['early','mid','late','final']:config[b][stage]=[name.replace('materials/wax/','materials/fruit-wax/') for name in config[b][stage]]
@@ -105,13 +125,15 @@ for b in ['chocolate','donut']:
  for stage in ['early','mid','late','final']:config[b][stage]=[name.replace('materials/wax/','materials/honey-wax/') for name in config[b][stage]]
 for b in ['rainbow','water']:
  for stage in ['early','mid','late','final']:config[b][stage]=[name.replace('materials/wax/','materials/ice-wax/') for name in config[b][stage]]
-(ROOT/'wakppuball/js/material-sounds.js').write_text('// Shared wax cracking, adapted from the existing yellow source; see sounds/materials/CREDITS.txt.\nwindow.WakppuMaterialSoundRevision="20261123-ice8";\nwindow.WakppuMaterialSounds='+json.dumps(config,separators=(',',':'))+';\n',encoding='utf8')
-manifest=dict(version=8,license='Pixabay Content License + CC0-1.0',page='https://pixabay.com/sound-effects/film-special-effects-bones-cracking-482875/',license_url='https://pixabay.com/service/license-summary/',author='DRAGON-STUDIO, qubodup, hello_world+123, Nox_Sound',generator='tools/build-material-sounds.py',sample_rate=SR,channels=1,pitch_shift=False,shared_base_layer=True,profiles=ids,sources=sources,recordings=[json.loads((ROOT/f'tools/audio-sources/{family}/source.json').read_text()) for family in ['fruit-wax','honey-wax','ice-wax']],outputs=outputs)
+for b in ['emerald','diamond']:
+ for stage in ['early','mid','late','final']:config[b][stage]=[name.replace('materials/wax/','materials/keycap/') for name in config[b][stage]]
+(ROOT/'wakppuball/js/material-sounds.js').write_text('// Shared wax cracking, adapted from the existing yellow source; see sounds/materials/CREDITS.txt.\nwindow.WakppuMaterialSoundRevision="20261123-keycap9";\nwindow.WakppuMaterialSounds='+json.dumps(config,separators=(',',':'))+';\n',encoding='utf8')
+manifest=dict(version=9,license='Pixabay Content License + CC0-1.0',page='https://pixabay.com/sound-effects/film-special-effects-bones-cracking-482875/',license_url='https://pixabay.com/service/license-summary/',author='DRAGON-STUDIO, qubodup, hello_world+123, Nox_Sound, StavSounds',generator='tools/build-material-sounds.py',sample_rate=SR,channels=1,pitch_shift=False,shared_base_layer=True,profiles=ids,sources=sources,recordings=[json.loads((ROOT/f'tools/audio-sources/{family}/source.json').read_text()) for family in ['fruit-wax','honey-wax','ice-wax','keycap']],outputs=outputs)
 (OUT/'sources.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf8')
 # Remove only obsolete generated WAVs recorded by the previous manifest.
 keep={o['file'] for o in outputs}
 for old in previous['outputs']:
  path=(OUT/old['file']).resolve()
  if old['file'] not in keep and path.is_relative_to(OUT.resolve()) and path.suffix=='.wav' and path.is_file():path.unlink()
-(OUT/'README.md').write_text('# Shared wax cracking\n\nThe other 17 ordinary balls share five short clips adapted from the existing yellow ball recording. Strawberry/apple use five fruit-wax clips: a thin wax-like crack plus a quiet low-passed CC0 soft-core squish. Chocolate/donut use five honey-wax clips: wax fractures plus real honey squeezed from a bottle (CC0), with a longer sticky tail. Rainbow/water use five ice-wax clips combining real ice fractures (Nox_Sound, CC0) with a quieter wax shell. These are Foley approximations, not recordings of actual wax-butter or honey-wax squishies. Early hits alternate two cracks; mid/late/final progress through the remaining three. No sequence overrides final: the final hit always uses final.wav. No pitch shift, synthetic theme layer or time stretching. Mono PCM16 at 22050 Hz, normalized levels with 48 kHz resampling peak protection. Original yellow and explicitly configured admin/gem/seasonal/skin/custom audio remain unchanged. Twenty shared files replace 92 generated WAVs. Bounded voices/cache and mute remain active. See CREDITS.txt for author, source, license and edits.\n',encoding='utf8')
+(OUT/'README.md').write_text('# Shared wax cracking\n\nThe other 15 ordinary balls share five short clips adapted from the existing yellow ball recording. Strawberry/apple use five fruit-wax clips: a thin wax-like crack plus a quiet low-passed CC0 soft-core squish. Chocolate/donut use five honey-wax clips: wax fractures plus real honey squeezed from a bottle (CC0), with a longer sticky tail. Rainbow/water use five ice-wax clips combining real ice fractures (Nox_Sound, CC0) with a quieter wax shell. Emerald/diamond use five real tactile/clicky mechanical-key presses (StavSounds, CC0), with no wax overlay. The wax-style families are Foley approximations, not recordings of actual wax-butter or honey-wax squishies. Early hits alternate two cracks; mid/late/final progress through the remaining three. No sequence overrides final: the final hit always uses final.wav. No pitch shift, synthetic theme layer or time stretching. Mono PCM16 at 22050 Hz, normalized levels with 48 kHz resampling peak protection. Original yellow and explicitly configured admin/gem/seasonal/skin/custom audio remain unchanged. Twenty-five shared files replace 92 generated WAVs. Bounded voices/cache and mute remain active. See CREDITS.txt for author, source, license and edits.\n',encoding='utf8')
 print('Built',len(outputs),'shared clips for',len(ids),'balls;',sum((OUT/o['file']).stat().st_size for o in outputs),'bytes')

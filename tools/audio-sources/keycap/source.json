@@ -1,0 +1,41 @@
+{
+  "author": "StavSounds",
+  "license": "CC0-1.0",
+  "samples": [
+    {
+      "stage": "early",
+      "page": "https://freesound.org/people/StavSounds/sounds/766625/",
+      "preview_url": "https://cdn.freesound.org/previews/766/766625_7862587-hq.mp3",
+      "file": "early.mp3",
+      "sha256": "41bd66f756a6387b2598316a8259f92b17bba328472934bdfa0b4ea002303cf5"
+    },
+    {
+      "stage": "tap",
+      "page": "https://freesound.org/people/StavSounds/sounds/766633/",
+      "preview_url": "https://cdn.freesound.org/previews/766/766633_7862587-hq.mp3",
+      "file": "tap.mp3",
+      "sha256": "2c3509bd80ebec134a2276a8cb4411773ac0331894fea056efb182935413cb2d"
+    },
+    {
+      "stage": "mid",
+      "page": "https://freesound.org/people/StavSounds/sounds/766634/",
+      "preview_url": "https://cdn.freesound.org/previews/766/766634_7862587-hq.mp3",
+      "file": "mid.mp3",
+      "sha256": "ecb1701717091d954949ff23ba41d19348a790deea22478506f5cd625bc47508"
+    },
+    {
+      "stage": "late",
+      "page": "https://freesound.org/people/StavSounds/sounds/766629/",
+      "preview_url": "https://cdn.freesound.org/previews/766/766629_7862587-hq.mp3",
+      "file": "late.mp3",
+      "sha256": "ec4d29b88d66d478e269d15456a9bec695fd8efd03ecbe04ac3c9595733443b2"
+    },
+    {
+      "stage": "final",
+      "page": "https://freesound.org/people/StavSounds/sounds/766614/",
+      "preview_url": "https://cdn.freesound.org/previews/766/766614_7862587-hq.mp3",
+      "file": "final.mp3",
+      "sha256": "260020767ff6068aeaafc982e7b0825576479256762a0c489ed5c9c06fb44959"
+    }
+  ]
+}
