@@ -1,0 +1,9 @@
+# Nature-grade ice-wax Foley — 2026-11-23
+
+Nature grade consists of rainbow (23 hits) and water (26 hits). Both now use five shared ice-wax-style clips. Mix real ice fracture excerpts from Nox_Sound's Foley_Natural_Ice_Breaking_Sequence_Stereo.wav (Freesound 625740, CC0) with a quieter existing DRAGON-STUDIO wax-like crack. Archive source already present, verified hash 388b6988c4cc021bbecce195e2c067edf721fd245064c4a895f4c03d54b16ff1; no duplicate source MP3. The result is an ice/wax Foley mix, not an actual ice-wax squishy recording.
+
+Distinct excerpt offsets .135/10.64/14.13/25.82/38.02 seconds, 70–7600 Hz filtering, 6 ms delay after the wax attack, and durations .24/.30/.40/.50/.76 seconds. Mono PCM16 22050 Hz, staged normalized peaks with resampling protection, no pitch shift or time stretching. Final always uses final.wav. Five shared files add 97,240 bytes; all ordinary WAVs total 379,262 bytes. Existing common/fruit/honey files stay byte-identical. Explicit original yellow, admin, gem, seasonal, skin and custom audio keeps precedence. Cache/voice limits, mute, rewards, save and gameplay rules stay intact.
+
+Source: https://freesound.org/people/Nox_Sound/sounds/625740/ ; https://creativecommons.org/publicdomain/zero/1.0/ . Credits/edits are in the game-settings linked materials/CREDITS.txt. Build and source/output checksums are reproducible through tools/build-material-sounds.py and sources.json.
+
+Validation: 16 Node audio/regression checks passed. Edge touch emulation at 320x640, 844x390 and 1200x900 covered all 23 selected-ball hits, all 20 real WAV decodes/stages, complete nature/fruit/snack/green breaks, final preemption, bounded cache/voices, mute, rewards and reload preservation. Prior common/fruit/honey WAVs have no diff. No physical-device or auditory monitoring test was performed.

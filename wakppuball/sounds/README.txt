@@ -1,3 +1,4 @@
+자연 등급(무지개·물)은 materials/ice-wax/의 얼음 균열+왁스 혼합음을 사용합니다.
 간식 등급(초콜릿·도넛)은 materials/honey-wax/의 균열+꿀 짜기 혼합음을 사용합니다. 실제 꿀 왁스를 부순 녹음은 아닙니다.
 과일 등급(딸기·사과)은 materials/fruit-wax/의 왁스 버터 스타일 균열+부드러운 눌림 혼합음을 사용합니다. 실제 왁스 버터 녹음은 아닙니다.
 일반 볼 공통 왁스 균열음: materials/wax/early.wav, tap.wav, mid.wav, late.wav, final.wav

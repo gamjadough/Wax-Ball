@@ -1,9 +1,9 @@
 {
-  "version": 7,
+  "version": 8,
   "license": "Pixabay Content License + CC0-1.0",
   "page": "https://pixabay.com/sound-effects/film-special-effects-bones-cracking-482875/",
   "license_url": "https://pixabay.com/service/license-summary/",
-  "author": "DRAGON-STUDIO, qubodup, hello_world+123",
+  "author": "DRAGON-STUDIO, qubodup, hello_world+123, Nox_Sound",
   "generator": "tools/build-material-sounds.py",
   "sample_rate": 22050,
   "channels": 1,
@@ -41,7 +41,8 @@
     "wakppuball/sounds/yellow-crack-4.wav": "ef84c63311ed42a5437b9513413dc564245be5433f43aef266ecd0430c9a4201",
     "wakppuball/sounds/yellow-crack-5.wav": "24d4b242682e65a33515c43f1bbc01a158614ae92bade52e89a0f0160707e585",
     "tools/audio-sources/fruit-wax/slime.mp3": "72521df6208f6a93518ece50dd2451f3769e0b78f5fc66837e39159eb9b3b8bf",
-    "tools/audio-sources/honey-wax/honey.mp3": "461d881cf8e64c982f7c9e53998c437d7f6aa4d1738ed035c93d83ec2157f844"
+    "tools/audio-sources/honey-wax/honey.mp3": "461d881cf8e64c982f7c9e53998c437d7f6aa4d1738ed035c93d83ec2157f844",
+    "tools/audio-sources/recorded/ice.mp3": "388b6988c4cc021bbecce195e2c067edf721fd245064c4a895f4c03d54b16ff1"
   },
   "recordings": [
     {
@@ -57,6 +58,15 @@
       "preview_url": "https://cdn.freesound.org/previews/764/764992_16536376-hq.mp3",
       "license": "CC0-1.0",
       "sha256": "461d881cf8e64c982f7c9e53998c437d7f6aa4d1738ed035c93d83ec2157f844"
+    },
+    {
+      "id": "ice",
+      "author": "Nox_Sound",
+      "page": "https://freesound.org/people/Nox_Sound/sounds/625740/",
+      "license": "CC0-1.0",
+      "preview_url": "https://cdn.freesound.org/previews/625/625740_9250976-hq.mp3",
+      "sha256": "388b6988c4cc021bbecce195e2c067edf721fd245064c4a895f4c03d54b16ff1",
+      "file": "ice.mp3"
     }
   ],
   "outputs": [
@@ -179,6 +189,46 @@
       "seconds": 0.78,
       "peak": 0.589996337890625,
       "rms": 0.0658016380795308
+    },
+    {
+      "file": "ice-wax/early.wav",
+      "source": "wax/early.wav + tools/audio-sources/recorded/ice.mp3",
+      "sha256": "08901c106ee1369d515bbbbe66cc2327d2af85c26911dfabfd1e210aed2a6683",
+      "seconds": 0.24,
+      "peak": 0.447906494140625,
+      "rms": 0.06338533414589652
+    },
+    {
+      "file": "ice-wax/tap.wav",
+      "source": "wax/tap.wav + tools/audio-sources/recorded/ice.mp3",
+      "sha256": "d13cd8b34e0be5bf5032d7e39ce938c9dac2502eed2275b6428e856a9fb0aaaf",
+      "seconds": 0.3,
+      "peak": 0.479949951171875,
+      "rms": 0.049279442503964835
+    },
+    {
+      "file": "ice-wax/mid.wav",
+      "source": "wax/mid.wav + tools/audio-sources/recorded/ice.mp3",
+      "sha256": "020590309b2ccbaeb0ccab270092cdf02351b7dbe4af298292dd656ab6daa645",
+      "seconds": 0.4,
+      "peak": 0.4464111328125,
+      "rms": 0.04845165996640565
+    },
+    {
+      "file": "ice-wax/late.wav",
+      "source": "wax/late.wav + tools/audio-sources/recorded/ice.mp3",
+      "sha256": "c92072c2ddce4cdc947c3651f9bc92793a30305ec374cf309ad33b75e7b6fcd3",
+      "seconds": 0.5,
+      "peak": 0.531158447265625,
+      "rms": 0.04272714976971753
+    },
+    {
+      "file": "ice-wax/final.wav",
+      "source": "wax/final.wav + tools/audio-sources/recorded/ice.mp3",
+      "sha256": "04247e1f68832c0ebba1578e27354640d7234e68cd77f7cba284dd08be7788b2",
+      "seconds": 0.76,
+      "peak": 0.54400634765625,
+      "rms": 0.05115428946204463
     }
   ]
 }

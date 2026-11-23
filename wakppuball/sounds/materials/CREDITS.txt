@@ -23,3 +23,10 @@ https://freesound.org/people/hello_world%2B123/sounds/764992/
 CC0 1.0 https://creativecommons.org/publicdomain/zero/1.0/
 Edits: HQ preview excerpts at 3.30, 6.22, 10.62, 14.58, 22.17 seconds; mono downmix, 22050 Hz resampling, 90–3200 Hz filtering, attack/decay envelope and 25 ms delayed mix with DRAGON-STUDIO cracks; short crops, fades and normalized/resampling-limited peaks. No pitch shift or time stretching.
 This is real honey squeezed from a bottle, mixed as honey-wax-style Foley; not a recording of an actual honey-wax squishy. No endorsement is implied.
+
+Nature-grade ice-wax-style mix (rainbow and water only)
+Additional fractures: "Foley_Natural_Ice_Breaking_Sequence_Stereo.wav" by Nox_Sound
+https://freesound.org/people/Nox_Sound/sounds/625740/
+CC0 1.0 https://creativecommons.org/publicdomain/zero/1.0/
+Edits: archived HQ preview excerpts at .135, 10.64, 14.13, 25.82, 38.02 seconds; mono, 22050 Hz, 70–7600 Hz filtering, a 6 ms offset from a quieter DRAGON-STUDIO wax-like crack, short crops/fades and normalized/resampling-limited peaks. No pitch shift/time stretching.
+Real ice fractures mixed as ice-wax-style Foley; not a recording of an actual ice-wax squishy. No endorsement implied.
