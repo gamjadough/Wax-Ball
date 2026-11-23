@@ -21,7 +21,7 @@ Snack-grade honey-wax-style mix (chocolate and donut only)
 Additional body: "squezing honey from bottle_mixdown" by hello_world+123
 https://freesound.org/people/hello_world%2B123/sounds/764992/
 CC0 1.0 https://creativecommons.org/publicdomain/zero/1.0/
-Edits: HQ preview excerpts at 3.30, 6.22, 10.62, 14.58, 22.17 seconds; mono downmix, 22050 Hz resampling, 90–3200 Hz filtering, attack/decay envelope and 25 ms delayed mix with DRAGON-STUDIO cracks; short crops, fades and normalized/resampling-limited peaks. No pitch shift or time stretching.
+Edits: HQ preview excerpts at 3.30, 6.22, 10.62, 14.58, 22.17 seconds; mono downmix, 22050 Hz resampling, 90–3200 Hz filtering, 2 ms attack/decay envelope mixed from time zero with DRAGON-STUDIO cracks, bounded to the crack duration; short crops, fades and normalized/resampling-limited peaks. No pitch shift or time stretching.
 This is real honey squeezed from a bottle, mixed as honey-wax-style Foley; not a recording of an actual honey-wax squishy. No endorsement is implied.
 
 Nature-grade ice-wax-style mix (rainbow and water only)
@@ -40,3 +40,8 @@ Keyboard_Tactile_13 https://freesound.org/people/StavSounds/sounds/766629/
 Keyboard_Clicky_18 https://freesound.org/people/StavSounds/sounds/766614/
 Each licensed CC0 1.0 https://creativecommons.org/publicdomain/zero/1.0/
 Edits: HQ previews, mono 22050 Hz, silence trimming with 3 ms pre-roll/20 ms tail, 1 ms/12 ms fades, gain normalization and resampling peak guard. No pitch shift, time stretching, wax overlay or synthetic impact. No endorsement implied.
+
+Space-grade honey-keycap mix (planet and sun only)
+Reuse the five StavSounds CC0 mechanical-key presses credited above with hello_world+123's CC0 honey-bottle squeeze excerpts credited above. No new source recording.
+Edits: key press and 100–2800 Hz filtered honey body start together, honey leading silence trimmed, 2 ms attack and short decay, same duration as each keycap clip (no added honey tail), mono 22050 Hz, fades and normalized/resampling-limited peaks. No pitch shift or time stretching.
+A Foley combination, not a recording of an actual honey-filled keycap. No endorsement implied.

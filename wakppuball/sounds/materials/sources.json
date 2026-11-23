@@ -1,5 +1,5 @@
 {
-  "version": 9,
+  "version": 11,
   "license": "Pixabay Content License + CC0-1.0",
   "page": "https://pixabay.com/sound-effects/film-special-effects-bones-cracking-482875/",
   "license_url": "https://pixabay.com/service/license-summary/",
@@ -199,42 +199,42 @@
     {
       "file": "honey-wax/early.wav",
       "source": "wax/early.wav + tools/audio-sources/honey-wax/honey.mp3",
-      "sha256": "1cf89ca55319b04914bd26189b6467e39a63694faba26e39db0e9a51d7fcb625",
-      "seconds": 0.32,
+      "sha256": "2329fa1c5eddc272384a0b1cf13bd5532161ccebefd07fdac99570e635ec4a6d",
+      "seconds": 0.3728344671201814,
       "peak": 0.459991455078125,
-      "rms": 0.037983674602312556
+      "rms": 0.03904327161743574
     },
     {
       "file": "honey-wax/tap.wav",
       "source": "wax/tap.wav + tools/audio-sources/honey-wax/honey.mp3",
-      "sha256": "efb58c61ef25a7811a91715db3238fc364e00aff404c46319d7d255e4fc5c7dc",
-      "seconds": 0.38,
-      "peak": 0.46722412109375,
-      "rms": 0.031008256084393178
+      "sha256": "8462c4924ee741b7e9640f8aef6800312c544c42466e48aa31f2836e6ef61ca9",
+      "seconds": 0.34095238095238095,
+      "peak": 0.4674072265625,
+      "rms": 0.03319781974691719
     },
     {
       "file": "honey-wax/mid.wav",
       "source": "wax/mid.wav + tools/audio-sources/honey-wax/honey.mp3",
-      "sha256": "87979292901e274126830d28e71b3579d3af260c1905b6c9e734ce0e55bb091a",
-      "seconds": 0.46,
-      "peak": 0.507415771484375,
-      "rms": 0.047665738115662735
+      "sha256": "369766efcd185c6a501cb2602025f4810d73fb31424a04a6ea50a361e4961f82",
+      "seconds": 0.49324263038548755,
+      "peak": 0.495452880859375,
+      "rms": 0.041593259407667574
     },
     {
       "file": "honey-wax/late.wav",
       "source": "wax/late.wav + tools/audio-sources/honey-wax/honey.mp3",
-      "sha256": "5fad2fb5ef5bb0bc619dfbdca8d5117d859707d0795a27292c383f0021e447a1",
-      "seconds": 0.54,
-      "peak": 0.537506103515625,
-      "rms": 0.04978239198512908
+      "sha256": "4808f6a27ca2db69d768d6128f85bb871f33440cd501deb63d357cfeead54cf9",
+      "seconds": 0.2755102040816326,
+      "peak": 0.528656005859375,
+      "rms": 0.0826754082285744
     },
     {
       "file": "honey-wax/final.wav",
       "source": "wax/final.wav + tools/audio-sources/honey-wax/honey.mp3",
-      "sha256": "93bb18b0f193bcc87a411ca68bd9654f154bd812cee3aef3518385ffd401fa05",
-      "seconds": 0.78,
+      "sha256": "a68c51da9f146174400b220791b9af64e15631938aa153c6365d896c2cf768c9",
+      "seconds": 0.43755102040816324,
       "peak": 0.589996337890625,
-      "rms": 0.0658016380795308
+      "rms": 0.08693895588695666
     },
     {
       "file": "ice-wax/early.wav",
@@ -315,6 +315,46 @@
       "seconds": 0.15900226757369615,
       "peak": 0.53125,
       "rms": 0.028062759053250112
+    },
+    {
+      "file": "honey-keycap/early.wav",
+      "source": "keycap/early.wav + tools/audio-sources/honey-wax/honey.mp3",
+      "sha256": "c245c48c804f3b2a40a6ae6b6f4b6aec74d2cebda6542534cf7cf33073eaea6e",
+      "seconds": 0.21219954648526076,
+      "peak": 0.435577392578125,
+      "rms": 0.028675736365994946
+    },
+    {
+      "file": "honey-keycap/tap.wav",
+      "source": "keycap/tap.wav + tools/audio-sources/honey-wax/honey.mp3",
+      "sha256": "05b5a0b322640b51f8f513bde1ecab0eb95d0cad208cb2a005ba6b2539a2315a",
+      "seconds": 0.20521541950113378,
+      "peak": 0.479949951171875,
+      "rms": 0.04576290011370611
+    },
+    {
+      "file": "honey-keycap/mid.wav",
+      "source": "keycap/mid.wav + tools/audio-sources/honey-wax/honey.mp3",
+      "sha256": "ee25ab017a824d1e4e1cced367a0e6c6a3fdd36e68e3a39e271f4dec5bbc0b66",
+      "seconds": 0.1891156462585034,
+      "peak": 0.445220947265625,
+      "rms": 0.05009487432910674
+    },
+    {
+      "file": "honey-keycap/late.wav",
+      "source": "keycap/late.wav + tools/audio-sources/honey-wax/honey.mp3",
+      "sha256": "0ab23efe5dbb9977f2d7631d990e010e1d853706eebb32144596b7511a47ade3",
+      "seconds": 0.19759637188208617,
+      "peak": 0.49237060546875,
+      "rms": 0.04409990238679703
+    },
+    {
+      "file": "honey-keycap/final.wav",
+      "source": "keycap/final.wav + tools/audio-sources/honey-wax/honey.mp3",
+      "sha256": "4971730b0e1e81e8bdcaea2dab33625ebf38bb0c48d36f327009ba51826e4177",
+      "seconds": 0.15900226757369615,
+      "peak": 0.541259765625,
+      "rms": 0.02849877519383802
     }
   ]
 }
