@@ -19,16 +19,16 @@ try:
    assert not page.evaluate("performance.getEntriesByType('resource').some(x=>x.name.includes('/materials/'))")
    ids=page.evaluate('Object.keys(WakppuMaterialSounds)')
    if width==320:
-    decoded=page.evaluate("""async()=>{const ac=new AudioContext(),out=[];for(const cfg of Object.values(WakppuMaterialSounds))for(const stage of ['early','mid','late','final']){const name=cfg[stage][0];const r=await fetch('sounds/'+name);if(!r.ok)throw Error(name);const b=await ac.decodeAudioData(await r.arrayBuffer());let peak=0,sum=0;for(const v of b.getChannelData(0)){peak=Math.max(peak,Math.abs(v));sum+=v*v;}out.push({name,channels:b.numberOfChannels,duration:b.duration,peak,rms:Math.sqrt(sum/b.length)});}await ac.close();return out;}""")
-    assert len(decoded)==92
+    decoded=page.evaluate("""async()=>{const ac=new AudioContext(),out=[];for(const name of [...new Set(Object.values(WakppuMaterialSounds).flatMap(cfg=>['early','mid','late','final'].flatMap(k=>cfg[k])))]){const r=await fetch('sounds/'+name);if(!r.ok)throw Error(name);const b=await ac.decodeAudioData(await r.arrayBuffer());let peak=0,sum=0;for(const v of b.getChannelData(0)){peak=Math.max(peak,Math.abs(v));sum+=v*v;}out.push({name,channels:b.numberOfChannels,duration:b.duration,peak,rms:Math.sqrt(sum/b.length)});}await ac.close();return out;}""")
+    assert len(decoded)==5
     for d in decoded:assert d['channels']==1 and .10<d['duration']<1.06 and .30<d['peak']<.61 and d['rms']>.015,d
    gold=page.evaluate('WakppuItemGame.read().gold')
    for ball in ids:
     page.evaluate("id=>WakppuGameTest.run('cracks',id)",ball)
-    page.wait_for_function("id=>['early','mid','late','final'].every(k=>SoundManager.ready(WakppuMaterialSounds[id][k][0]))",arg=ball)
+    page.wait_for_function("id=>['early','mid','late','final'].every(k=>WakppuMaterialSounds[id][k].every(n=>SoundManager.ready(n)))",arg=ball)
     start=page.evaluate('materialPlayed.length');page.locator('#ballSvg').tap()
     page.wait_for_function('n=>materialPlayed.length===n+1',arg=start)
-    assert page.evaluate('materialPlayed.at(-1).src').endswith(f'/materials/{ball}/early.wav')
+    assert page.evaluate('materialPlayed.at(-1).src').split('/')[-1] in ['early.wav','tap.wav']
     # Real files in the other stages are playable and use this same material.
     page.evaluate("id=>{const cfg=WakppuMaterialSounds[id];for(const stage of ['mid','late','final'])SoundManager.play(cfg[stage][0],cfg)}",ball)
     assert page.evaluate('materialPlayed.slice(-3).map(x=>x.src.split("/").pop())')==['mid.wav','late.wav','final.wav']
@@ -40,7 +40,7 @@ try:
    for i in range(8):page.locator('#ballSvg').tap()
    page.wait_for_function('!WakppuItemGame.read().busy')
    stages=page.evaluate('n=>materialPlayed.slice(n).map(x=>x.src.split("/").pop())',start)
-   assert stages==['early.wav','early.wav','mid.wav','mid.wav','mid.wav','late.wav','late.wav','final.wav'],stages
+   assert set(stages[:2])=={'early.wav','tap.wav'} and stages[2:]==['mid.wav','mid.wav','mid.wav','late.wav','late.wav','final.wav'],stages
    assert page.evaluate('WakppuItemGame.read().gold')==gold
    # Burst playback remains bounded; final preempts previous hit tails.
    page.evaluate("()=>{const c=WakppuMaterialSounds.green;for(let i=0;i<60;i++)SoundManager.play(c[['early','mid','late'][i%3]][0],c)}")
@@ -63,7 +63,7 @@ try:
     page.reload(wait_until='networkidle');assert page.evaluate('WakppuItemGame.read().gold')=='10'
    assert not errors,errors
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
-   print(f'PASS {width}x{height}: 23 selected-ball touch hits, 92 real stage files, full green break, bounded cache/voices, final preemption, mute and reward preservation',flush=True)
+   print(f'PASS {width}x{height}: 23 selected-ball touch hits, 5 shared real WAVs across every stage, full green break, bounded cache/voices, final preemption, mute and reward preservation',flush=True)
    ctx.close()
   browser.close()
 finally:server.terminate();server.wait(timeout=10)

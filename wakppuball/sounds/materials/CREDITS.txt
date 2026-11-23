@@ -1,22 +1,10 @@
-Recorded material sounds / Foley revision 4
+Shared wax cracking — DRAGON-STUDIO
+"Bones Cracking", Pixabay asset 482875
+https://pixabay.com/sound-effects/film-special-effects-bones-cracking-482875/
+License: Pixabay Content License
+https://pixabay.com/service/license-summary/
+Free game/commercial use and modification permitted under that license. This is not CC0.
 
-Chocolate: "chocolate bar breaking.mp3" by orginaljun
-Credit requested by author: orginaljun.deviantart.com
-https://freesound.org/people/orginaljun/sounds/151672/
-Page license: CC BY 4.0 https://creativecommons.org/licenses/by/4.0/
-Author description also grants CC BY 3.0 https://creativecommons.org/licenses/by/3.0/
-Changes: HQ preview excerpts, mono, 22050 Hz resampling, 65 Hz high-pass, gain and fades. No pitch shift. Different fractures per stage.
-
-Donut / pastry: "bread slice serrated knife cut and rip" by spanrucker
-https://freesound.org/people/spanrucker/sounds/272223/
-CC0 1.0 https://creativecommons.org/publicdomain/zero/1.0/
-Changes: HQ preview excerpts, mono, resampling, 140 Hz high-pass / 6500 Hz low-pass, gain and fades.
-This is bread cutting/ripping used as pastry foley, not a recording of a donut.
-
-Ice (water ball): "Foley_Natural_Ice_Breaking_Sequence_Stereo.wav" by Nox_Sound
-https://freesound.org/people/Nox_Sound/sounds/625740/
-CC0 1.0 https://creativecommons.org/publicdomain/zero/1.0/
-Changes: HQ preview excerpts, mono, resampling, 65 Hz high-pass, gain and fades.
-
-No endorsement by any source author is implied.
-Other material sounds use Kenney CC0 sources (impact-LICENSE.txt, scifi-LICENSE.txt, sources.json).
+Source: the user-supplied dragon-studio-bones-cracking-482875.mp3, already used by the yellow ball.
+Changes: reuse its existing five short yellow-crack WAV segments, mono downmix, 22050 Hz resampling and level normalization with resampling peak protection. No pitch shift or time stretching. Integrated as interactive game effects, not offered as a standalone sound library.
+The existing yellow clips themselves are unchanged. Other explicit special/skin audio keeps its own credits.
