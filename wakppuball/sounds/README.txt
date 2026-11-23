@@ -1,3 +1,4 @@
+과일 등급(딸기·사과)은 materials/fruit-wax/의 왁스 버터 스타일 균열+부드러운 눌림 혼합음을 사용합니다. 실제 왁스 버터 녹음은 아닙니다.
 일반 볼 공통 왁스 균열음: materials/wax/early.wav, tap.wav, mid.wav, late.wav, final.wav
 노란 볼을 제외한 일반 23종 · 노란 볼의 무료 균열 원음을 짧게 편집한 공통 효과음 (라이선스: materials/CREDITS.txt) · 타격→균열→파열→파괴
 기존 노란/관리자/푸른 수정/한정/스킨 음원은 유지합니다.

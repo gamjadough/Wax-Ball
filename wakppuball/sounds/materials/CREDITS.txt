@@ -8,3 +8,11 @@ Free game/commercial use and modification permitted under that license. This is 
 Source: the user-supplied dragon-studio-bones-cracking-482875.mp3, already used by the yellow ball.
 Changes: reuse its existing five short yellow-crack WAV segments, mono downmix, 22050 Hz resampling and level normalization with resampling peak protection. No pitch shift or time stretching. Integrated as interactive game effects, not offered as a standalone sound library.
 The existing yellow clips themselves are unchanged. Other explicit special/skin audio keeps its own credits.
+
+Fruit-grade wax-butter-style mix (strawberry and apple only)
+Additional core: "Slime Squish" by qubodup
+https://freesound.org/people/qubodup/sounds/442772/
+CC0 1.0 https://creativecommons.org/publicdomain/zero/1.0/
+The source itself mixes CC0 recordings; original source links are on its Freesound page.
+Edits: HQ preview mono downmix, 22050 Hz resampling, 2800 Hz low-pass, quiet decaying core placed 18 ms after a DRAGON-STUDIO crack; short crops, fades and gain normalization. No pitch shift or time stretching.
+This is an approximation made from freely usable recordings, not an actual wax-butter recording. No endorsement is implied.

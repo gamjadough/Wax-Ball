@@ -20,7 +20,7 @@ try:
    ids=page.evaluate('Object.keys(WakppuMaterialSounds)')
    if width==320:
     decoded=page.evaluate("""async()=>{const ac=new AudioContext(),out=[];for(const name of [...new Set(Object.values(WakppuMaterialSounds).flatMap(cfg=>['early','mid','late','final'].flatMap(k=>cfg[k])))]){const r=await fetch('sounds/'+name);if(!r.ok)throw Error(name);const b=await ac.decodeAudioData(await r.arrayBuffer());let peak=0,sum=0;for(const v of b.getChannelData(0)){peak=Math.max(peak,Math.abs(v));sum+=v*v;}out.push({name,channels:b.numberOfChannels,duration:b.duration,peak,rms:Math.sqrt(sum/b.length)});}await ac.close();return out;}""")
-    assert len(decoded)==5
+    assert len(decoded)==10
     for d in decoded:assert d['channels']==1 and .10<d['duration']<1.06 and .30<d['peak']<.61 and d['rms']>.015,d
    gold=page.evaluate('WakppuItemGame.read().gold')
    for ball in ids:
@@ -28,11 +28,22 @@ try:
     page.wait_for_function("id=>['early','mid','late','final'].every(k=>WakppuMaterialSounds[id][k].every(n=>SoundManager.ready(n)))",arg=ball)
     start=page.evaluate('materialPlayed.length');page.locator('#ballSvg').tap()
     page.wait_for_function('n=>materialPlayed.length===n+1',arg=start)
-    assert page.evaluate('materialPlayed.at(-1).src').split('/')[-1] in ['early.wav','tap.wav']
+    assert page.evaluate('id=>WakppuMaterialSounds[id].early.some(n=>materialPlayed.at(-1).src.endsWith(n))',ball)
     # Real files in the other stages are playable and use this same material.
     page.evaluate("id=>{const cfg=WakppuMaterialSounds[id];for(const stage of ['mid','late','final'])SoundManager.play(cfg[stage][0],cfg)}",ball)
     assert page.evaluate('materialPlayed.slice(-3).map(x=>x.src.split("/").pop())')==['mid.wav','late.wav','final.wav']
     assert page.evaluate("mediaCreated.filter(a=>a.src.includes('/materials/')).length")<=48
+   # Both fruit balls really break through their own family; mode preserves gold.
+   for fruit,count in [('strawberry',11),('apple',14)]:
+    page.evaluate("id=>WakppuGameTest.run('cracks',id)",fruit)
+    page.wait_for_function("id=>Object.values(WakppuMaterialSounds[id]).filter(Array.isArray).flat().every(n=>SoundManager.ready(n))",arg=fruit)
+    start=page.evaluate('materialPlayed.length')
+    for i in range(count):page.locator('#ballSvg').tap()
+    page.wait_for_function('!WakppuItemGame.read().busy')
+    played=page.evaluate('n=>materialPlayed.slice(n).map(x=>x.src)',start)
+    assert len(played)==count and all('/materials/fruit-wax/' in n for n in played),played
+    assert played[-1].endswith('/fruit-wax/final.wav'),played
+    assert page.evaluate('WakppuItemGame.read().gold')==gold
    # Real full green-ball progression uses early/mid/late/final exactly once per accepted input.
    page.evaluate("WakppuGameTest.run('cracks','green')")
    page.wait_for_function("['early','mid','late','final'].every(k=>SoundManager.ready(WakppuMaterialSounds.green[k][0]))")
@@ -63,7 +74,7 @@ try:
     page.reload(wait_until='networkidle');assert page.evaluate('WakppuItemGame.read().gold')=='10'
    assert not errors,errors
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
-   print(f'PASS {width}x{height}: 23 selected-ball touch hits, 5 shared real WAVs across every stage, full green break, bounded cache/voices, final preemption, mute and reward preservation',flush=True)
+   print(f'PASS {width}x{height}: 23 selected-ball touch hits, 10 real WAVs across every stage, both fruit breaks + green break, bounded cache/voices, final preemption, mute and reward preservation',flush=True)
    ctx.close()
   browser.close()
 finally:server.terminate();server.wait(timeout=10)
