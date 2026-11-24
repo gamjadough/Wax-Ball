@@ -55,3 +55,7 @@ Transcendent-grade combined ASMR (ten base transcendent balls)
 Offline simultaneous mix of DRAGON-STUDIO wax cracks, qubodup butter-style soft core, hello_world+123 honey, Nox_Sound ice fractures, and StavSounds mechanical keys, with the same source licenses/URLs credited above.
 Edits: source crops as above, honey 100–2800 Hz, ice 600–6500 Hz; silence trimming, 2 ms layer attack and short decays, same wax-length window, no extra tail, mono 22050 Hz, fades, staged normalized peaks with 48 kHz peak protection and RMS capped at .12. No pitch shift/time stretching. One mixed playback file per hit; no extra live audio layers.
 This is mixed Foley; existing dedicated paid/seasonal/eternity-skin audio keeps precedence. No endorsement implied.
+
+Four blue-gem balls: simultaneous ice + keycap
+Nox_Sound CC0 ice fractures and StavSounds CC0 mechanical-key recordings credited above; no new source download.
+Edits: 400–6000 Hz ice filter, leading-silence trim, 2 ms attack/short decay, mixed from time zero and cropped inside each keycap clip window. Mono 22050 Hz, fades, normalized/resampling-limited peaks and RMS <=.12. No pitch shift/time stretching or delayed ice tail.

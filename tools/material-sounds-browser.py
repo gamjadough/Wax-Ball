@@ -20,7 +20,7 @@ try:
    ids=page.evaluate('Object.keys(WakppuMaterialSounds)')
    if width==320:
     decoded=page.evaluate("""async()=>{const ac=new AudioContext(),out=[];for(const name of [...new Set(Object.values(WakppuMaterialSounds).flatMap(cfg=>['early','mid','late','final'].flatMap(k=>cfg[k])))]){const r=await fetch('sounds/'+name);if(!r.ok)throw Error(name);const b=await ac.decodeAudioData(await r.arrayBuffer());let peak=0,sum=0;for(const v of b.getChannelData(0)){peak=Math.max(peak,Math.abs(v));sum+=v*v;}out.push({name,channels:b.numberOfChannels,duration:b.duration,peak,rms:Math.sqrt(sum/b.length)});}await ac.close();return out;}""")
-    assert len(decoded)==40
+    assert len(decoded)==45
     for d in decoded:assert d['channels']==1 and .10<d['duration']<1.06 and .30<d['peak']<.61 and d['rms']>.015,d
    gold=page.evaluate('WakppuItemGame.read().gold')
    for ball in ids:
@@ -94,7 +94,7 @@ try:
     page.reload(wait_until='networkidle');assert page.evaluate('WakppuItemGame.read().gold')=='10'
    assert not errors,errors
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
-   print(f'PASS {width}x{height}: 23 selected-ball touch hits, 40 real WAVs across every stage, full {full_label} breaks, {len(last_ids)} last-hit destructions, bounded cache/voices, final preemption, mute and reward preservation',flush=True)
+   print(f'PASS {width}x{height}: 23 selected-ball touch hits, 45 real WAVs across every stage, full {full_label} breaks, {len(last_ids)} last-hit destructions, bounded cache/voices, final preemption, mute and reward preservation',flush=True)
    ctx.close()
   browser.close()
 finally:server.terminate();server.wait(timeout=10)

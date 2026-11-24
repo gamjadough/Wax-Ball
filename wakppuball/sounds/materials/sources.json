@@ -1,5 +1,5 @@
 {
-  "version": 13,
+  "version": 14,
   "license": "Pixabay Content License + CC0-1.0",
   "page": "https://pixabay.com/sound-effects/film-special-effects-bones-cracking-482875/",
   "license_url": "https://pixabay.com/service/license-summary/",
@@ -435,6 +435,46 @@
       "seconds": 0.43755102040816324,
       "peak": 0.589996337890625,
       "rms": 0.084229088737604
+    },
+    {
+      "file": "ice-keycap/early.wav",
+      "source": "keycap/early.wav + tools/audio-sources/recorded/ice.mp3",
+      "sha256": "e4bd15e9365df5f48cab5ce8478639c2b2b53f61fad4dcd39ada0847d676b7d1",
+      "seconds": 0.21219954648526076,
+      "peak": 0.447540283203125,
+      "rms": 0.039125479820181656
+    },
+    {
+      "file": "ice-keycap/tap.wav",
+      "source": "keycap/tap.wav + tools/audio-sources/recorded/ice.mp3",
+      "sha256": "e48cc18e3e11831054ed5cc603b91e365a9567fcf589575a8e831e3ee43dbaa5",
+      "seconds": 0.20521541950113378,
+      "peak": 0.489990234375,
+      "rms": 0.051543729099419205
+    },
+    {
+      "file": "ice-keycap/mid.wav",
+      "source": "keycap/mid.wav + tools/audio-sources/recorded/ice.mp3",
+      "sha256": "a93345dd6c3993033a18d393839662b96699970923d3584c12b1f559ff0208bc",
+      "seconds": 0.1891156462585034,
+      "peak": 0.451019287109375,
+      "rms": 0.058393321111429274
+    },
+    {
+      "file": "ice-keycap/late.wav",
+      "source": "keycap/late.wav + tools/audio-sources/recorded/ice.mp3",
+      "sha256": "31527c7328466128560e7607f5818e9dcb54a3dbf3e39d3ad8256145f7e357c9",
+      "seconds": 0.19759637188208617,
+      "peak": 0.490753173828125,
+      "rms": 0.04753408206272758
+    },
+    {
+      "file": "ice-keycap/final.wav",
+      "source": "keycap/final.wav + tools/audio-sources/recorded/ice.mp3",
+      "sha256": "f86b9561a38bb87de4893ba86e0e7fbe53e4afa466dd20993aefbb0619eaa2af",
+      "seconds": 0.15900226757369615,
+      "peak": 0.531097412109375,
+      "rms": 0.03761041053073246
     }
   ]
 }

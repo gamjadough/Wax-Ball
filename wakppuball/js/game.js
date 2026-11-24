@@ -132,7 +132,7 @@
   function eventBaseReward(){return WAKPPU_BALLS.reduce((best,b,i)=>state.unlocked[i]&&BigInt(b.reward)>best?BigInt(b.reward):best,1n)*10n;}
   function gemSelected(){return !testSnapshot&&!eventSelected&&!!window.WakppuGemBalls?.data?.selected;}
   function limitedSelected(){return !testSnapshot&&!eventSelected&&!gemSelected()&&!!window.WakppuLimited?.data?.selected;}
-  function currentBall(){const base=eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:gemSelected()?WakppuGemBallData.ball:limitedSelected()?{...WakppuLimitedData.ball,reward:BigInt(WakppuLimitedData.ball.reward)}:WAKPPU_BALLS[state.selected];const equipped=window.WakppuSkins?.equippedRank(base.id);const ordinary=window.WakppuSkinSounds?.appearance(equipped?{...base,skinId:equipped}:base)||base;const pumpkin=window.WakppuPumpkinInventory?.equipped();const originalBall=pumpkin&&base.id===WakppuLimitedData.ball.id?WakppuPumpkinSkins.appearance(ordinary,pumpkin):ordinary;const ball=window.WakppuCustomBall?.appearance(originalBall)||originalBall;const e=window.WakppuItemData?.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt);return {...ball,clicks:ball.id===window.WakppuGemBallData?.ball.id?ball.clicks:e?WakppuItemData.required(ball.clicks,e,coatingActive()):ball.clicks*(coatingActive()?2:1)};}
+  function currentBall(){const base=eventSelected?{...ADMIN_EVENT_BALL,reward:eventBaseReward()}:gemSelected()?(WakppuGemBalls.current||WakppuGemBallData.ball):limitedSelected()?{...WakppuLimitedData.ball,reward:BigInt(WakppuLimitedData.ball.reward)}:WAKPPU_BALLS[state.selected];const equipped=window.WakppuSkins?.equippedRank(base.id);const ordinary=window.WakppuSkinSounds?.appearance(equipped?{...base,skinId:equipped}:base)||base;const pumpkin=window.WakppuPumpkinInventory?.equipped();const originalBall=pumpkin&&base.id===WakppuLimitedData.ball.id?WakppuPumpkinSkins.appearance(ordinary,pumpkin):ordinary;const ball=window.WakppuCustomBall?.appearance(originalBall)||originalBall;const e=window.WakppuItemData?.effective(window.WakppuItems?.data?.effects||{},state.honeyExpiresAt,state.coatingExpiresAt);return {...ball,clicks:window.WakppuGemBallData?.has(ball.id)?ball.clicks:e?WakppuItemData.required(ball.clicks,e,coatingActive()):ball.clicks*(coatingActive()?2:1)};}
   function eventPreferenceKey(){return SAVE_KEY+':event-choice:'+state.account?.id;}
   function switchEvent(use,remember=true){
     if(use&&(!eventActive()||testSnapshot||!state.remoteReady||eventRequest))return;
@@ -937,7 +937,7 @@
         eventClicks=0;spawnBall(true);updateAll();
       },1100/speed+RESPAWN_DELAY_MS/respawnSpeed);return;
     }
-    if(data.grade==='초월'||data.id===window.WakppuGemBallData?.ball.id){
+    if(data.grade==='초월'||window.WakppuGemBallData?.has(data.id)){
       transcendentEffect=WakppuTranscendent.play({ball:data,wrap,svg:svgEl,effects,center:ballCenter(),radius:wrap.offsetWidth*.42,speed,respawnSpeed,
         valid:()=>epoch===animationEpoch&&!window.wakppuServerBlocked,
         reward:()=>awardBreakReward(data),
@@ -981,7 +981,7 @@
 
   function awardBreakReward(data){
     const center=ballCenter();
-    if(data.id===window.WakppuGemBallData?.ball.id){itemAward=null;rewardReadyEpoch=animationEpoch;updateAll();floatText('💎 +5',center.x,center.y-wrap.offsetHeight*.32);return;}
+    if(window.WakppuGemBallData?.has(data.id)){itemAward=null;rewardReadyEpoch=animationEpoch;updateAll();floatText('💎 +'+data.gemReward,center.x,center.y-wrap.offsetHeight*.32);return;}
     const reward=BigInt(data.reward)*rebirthMultiplier(state.rebirths)*BigInt(honeyMultiplier())*BigInt(coatingMultiplier())*BigInt(window.WakppuGoldEvent?.multiplier()||1);
     if(!testSnapshot&&itemAward===null)state.gold+=reward;
     const displayed=itemAward??reward;itemAward=null;
@@ -1614,7 +1614,7 @@
   window.WakppuCustomGame={current:()=>currentBall().id,select:async id=>{
     if(!state.remoteReady||state.busy||eventRequest||window.wakppuServerBlocked)return false;
     if(id===currentBall().id)return true;
-    if(id===window.WakppuGemBallData?.ball.id)return await WakppuGemBalls.select(id);
+    if(window.WakppuGemBallData?.has(id))return await WakppuGemBalls.select(id);
     if(gemSelected()&&!await WakppuGemBalls.select(null))return false;
     if(id===window.WakppuLimitedData?.ball.id){if(eventSelected)switchEvent(false);return await WakppuLimited.select(id);}
     if(id==='admin-event'){if(!eventActive())return false;if(limitedSelected()&&!await WakppuLimited.select(null))return false;switchEvent(true);return eventSelected;}

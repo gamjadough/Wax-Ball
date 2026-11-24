@@ -2,3 +2,5 @@
 #gemCollection .collection-card{font:inherit;color:var(--text);cursor:pointer}
 #gemCollection .collection-name{color:var(--text)}
 #gemCollection{min-width:0}#gemCollection p{font-size:13px;line-height:1.7;overflow-wrap:anywhere}#gemCollectionCards{display:grid;gap:12px}#gemCollectionCards .card{min-width:0}#gemCollectionCards .btn{min-height:44px}#gemCollectionTab[aria-selected="true"]{border-color:#74d8ff;color:#c0f0ff}#gemCollectionBalance{color:#98dfff}#gemCollection .collection-card{width:100%;max-width:320px;min-height:160px}#gemCollection .limited-detail{max-width:420px}#gemCollection .thumb{margin:0 auto}
+
+#gemCollectionCards{grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr))}#gemCollectionCards:has(.limited-detail){display:block}#gemCollectionCards [data-gem-back]{margin-bottom:12px}.gem-card-reward{display:block;font-size:12px;color:#b6eaff;margin-top:6px}.gem-prerequisite{color:#b9c7df}#gemCollectionCards .limited-detail{margin:auto}

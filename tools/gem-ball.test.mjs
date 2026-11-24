@@ -42,16 +42,18 @@ test('real SQL gem ball: shared input guard/ember path, CAS buy, manual ownershi
  await assert.rejects(db.exec("select wakppu_gem_ball_hit('{}')"),{code:'42501'});
  }finally{await db.close();}
 });
-test('crystal theme: original bounded CC0 audio, zero Gold data, dedicated SVG and exact eternity motion timings',async()=>{
+test('four crystal themes: simultaneous bounded CC0 ice-keycap audio, zero Gold data, dedicated SVG and exact eternity motion timings',async()=>{
  const code=await readFile(new URL('../wakppuball/js/gem-ball-data.js',import.meta.url),'utf8'),ctx={window:{}};vm.runInNewContext(code,ctx);const ball=ctx.window.WakppuGemBallData.ball;
  assert.equal(ball.reward,0);assert.equal(ball.clicks,100);assert.match(ctx.window.WakppuGemBallArt('test').art,/data-gem-wax="blue-crystal"/);
  assert.equal(ball.design.motif,'blue_crystal');
  const fx={window:{}};vm.runInNewContext(await readFile(new URL('../wakppuball/js/transcendent-effects.js',import.meta.url),'utf8'),fx);
  assert.equal(fx.window.WakppuTranscendent.profiles.blue_crystal.duration,fx.window.WakppuTranscendent.profiles.eternity.duration);
  assert.equal(fx.window.WakppuTranscendent.profiles.blue_crystal.kind,'crystals');
- const meta=JSON.parse(await readFile(new URL('../wakppuball/sounds/blue-crystal/sources.json',import.meta.url),'utf8'));assert.equal(meta.license,'CC0-1.0');
- for(const file of meta.outputs){const bytes=await readFile(new URL('../wakppuball/sounds/blue-crystal/'+file.file,import.meta.url));assert.equal(createHash('sha256').update(bytes).digest('hex'),file.sha256);assert.ok(file.duration<=1&&file.peak<.5);assert.ok(bytes.length<45000);}
- assert.equal(new Set(meta.outputs.map(f=>f.sha256)).size,4);
+ const meta=JSON.parse(await readFile(new URL('../wakppuball/sounds/materials/sources.json',import.meta.url),'utf8'));const clips=meta.outputs.filter(f=>f.file.startsWith('ice-keycap/'));assert.equal(clips.length,5);
+ const art=new Set();for(const b of ctx.window.WakppuGemBallData.balls){assert.equal(b.reward,0);assert.equal(b.sound.pitch,1);assert.equal(b.sound.pitchRandom,0);assert.ok(b.sound.final[0].startsWith('materials/ice-keycap/'));art.add(ctx.window.WakppuGemBallArt('test',b).art);}assert.equal(art.size,4);
+ for(const file of clips){const bytes=await readFile(new URL('../wakppuball/sounds/materials/'+file.file,import.meta.url));assert.equal(createHash('sha256').update(bytes).digest('hex'),file.sha256);assert.ok(file.seconds<=.6&&file.peak<=.6&&file.rms<=.1201);assert.ok(bytes.length<16000);}
+ assert.equal(new Set(clips.map(f=>f.sha256)).size,5);
+
 });
 test('crystal and eternity share actual reward/respawn deadlines, speed modifiers, reduced motion and cancellation cleanup',async()=>{
  const code=await readFile(new URL('../wakppuball/js/transcendent-effects.js',import.meta.url),'utf8');

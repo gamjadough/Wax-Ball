@@ -24,6 +24,7 @@ if(process.env.WAKPPU_LOCAL_GEM_BALL_PREVIEW==='1'){
  (await import('./blue-gem-data.mjs')).gemState(actor).balance=5000n;
  actor.state.hammer_owned=true;actor.state.hammer_level=10;
 }
+if(process.env.WAKPPU_LOCAL_GEM_EXPANSION_PREVIEW==='1'){const actor=store.players.find(p=>p.id==='local-player');(await import('./blue-gem-data.mjs')).gemState(actor).balance=630000n;actor.state.hammer_owned=true;actor.state.hammer_level=30;}
 if(process.env.WAKPPU_LOCAL_HALLOWEEN_GOODS_PREVIEW==='1'){store.limited_preview='active';limitedState(store.players.find(p=>p.id==='local-player')).tokens=5000;}
 const profiles=createProfileService(store);
 const profilePreview=process.env.WAKPPU_LOCAL_PROFILE_PREVIEW==='1'?(await import('./profile-preview-service.mjs')).createProfilePreview(store):null;
