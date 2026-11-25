@@ -1,8 +1,9 @@
+import {gemBoostFactor,boostSnapshot} from './gem-boost-data.mjs';
 import {adminContentAccess} from './admin-content.mjs';
 export const gemProducts=['1000','10000','100000','1000000','10000000','1000000000000000','1'+'0'.repeat(39)].map((price,i)=>({level:i+1,price,multiplier:['2','5','10','100','1000','1000000','1000000000'][i]}));
 export const gemState=a=>a.blueGems||={balance:0n,level:0,adminLevel:0,revision:0,requests:new Map()};
-export function gemSnapshot(a){const g=gemState(a),admin=adminContentAccess(a),level=Math.max(g.level,admin?g.adminLevel:0);return {balance:String(g.balance),level,revision:g.revision,multiplier:gemProducts.find(p=>p.level===level)?.multiplier||'1',admin_access:admin,catalog:gemProducts};}
-export function gemReward(a,paid){if(paid<=0n)return paid;const g=gemState(a);if(!a.blueGemExcluded){g.balance++;g.revision++;}return paid*BigInt(gemSnapshot(a).multiplier);}
+export function gemSnapshot(a){const g=gemState(a),admin=adminContentAccess(a),level=Math.max(g.level,admin?g.adminLevel:0);return {balance:String(g.balance),boost:boostSnapshot(a),level,revision:g.revision,multiplier:gemProducts.find(p=>p.level===level)?.multiplier||'1',admin_access:admin,catalog:gemProducts};}
+export function gemReward(a,paid){if(paid<=0n)return paid;const g=gemState(a);if(!a.blueGemExcluded){g.balance+=BigInt(gemBoostFactor(a));g.revision++;}return paid*BigInt(gemSnapshot(a).multiplier);}
 export function gemBuy(a,b){
  const fail=(m,status=400)=>{throw Object.assign(Error(m),{status});},g=gemState(a);
  if(['user_id','target_user_id','balance','price','multiplier'].some(k=>k in b))fail('서버가 가격과 재화를 결정합니다.',403);

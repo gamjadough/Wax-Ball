@@ -1,3 +1,4 @@
+import {gemBoostFactor} from './gem-boost-data.mjs';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {adminContentAccess} from './admin-content.mjs';
@@ -43,8 +44,9 @@ export function gemBallHit(a,b){
  const hits=Math.min(d.clicks,s.clicks+hammerDamage(a.state.hammer_owned,a.state.hammer_level,a.state.hammer_selected_level)),broken=hits===d.clicks;
  const e=itemData.effective(inv.effects,0,0),ids=new Set(['animation','respawn','damage','add','difficulty'].map(k=>e[k]?.id).filter(Boolean));
  for(const id of ids){const d=itemData.list.find(d=>d.id===id);if(d&&!d.seconds&&(d.unit==='hit'||broken))inv.effects[id].remaining=Math.max(0,inv.effects[id].remaining-1);}
- if(broken){const g=gemState(a);g.balance+=BigInt(d.gem_reward);g.revision++;}
+ const earned=BigInt(d.gem_reward)*BigInt(gemBoostFactor(a));
+ if(broken){const g=gemState(a);g.balance+=earned;g.revision++;}
  s.clicks=broken?0:hits;inv.revision++;a.state.item_revision=inv.revision;
- const r={...snapshot(a),reward:'0',broken,clicks:hits,required_clicks:d.clicks,gem_reward:broken?d.gem_reward:'0',gem_balls:gemBallSnapshot(a),blue_gems:gemSnapshot(a)};
+ const r={...snapshot(a),reward:'0',broken,clicks:hits,required_clicks:d.clicks,gem_reward:broken?String(earned):'0',gem_balls:gemBallSnapshot(a),blue_gems:gemSnapshot(a)};
  inv.requests.set(b.request_id,{action:'item_hit',result:structuredClone(r)});return r;
 }

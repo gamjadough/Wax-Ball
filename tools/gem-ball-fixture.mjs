@@ -14,6 +14,7 @@ export async function gemBallFixture(){
  for(const n of ['20261019084353_manual_bank_orders.sql','20261020010000_supporter_gold_bonus.sql','20261020010100_supporter_gold_paths.sql','20261020085313_input_guard.sql','20261022081610_multi_position_input_guard.sql','20261022093644_halloween_decoration_box.sql','20261022095516_halloween_decor_admin_access.sql','20261022102841_halloween_pet_traits.sql','20261025054917_blue_gems.sql','20261025061053_ember_auto_attack.sql'])await db.exec(await sql(n));
  await db.exec(await readFile(gemBallMigration,'utf8'));
  await db.exec(await readFile(gemBallExpansionMigration,'utf8'));
+ await db.exec(await sql('20261125082055_blue_gem_boost_consumable.sql'));
  async function rpc(action,more={},user=p,anonymous=false){await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify(user?{sub:user,is_anonymous:anonymous}:{})]);return (await db.query('select wakppu_api($1::jsonb) as r',[JSON.stringify({action,...more})])).rows[0].r;}
  async function send(action,more={},user=p){return rpc(action,{request_id:crypto.randomUUID(),item_revision:(await rpc('items',{},user)).revision,...more},user);}
  return {db,rpc,send};

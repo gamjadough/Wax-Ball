@@ -19,6 +19,7 @@ export async function publicFixture({launch=true}={}){
  await db.exec(await read('supabase/public-server/public-policy.sql'));
  if(launch)await db.exec(await read('supabase/public-server/migrations/20261122102300_public_launch_december.sql'));
  await db.exec(await read('supabase/migrations/20261124091334_expand_blue_gem_ball_catalog.sql'));
+ await db.exec(await read('supabase/migrations/20261125082055_blue_gem_boost_consumable.sql'));
  async function rpc(u,b,anonymous=false){await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify(u?{sub:u,role:'authenticated',is_anonymous:anonymous}:{})]);return(await db.query('select public.wakppu_api($1::jsonb) r',[JSON.stringify(b)])).rows[0].r;}
  return {db,rpc};
 }

@@ -117,7 +117,7 @@
   let testSnapshot = null;
   let animationEpoch = 0;
   let rewardReadyEpoch = -1;
-  let itemRevision=0,itemAward=null,remoteInFlight=Promise.resolve(),pendingItemHits=WakppuHitRequests.createQueue();
+  let itemRevision=0,itemAward=null,gemAward=null,remoteInFlight=Promise.resolve(),pendingItemHits=WakppuHitRequests.createQueue();
 
   let whiteholeEffect = null;
   let transcendentEffect = null;
@@ -394,7 +394,7 @@
     window.WakppuPumpkinSkins?.reset(svgEl);
     adminFade?.cancel();adminFade=null;
     whiteholeEffect?.cancel();whiteholeEffect=null;
-    transcendentEffect?.cancel();transcendentEffect=null;itemAward=null;pendingItemHits.clear();
+    transcendentEffect?.cancel();transcendentEffect=null;itemAward=null;gemAward=null;pendingItemHits.clear();
     animationEpoch++;
     clearTimeout(state.respawnTimer);
     const data = currentBall();
@@ -785,6 +785,7 @@
       if(result.limited)WakppuLimited.accept(result.limited);
       if(result.candy_drop)floatText('🍬 사탕 +1',ballCenter().x,ballCenter().y-70);
       if(epoch!==animationEpoch){itemBreakTiming=null;return;}
+      if(result.broken&&result.gem_reward!==undefined)gemAward=result.gem_reward;
       if(!eventSelected&&BigInt(result.reward)>0n)itemAward=BigInt(result.reward);
       if(eventSelected){eventAward=BigInt(result.reward);displayEventReward=eventAward;}
       onHit(x,y,result.clicks-state.clicks,activeHammerLevel()>0,true,result.required_clicks);
@@ -981,7 +982,7 @@
 
   function awardBreakReward(data){
     const center=ballCenter();
-    if(window.WakppuGemBallData?.has(data.id)){itemAward=null;rewardReadyEpoch=animationEpoch;updateAll();floatText('💎 +'+data.gemReward,center.x,center.y-wrap.offsetHeight*.32);return;}
+    if(window.WakppuGemBallData?.has(data.id)){itemAward=null;rewardReadyEpoch=animationEpoch;updateAll();floatText('💎 +'+(gemAward??data.gemReward),center.x,center.y-wrap.offsetHeight*.32);gemAward=null;return;}
     const reward=BigInt(data.reward)*rebirthMultiplier(state.rebirths)*BigInt(honeyMultiplier())*BigInt(coatingMultiplier())*BigInt(window.WakppuGoldEvent?.multiplier()||1);
     if(!testSnapshot&&itemAward===null)state.gold+=reward;
     const displayed=itemAward??reward;itemAward=null;

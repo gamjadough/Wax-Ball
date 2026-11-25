@@ -7,7 +7,7 @@ import {createStore} from './admin-service.mjs';
 import {createProfileService} from './profile-service.mjs';
 import {monthlyAction,monthlyBadges,monthlySettle} from './monthly-service.mjs';
 import {profileTitles} from './profile-titles-service.mjs';
-import {execute} from './halloween-goods-service.mjs';
+import {execute} from './gem-boost-service.mjs';
 import {itemData,itemState,snapshot} from './items-service.mjs';
 import {limitedState,limitedSnapshot} from './limited-service.mjs';
 import {decorAction,decorState} from './halloween-decor-service.mjs';
@@ -24,6 +24,7 @@ if(process.env.WAKPPU_LOCAL_GEM_BALL_PREVIEW==='1'){
  (await import('./blue-gem-data.mjs')).gemState(actor).balance=5000n;
  actor.state.hammer_owned=true;actor.state.hammer_level=10;
 }
+if(process.env.WAKPPU_LOCAL_GEM_BOOST_PREVIEW==='1'){const actor=store.players.find(p=>p.id==='local-player');(await import('./blue-gem-data.mjs')).gemState(actor).balance=300n;(await import('./gem-ball-data.mjs')).gemBallState(actor).owned.push('blue-crystal-wax');actor.state.hammer_owned=true;actor.state.hammer_level=30;}
 if(process.env.WAKPPU_LOCAL_GEM_EXPANSION_PREVIEW==='1'){const actor=store.players.find(p=>p.id==='local-player');(await import('./blue-gem-data.mjs')).gemState(actor).balance=630000n;actor.state.hammer_owned=true;actor.state.hammer_level=30;}
 if(process.env.WAKPPU_LOCAL_HALLOWEEN_GOODS_PREVIEW==='1'){store.limited_preview='active';limitedState(store.players.find(p=>p.id==='local-player')).tokens=5000;}
 const profiles=createProfileService(store);
